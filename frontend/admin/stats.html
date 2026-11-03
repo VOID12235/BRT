@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据统计 · BTR 管理后台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="admin-body" data-page="stats" data-title="数据统计" data-crumb="评审与内容 / 数据统计">
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="adminTopbar"></header>
+      <div class="admin-content">
+        <div class="admin-page-head">
+          <div>
+            <h2>数据统计</h2>
+            <p>按赛事维度汇总报名、作品、评审与获奖数据，辅助运营决策。</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-outline" id="statsRefreshBtn">刷新数据</button>
+          </div>
+        </div>
+
+        <div class="stat-grid" id="statsOverview" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:18px">
+          <div class="card stat-card"><div class="skeleton" style="height:34px"></div><div class="skeleton" style="height:14px;margin-top:8px"></div></div>
+          <div class="card stat-card"><div class="skeleton" style="height:34px"></div><div class="skeleton" style="height:14px;margin-top:8px"></div></div>
+          <div class="card stat-card"><div class="skeleton" style="height:34px"></div><div class="skeleton" style="height:14px;margin-top:8px"></div></div>
+          <div class="card stat-card"><div class="skeleton" style="height:34px"></div><div class="skeleton" style="height:14px;margin-top:8px"></div></div>
+          <div class="card stat-card"><div class="skeleton" style="height:34px"></div><div class="skeleton" style="height:14px;margin-top:8px"></div></div>
+        </div>
+
+        <div class="stats-chart-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;margin-bottom:18px">
+          <div class="card"><h3 style="margin:14px 16px 0">赛事状态分布</h3><div id="chartStatus" style="height:260px"></div></div>
+          <div class="card"><h3 style="margin:14px 16px 0">线上 / 线下赛事</h3><div id="chartMode" style="height:260px"></div></div>
+          <div class="card" style="grid-column:1/-1"><h3 style="margin:14px 16px 0">各赛事报名与作品数</h3><div id="chartContests" style="height:320px"></div></div>
+        </div>
+
+        <div class="admin-table-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>赛事</th><th>类型</th><th>状态</th><th>报名</th><th>作品</th><th>评委</th><th>获奖</th><th>奖金池</th></tr>
+              </thead>
+              <tbody id="statsTable">
+                <tr><td colspan="8"><div class="skeleton" style="height:60px"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="admin-backdrop" id="adminBackdrop"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

@@ -175,3 +175,12 @@ CREATE TABLE sys_log (
     ip VARCHAR(64),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE notice_read (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    notice_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    read_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_notice_read UNIQUE (notice_id, user_id)
+);
+CREATE INDEX idx_notice_read_notice ON notice_read (notice_id);

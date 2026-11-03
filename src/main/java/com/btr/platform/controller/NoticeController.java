@@ -3,6 +3,7 @@ package com.btr.platform.controller;
 import com.btr.platform.common.ApiResponse;
 import com.btr.platform.common.PageResult;
 import com.btr.platform.entity.Notice;
+import com.btr.platform.security.SecurityUtils;
 import com.btr.platform.service.NoticeService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -30,6 +31,11 @@ public class NoticeController {
 
     @GetMapping("/{id}")
     public ApiResponse<Notice> detail(@PathVariable Long id) {
-        return ApiResponse.ok(noticeService.get(id));
+        Notice notice = noticeService.get(id);
+        // 阅读埋点：登录用户查看公告正文时记录（幂等）
+        if (SecurityUtils.currentOrNull() != null) {
+            noticeService.recordRead(id, SecurityUtils.currentOrNull().id());
+        }
+        return ApiResponse.ok(notice);
     }
 }

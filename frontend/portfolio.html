@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>选手作品集 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="page-head">
+        <div class="breadcrumb"><a href="/index.html">首页</a><span>/</span><span>作品集</span></div>
+        <h1 id="portfolioTitle">选手作品集</h1>
+        <p>参赛记录、作品展示与获奖荣誉。</p>
+      </div>
+
+      <div class="card portfolio-hero" id="portfolioHero" style="padding:22px 24px;display:flex;gap:20px;align-items:center;margin-bottom:20px">
+        <div class="skeleton" style="width:72px;height:72px;border-radius:50%"></div>
+        <div style="flex:1"><div class="skeleton" style="height:22px;width:180px"></div><div class="skeleton" style="height:14px;width:240px;margin-top:10px"></div></div>
+      </div>
+
+      <div id="portfolioStats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px">
+        <div class="card stat-card"><div class="skeleton" style="height:30px"></div><div class="skeleton" style="height:13px;margin-top:8px"></div></div>
+        <div class="card stat-card"><div class="skeleton" style="height:30px"></div><div class="skeleton" style="height:13px;margin-top:8px"></div></div>
+        <div class="card stat-card"><div class="skeleton" style="height:30px"></div><div class="skeleton" style="height:13px;margin-top:8px"></div></div>
+      </div>
+
+      <div class="split" style="gap:20px">
+        <div class="card" style="flex:1.2">
+          <div class="card-head"><h3>参赛作品</h3></div>
+          <div class="card-body" id="portfolioWorks">
+            <div class="skeleton" style="height:110px"></div>
+            <div class="skeleton" style="height:110px;margin-top:12px"></div>
+          </div>
+        </div>
+        <div class="card" style="flex:0.8">
+          <div class="card-head"><h3>获奖记录</h3></div>
+          <div class="card-body" id="portfolioAwards">
+            <div class="skeleton" style="height:90px"></div>
+            <div class="skeleton" style="height:90px;margin-top:12px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/portfolio.js"></script>
+</body>
+</html>

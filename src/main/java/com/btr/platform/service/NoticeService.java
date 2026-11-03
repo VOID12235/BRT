@@ -5,21 +5,34 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.btr.platform.common.BizException;
 import com.btr.platform.common.PageResult;
 import com.btr.platform.dto.Requests.NoticeReq;
+import com.btr.platform.dto.Views.NoticeReadView;
+import com.btr.platform.dto.Views.NoticeReads;
 import com.btr.platform.entity.Notice;
+import com.btr.platform.entity.NoticeRead;
+import com.btr.platform.entity.User;
 import com.btr.platform.mapper.NoticeMapper;
+import com.btr.platform.mapper.NoticeReadMapper;
+import com.btr.platform.mapper.UserMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class NoticeService {
 
     private final NoticeMapper noticeMapper;
+    private final NoticeReadMapper noticeReadMapper;
+    private final UserMapper userMapper;
 
-    public NoticeService(NoticeMapper noticeMapper) {
+    public NoticeService(NoticeMapper noticeMapper, NoticeReadMapper noticeReadMapper, UserMapper userMapper) {
         this.noticeMapper = noticeMapper;
+        this.noticeReadMapper = noticeReadMapper;
+        this.userMapper = userMapper;
     }
 
     public PageResult<Notice> list(String keyword, long page, long size) {
@@ -69,5 +82,46 @@ public class NoticeService {
     @Transactional
     public void delete(Long id) {
         noticeMapper.deleteById(id);
+        noticeReadMapper.delete(new QueryWrapper<NoticeRead>().eq("notice_id", id));
+    }
+
+    /** 记录某用户阅读公告（幂等，仅记录一次） */
+    @Transactional
+    public void recordRead(Long noticeId, Long userId) {
+        if (noticeId == null || userId == null) return;
+        Long exists = noticeReadMapper.selectCount(new QueryWrapper<NoticeRead>()
+                .eq("notice_id", noticeId).eq("user_id", userId));
+        if (exists != null && exists > 0) return;
+        NoticeRead read = new NoticeRead();
+        read.setNoticeId(noticeId);
+        read.setUserId(userId);
+        read.setReadAt(LocalDateTime.now());
+        noticeReadMapper.insert(read);
+    }
+
+    /** 公告阅读统计与明细（管理端） */
+    public NoticeReads reads(Long noticeId) {
+        List<NoticeRead> list = noticeReadMapper.selectList(new QueryWrapper<NoticeRead>()
+                .eq("notice_id", noticeId).orderByDesc("read_at"));
+        Map<Long, User> users = list.stream().map(NoticeRead::getUserId).distinct()
+                .collect(Collectors.toMap(Function.identity(), id -> {
+                    User u = userMapper.selectById(id);
+                    return u == null ? new User() : u;
+                }, (a, b) -> a));
+        NoticeReads out = new NoticeReads();
+        out.setTotal((long) list.size());
+        out.setList(list.stream().map(read -> {
+            NoticeReadView view = new NoticeReadView();
+            view.setUserId(read.getUserId());
+            view.setReadAt(read.getReadAt());
+            User user = users.get(read.getUserId());
+            if (user != null) {
+                view.setAccount(user.getAccount());
+                view.setNickname(user.getNickname());
+                view.setRole(user.getRole());
+            }
+            return view;
+        }).toList());
+        return out;
     }
 }

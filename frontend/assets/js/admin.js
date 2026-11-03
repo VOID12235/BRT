@@ -34,6 +34,8 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>',
     mails:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
+    stats:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
   };
 
   const NAV = [
@@ -53,6 +55,7 @@
         { key: "judges", label: "评委分配", href: "/admin/judge-manage.html", icon: "judge" },
         { key: "rankManage", label: "榜单管理", href: "/admin/rank-manage.html", icon: "award" },
         { key: "notices", label: "公告管理", href: "/admin/notice-manage.html", icon: "notice" },
+        { key: "stats", label: "数据统计", href: "/admin/stats.html", icon: "stats" },
         { key: "export", label: "数据导出", href: "/admin/export.html", icon: "export" },
       ],
     },
@@ -1297,6 +1300,7 @@
               <td>${B.formatDate(n.publishedAt, true)}</td>
               <td>
                 <div class="actions-cell">
+                  <button class="btn btn-outline btn-xs" data-notice-reads="${n.id}">阅读记录</button>
                   <button class="btn btn-outline btn-xs" data-edit-notice="${n.id}">编辑</button>
                   <button class="btn btn-ghost btn-xs" data-del-notice="${n.id}" style="color:var(--brand)">删除</button>
                 </div>
@@ -1304,6 +1308,10 @@
             </tr>`
           )
           .join("");
+        tbody.querySelectorAll("[data-notice-reads]").forEach((btn) => {
+          const notice = list.find((n) => n.id === Number(btn.dataset.noticeReads));
+          if (notice) btn.addEventListener("click", () => openNoticeReads(notice));
+        });
         tbody.querySelectorAll("[data-edit-notice]").forEach((btn) => {
           const notice = list.find((n) => n.id === Number(btn.dataset.editNotice));
           btn.addEventListener("click", () => openNoticeModal(notice));
@@ -1377,6 +1385,59 @@
         }
         loadNoticeTable();
       },
+    });
+  }
+
+  async function openNoticeReads(notice) {
+    openModal({
+      title: "阅读记录 · " + (notice.title || ""),
+      submitText: "关闭",
+      size: "modal-lg",
+      body: '<div id="noticeReadsBody"><div class="skeleton" style="height:120px"></div></div>',
+      onMount: async (form) => {
+        const target = form.querySelector("#noticeReadsBody");
+        if (!target) return;
+        try {
+          const data = await B.api.get("/admin/notices/" + notice.id + "/reads");
+          const list = data.list || [];
+          if (!list.length) {
+            target.innerHTML =
+              '<div class="muted center" style="padding:32px">暂无阅读记录，登录用户在查看公告正文后会计入此处</div>';
+            return;
+          }
+          target.innerHTML = `
+            <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+              <div style="flex:1;min-width:130px;padding:12px;border-radius:12px;background:rgba(94,132,238,.08)"><div style="font-size:22px;font-weight:600;color:var(--brand)">${list.length}</div><div style="font-size:12px;color:#6B7280;margin-top:2px">已读用户</div></div>
+              <div style="flex:1;min-width:130px;padding:12px;border-radius:12px;background:rgba(94,132,238,.08)"><div style="font-size:22px;font-weight:600;color:var(--brand)">${list.reduce(
+                (acc, r) => acc + (r.role === "PLAYER" ? 1 : 0),
+                0
+              )}</div><div style="font-size:12px;color:#6B7280;margin-top:2px">选手</div></div>
+              <div style="flex:1;min-width:130px;padding:12px;border-radius:12px;background:rgba(94,132,238,.08)"><div style="font-size:22px;font-weight:600;color:var(--brand)">${list.reduce(
+                (acc, r) => acc + (r.role !== "PLAYER" ? 1 : 0),
+                0
+              )}</div><div style="font-size:12px;color:#6B7280;margin-top:2px">工作人员</div></div>
+            </div>
+            <div style="max-height:340px;overflow:auto">
+              <table class="table">
+                <thead><tr><th>用户</th><th>账号</th><th>角色</th><th>阅读时间</th></tr></thead>
+                <tbody>${list
+                  .map(
+                    (r) => `<tr>
+                      <td>${B.escapeHtml(r.nickname || "—")}</td>
+                      <td>${B.escapeHtml(r.account || "—")}</td>
+                      <td>${B.escapeHtml({ PLAYER: "选手", JUDGE: "评委", ADMIN: "管理员" }[r.role] || r.role || "—")}</td>
+                      <td>${B.formatDate(r.readAt, true)}</td>
+                    </tr>`
+                  )
+                  .join("")}
+                </tbody>
+              </table>
+            </div>`;
+        } catch (e) {
+          target.innerHTML = '<div class="muted center" style="padding:32px">' + B.escapeHtml(e.message || "加载失败") + "</div>";
+        }
+      },
+      onSubmit: () => {},
     });
   }
 
@@ -2052,7 +2113,7 @@
       document.getElementById("logFoot").textContent =
         "第 " + logState.page + " / " + Math.max(1, Math.ceil(data.total / logState.size)) + " 页";
       if (!list.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="muted center" style="padding:28px">暂无日志</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="muted center" style="padding:28px">暂无日志</td></tr>';
       } else {
         tbody.innerHTML = list
           .map(
@@ -2062,9 +2123,16 @@
               <td><code>${B.escapeHtml(l.action || "")}</code></td>
               <td class="muted" style="max-width: 320px; white-space: normal">${B.escapeHtml(l.target || "—")}</td>
               <td class="muted">${B.escapeHtml(l.ip || "—")}</td>
+              <td>
+                <button class="btn btn-outline btn-xs" data-log-detail="${l.id}">详情</button>
+              </td>
             </tr>`
           )
           .join("");
+        tbody.querySelectorAll("[data-log-detail]").forEach((btn) => {
+          const log = list.find((x) => x.id === Number(btn.dataset.logDetail));
+          if (log) btn.addEventListener("click", () => openLogDetail(log));
+        });
       }
       renderPagination(
         document.getElementById("logPagination"),
@@ -2077,10 +2145,45 @@
         }
       );
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="5" class="muted center" style="padding:28px">${B.escapeHtml(
+      tbody.innerHTML = `<tr><td colspan="6" class="muted center" style="padding:28px">${B.escapeHtml(
         e.message || "加载失败"
       )}</td></tr>`;
     }
+  }
+
+  function openLogDetail(log) {
+    const ACTION_CN = {
+      LOGIN: "登录", REGISTER: "注册", FORGOT_PASSWORD: "申请重置密码", RESET_PASSWORD: "重置密码",
+      ADMIN_CREATE_USER: "创建账号", ADMIN_RESET_PASSWORD: "管理员重置密码", ADMIN_CHANGE_ROLE: "调整角色",
+      CONFIG_MAIL: "修改邮件配置", CONFIG_MAIL_TEST: "邮件测试", CONFIG_SITE: "修改站点信息",
+      CONFIG_SWITCHES: "修改系统开关", CONFIG_TEMPLATE: "修改通知模板", CONFIG_UPLOAD: "修改上传参数",
+      CONFIG_SECURITY: "修改安全策略", CONFIG_DB: "修改 MySQL 配置", CONFIG_DB_TEST: "MySQL 连接测试",
+      CONFIG_REDIS: "修改 Redis 配置", CONFIG_REDIS_TEST: "Redis 连接测试",
+      RANKING_EDIT: "手动调整榜单", RANKING_RECOMPUTE: "重算获奖名单",
+    };
+    const rows = [
+      ["日志 ID", String(log.id || "—")],
+      ["动作", B.escapeHtml(ACTION_CN[log.action] || log.action || "—")],
+      ["动作编码", `<code>${B.escapeHtml(log.action || "")}</code>`],
+      ["操作者", B.escapeHtml(log.nickname || log.account || "—")],
+      ["账号", B.escapeHtml(log.account || "—")],
+      ["用户 ID", log.userId == null ? "—" : String(log.userId)],
+      ["IP 地址", B.escapeHtml(log.ip || "—")],
+      ["时间", B.formatDate(log.createdAt, true)],
+      ["详情", B.escapeHtml(log.target || "—")],
+    ];
+    openModal({
+      title: "日志详情",
+      submitText: "关闭",
+      size: "modal-lg",
+      body: rows
+        .map(
+          ([k, v]) =>
+            `<div style="display:flex;gap:14px;padding:10px 2px;border-bottom:1px solid rgba(0,0,0,.06)"><span style="width:92px;flex:none;color:#6B7280">${k}</span><div style="flex:1;word-break:break-all;min-width:0">${v}</div></div>`
+        )
+        .join(""),
+      onSubmit: () => {},
+    });
   }
 
   /* ------------------------------- 邮件记录 ------------------------------- */
@@ -2151,6 +2254,144 @@
     }
   }
 
+  /* ------------------------------- 数据统计 ------------------------------- */
+  const STATUS_CN = {
+    DRAFT: "筹备中", SIGNUP: "报名中", REVIEW: "评审中", PUBLISHED: "已公示", FINISHED: "已结束",
+  };
+  const MODE_CN = { ONLINE: "线上比赛", OFFLINE: "线下比赛" };
+
+  async function initStats() {
+    const btn = document.getElementById("statsRefreshBtn");
+    if (btn) btn.addEventListener("click", loadStats);
+    await loadStats();
+  }
+
+  async function loadStats() {
+    let contests = [];
+    let dash = {};
+    try {
+      const [stats, dashboard] = await Promise.all([
+        B.api.get("/admin/stats/contests"),
+        B.api.get("/admin/dashboard"),
+      ]);
+      contests = stats || [];
+      dash = dashboard || {};
+    } catch (e) {
+      B.toast(e.message || "统计数据加载失败", "error");
+    }
+    renderStatsOverview(contests, dash);
+    renderStatsCharts(contests);
+    renderStatsTable(contests);
+  }
+
+  function renderStatsOverview(contests, dash) {
+    const host = document.getElementById("statsOverview");
+    if (!host) return;
+    const online = contests.filter((c) => c.mode === "ONLINE").length;
+    const offline = contests.filter((c) => c.mode === "OFFLINE").length;
+    const cards = [
+      ["赛事总数", contests.length],
+      ["线上赛事", online],
+      ["线下赛事", offline],
+      ["累计报名", dash.signups || 0],
+      ["累计作品", dash.works || 0],
+    ];
+    host.innerHTML = cards
+      .map(
+        ([label, value]) =>
+          `<div class="card stat-card"><div class="value">${Number(value || 0).toLocaleString("zh-CN")}</div><div class="label">${label}</div></div>`
+      )
+      .join("");
+  }
+
+  function renderStatsCharts(contests) {
+    if (typeof echarts === "undefined") return;
+    const statusMap = {};
+    const modeMap = {};
+    contests.forEach((c) => {
+      statusMap[STATUS_CN[c.status] || c.status] = (statusMap[STATUS_CN[c.status] || c.status] || 0) + 1;
+      modeMap[MODE_CN[c.mode] || c.mode] = (modeMap[MODE_CN[c.mode] || c.mode] || 0) + 1;
+    });
+
+    const pieBase = {
+      backgroundColor: "transparent",
+      tooltip: { trigger: "item", confine: true },
+      legend: { bottom: 0, textStyle: { fontSize: 11 } },
+      series: [{
+        type: "pie",
+        radius: ["42%", "68%"],
+        center: ["50%", "44%"],
+        label: { fontSize: 11, formatter: "{b} {c}" },
+        itemStyle: { borderRadius: 6, borderColor: "#fff", borderWidth: 2 },
+        data: [],
+      }],
+    };
+
+    const elStatus = document.getElementById("chartStatus");
+    if (elStatus) {
+      const chart = echarts.init(elStatus);
+      const option = JSON.parse(JSON.stringify(pieBase));
+      option.title = { text: "按赛事状态", left: "center", top: 4, textStyle: { fontSize: 12, color: "#6B7280" } };
+      option.series[0].data = Object.entries(statusMap).map(([name, value]) => ({
+        name, value, itemStyle: { color: { DRAFT: "#9EACEA", SIGNUP: "#8BC8EA", REVIEW: "#F4B393", PUBLISHED: "#94D8C3", FINISHED: "#E1B98F" }[name] || "#9EACEA" },
+      }));
+      chart.setOption(option);
+      window.addEventListener("resize", () => chart.resize());
+    }
+
+    const elMode = document.getElementById("chartMode");
+    if (elMode) {
+      const chart = echarts.init(elMode);
+      const option = JSON.parse(JSON.stringify(pieBase));
+      option.title = { text: "线上 vs 线下", left: "center", top: 4, textStyle: { fontSize: 12, color: "#6B7280" } };
+      option.series[0].data = Object.entries(modeMap).map(([name, value]) => ({ name, value }));
+      chart.setOption(option);
+      window.addEventListener("resize", () => chart.resize());
+    }
+
+    const elContests = document.getElementById("chartContests");
+    if (elContests) {
+      const chart = echarts.init(elContests);
+      const titles = contests.map((c) => (c.title || "").length > 12 ? c.title.slice(0, 12) + "…" : c.title);
+      chart.setOption({
+        backgroundColor: "transparent",
+        tooltip: { trigger: "axis", axisPointer: { type: "shadow" }, confine: true, textStyle: { fontSize: 11 } },
+        legend: { bottom: 0, textStyle: { fontSize: 11 } },
+        grid: { left: 12, right: 16, top: 24, bottom: 44, containLabel: true },
+        xAxis: { type: "category", data: titles, axisLabel: { fontSize: 11, interval: 0, rotate: titles.length > 5 ? 24 : 0 } },
+        yAxis: { type: "value", minInterval: 1, axisLabel: { fontSize: 11 } },
+        series: [
+          { name: "报名", type: "bar", barMaxWidth: 22, data: contests.map((c) => c.signups), itemStyle: { color: "#8BC8EA", borderRadius: [5, 5, 0, 0] } },
+          { name: "作品", type: "bar", barMaxWidth: 22, data: contests.map((c) => c.works), itemStyle: { color: "#94D8C3", borderRadius: [5, 5, 0, 0] } },
+        ],
+      });
+      window.addEventListener("resize", () => chart.resize());
+    }
+  }
+
+  function renderStatsTable(contests) {
+    const tbody = document.getElementById("statsTable");
+    if (!tbody) return;
+    if (!contests.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="muted center" style="padding:28px">暂无赛事数据</td></tr>';
+      return;
+    }
+    tbody.innerHTML = contests
+      .map(
+        (c) => `<tr>
+          <td class="title-cell">${B.escapeHtml(c.title)}</td>
+          <td>${MODE_CN[c.mode] || c.mode}</td>
+          <td><span class="badge ${B.statusInfo(c.status).cls}">${B.statusInfo(c.status).label}</span></td>
+          <td>${c.signups || 0}</td>
+          <td>${c.works || 0}</td>
+          <td>${c.judges || 0}</td>
+          <td>${c.winners || 0}</td>
+          <td>${Number(c.totalPrize || 0) > 0 ? "¥" + Number(c.totalPrize).toLocaleString("zh-CN", { maximumFractionDigits: 0 }) : "—"}</td>
+        </tr>`
+      )
+      .join("");
+  }
+
   /* ------------------------------- 启动 ------------------------------- */
   async function init() {
     const user = B.requireAuth(["ADMIN"]);
@@ -2168,6 +2409,7 @@
       rankManage: initRankManage,
       awards: initAwards,
       notices: initNotices,
+      stats: initStats,
       export: initExport,
       settings: initSettings,
       userManage: initUserManage,

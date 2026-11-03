@@ -3,6 +3,12 @@
   let contests = [];
   let contestId = Number(B.qs("contestId"));
 
+  function playerLink(row) {
+    const name = B.escapeHtml(row.author || row.realName || "匿名选手");
+    if (!row.userId) return name;
+    return `<a href="/portfolio.html?id=${row.userId}" class="player-link" style="color:var(--brand,#e8a33d);text-decoration:underline;text-underline-offset:2px">${name}</a>`;
+  }
+
   async function init() {
     try {
       const data = await B.api.get("/contests?page=1&size=50");
@@ -77,7 +83,7 @@
         return `<div class="podium-card ${isFirst ? "first" : ""}">
           <div class="podium-rank">${row.rank}</div>
           <h4>${B.escapeHtml(row.workTitle)}</h4>
-          <p>${B.escapeHtml(row.author || "匿名选手")}${row.school ? " · " + B.escapeHtml(row.school) : ""}</p>
+          <p>${playerLink(row)}${row.school ? " · " + B.escapeHtml(row.school) : ""}</p>
           <div class="podium-score">${
             prize ? B.escapeHtml(prize) : '<span class="muted">—</span>'
           }</div>
@@ -96,7 +102,7 @@
               (row) => `<tr>
                 <td><span class="rank-no ${row.rank <= 3 ? "top" : ""}">${row.rank}</span></td>
                 <td class="title-cell">${B.escapeHtml(row.workTitle)}</td>
-                <td>${B.escapeHtml(row.author || "—")}</td>
+                <td>${playerLink(row)}</td>
                 <td>${B.escapeHtml(row.school || "—")}</td>
                 <td>${
                   B.formatPrize(row)

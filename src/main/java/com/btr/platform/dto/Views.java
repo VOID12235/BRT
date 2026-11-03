@@ -156,6 +156,7 @@ public final class Views {
         private int rank;
         private Long workId;
         private Long signupId;
+        private Long userId;
         private String workTitle;
         private String author;
         private String realName;
@@ -366,5 +367,83 @@ public final class Views {
         private String status;
         private String error;
         private LocalDateTime createdAt;
+    }
+
+    /* ------------------------- 数据统计 / 公告阅读 / 选手作品集 ------------------------- */
+
+    @Data
+    public static class ContestStats {
+        private Long id;
+        private String title;
+        private String mode;
+        private String status;
+        private Long signups;
+        private Long works;
+        private Long judges;
+        private Long winners;
+        private java.math.BigDecimal totalPrize;
+    }
+
+    @Data
+    public static class NoticeReadView {
+        private Long userId;
+        private String account;
+        private String nickname;
+        private String role;
+        private LocalDateTime readAt;
+    }
+
+    @Data
+    public static class NoticeReads {
+        private Long total;
+        private List<NoticeReadView> list;
+    }
+
+    @Data
+    public static class PortfolioUser {
+        private Long id;
+        private String nickname;
+        private String avatar;
+        private String email;
+        private String phone;
+        private String role;
+    }
+
+    @Data
+    public static class PortfolioWork {
+        private Long id;
+        private String title;
+        private String description;
+        private String fileUrl;
+        private String fileName;
+        private Long contestId;
+        private String contestTitle;
+        private String contestMode;
+        private String status;
+        private String awardName;
+        private Integer rankNo;
+        private java.math.BigDecimal avgScore;
+    }
+
+    @Data
+    public static class PortfolioAward {
+        private Long contestId;
+        private String contestTitle;
+        private String contestMode;
+        private String awardName;
+        private Integer rankNo;
+        private java.math.BigDecimal prizeAmount;
+        private String gift;
+        private LocalDateTime publishedAt;
+    }
+
+    @Data
+    public static class Portfolio {
+        private PortfolioUser user;
+        private Long signupCount;
+        private Long workCount;
+        private Long awardCount;
+        private List<PortfolioWork> works;
+        private List<PortfolioAward> awards;
     }
 }

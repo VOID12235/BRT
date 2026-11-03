@@ -153,6 +153,7 @@ public class RankService {
                 WorkScore score = entry.getValue();
                 RankRow row = new RankRow();
                 row.setSignupId(signup.getId());
+                row.setUserId(signup.getUserId());
                 row.setWorkTitle("选手：" + signup.getRealName());
                 row.setAuthor(signup.getRealName());
                 row.setRealName(signup.getRealName());
@@ -169,6 +170,7 @@ public class RankService {
                 }
                 RankRow row = new RankRow();
                 row.setWorkId(work.getId());
+                row.setUserId(work.getUserId());
                 row.setWorkTitle(work.getTitle());
                 Signup signup = signups.get(work.getSignupId());
                 if (signup != null) {

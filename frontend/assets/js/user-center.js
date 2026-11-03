@@ -96,6 +96,12 @@
     document.getElementById("profileAccount").textContent = "@" + (user.account || "—");
     document.getElementById("profileRole").textContent = B.roleLabel(user.role);
 
+    const link = document.getElementById("portfolioLink");
+    if (link) {
+      link.href = "/portfolio.html?id=" + user.id;
+      link.style.display = "";
+    }
+
     document.getElementById("profileMeta").innerHTML = `
       <div><span>账号</span><b>${B.escapeHtml(user.account || "—")}</b></div>
       <div><span>昵称</span><b>${B.escapeHtml(user.nickname || "—")}</b></div>

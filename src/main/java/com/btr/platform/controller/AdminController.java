@@ -24,11 +24,13 @@ import com.btr.platform.dto.Requests.UploadConfigReq;
 import com.btr.platform.dto.Requests.UserStatusReq;
 import com.btr.platform.dto.Requests.WinnerEditReq;
 import com.btr.platform.dto.Views.AssignView;
+import com.btr.platform.dto.Views.ContestStats;
 import com.btr.platform.dto.Views.Dashboard;
 import com.btr.platform.dto.Views.DbConfig;
 import com.btr.platform.dto.Views.LogView;
 import com.btr.platform.dto.Views.MailConfig;
 import com.btr.platform.dto.Views.MailRecordView;
+import com.btr.platform.dto.Views.NoticeReads;
 import com.btr.platform.dto.Views.RedisConfig;
 import com.btr.platform.dto.Views.SecurityConfig;
 import com.btr.platform.dto.Views.SignupView;
@@ -38,14 +40,23 @@ import com.btr.platform.dto.Views.TemplateConfig;
 import com.btr.platform.dto.Views.UploadConfig;
 import com.btr.platform.dto.Views.UserView;
 import com.btr.platform.dto.Views.WorkView;
+import com.btr.platform.entity.Contest;
 import com.btr.platform.entity.EmailRecord;
+import com.btr.platform.entity.JudgeAssign;
 import com.btr.platform.entity.Notice;
+import com.btr.platform.entity.Signup;
 import com.btr.platform.entity.SysLog;
 import com.btr.platform.entity.User;
+import com.btr.platform.entity.Work;
 import com.btr.platform.mapper.AwardMapper;
+import com.btr.platform.mapper.ContestMapper;
 import com.btr.platform.mapper.EmailRecordMapper;
+import com.btr.platform.mapper.JudgeAssignMapper;
+import com.btr.platform.mapper.SignupMapper;
 import com.btr.platform.mapper.SysLogMapper;
 import com.btr.platform.mapper.UserMapper;
+import com.btr.platform.mapper.WinnerMapper;
+import com.btr.platform.mapper.WorkMapper;
 import com.btr.platform.security.SecurityUtils;
 import com.btr.platform.service.AuthService;
 import com.btr.platform.service.ConfigService;
@@ -76,6 +87,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -101,6 +113,11 @@ public class AdminController {
     private final LogService logService;
     private final RankService rankService;
     private final AwardMapper awardMapper;
+    private final ContestMapper contestMapper;
+    private final SignupMapper signupMapper;
+    private final WorkMapper workMapper;
+    private final JudgeAssignMapper judgeAssignMapper;
+    private final WinnerMapper winnerMapper;
 
     public AdminController(DashboardService dashboardService, SignupService signupService,
                            WorkService workService, JudgeService judgeService, AuthService authService,
@@ -109,7 +126,8 @@ public class AdminController {
                            InfraTestService infraTestService,
                            SysLogMapper sysLogMapper, EmailRecordMapper emailRecordMapper,
                            UserMapper userMapper, LogService logService, RankService rankService,
-                           AwardMapper awardMapper) {
+                           AwardMapper awardMapper, ContestMapper contestMapper, SignupMapper signupMapper,
+                           WorkMapper workMapper, JudgeAssignMapper judgeAssignMapper, WinnerMapper winnerMapper) {
         this.dashboardService = dashboardService;
         this.signupService = signupService;
         this.workService = workService;
@@ -126,6 +144,11 @@ public class AdminController {
         this.logService = logService;
         this.rankService = rankService;
         this.awardMapper = awardMapper;
+        this.contestMapper = contestMapper;
+        this.signupMapper = signupMapper;
+        this.workMapper = workMapper;
+        this.judgeAssignMapper = judgeAssignMapper;
+        this.winnerMapper = winnerMapper;
     }
 
     /* ------------------------- 仪表盘 / 业务管理（原有） ------------------------- */
@@ -261,6 +284,41 @@ public class AdminController {
     public ApiResponse<Void> deleteNotice(@PathVariable Long id) {
         noticeService.delete(id);
         return ApiResponse.ok();
+    }
+
+    @GetMapping("/notices/{id}/reads")
+    public ApiResponse<NoticeReads> noticeReads(@PathVariable Long id) {
+        return ApiResponse.ok(noticeService.reads(id));
+    }
+
+    /* ------------------------- 数据统计（赛事维度） ------------------------- */
+
+    @GetMapping("/stats/contests")
+    public ApiResponse<List<ContestStats>> contestStats() {
+        List<Contest> contests = contestMapper.selectList(
+                new QueryWrapper<Contest>().orderByDesc("created_at"));
+        List<ContestStats> out = new ArrayList<>();
+        for (Contest c : contests) {
+            ContestStats s = new ContestStats();
+            s.setId(c.getId());
+            s.setTitle(c.getTitle());
+            s.setMode(c.getMode());
+            s.setStatus(c.getStatus());
+            s.setSignups(signupMapper.selectCount(new QueryWrapper<Signup>()
+                    .eq("contest_id", c.getId()).ne("status", "CANCELED")));
+            s.setWorks(workMapper.selectCount(new QueryWrapper<Work>()
+                    .eq("contest_id", c.getId()).eq("status", "SUBMITTED")));
+            s.setJudges((long) judgeAssignMapper.selectObjs(new QueryWrapper<JudgeAssign>()
+                    .select("DISTINCT judge_id").eq("contest_id", c.getId())).size());
+            s.setWinners(winnerMapper.selectCount(new QueryWrapper<com.btr.platform.entity.Winner>()
+                    .eq("contest_id", c.getId())));
+            s.setTotalPrize(awardMapper.selectList(new QueryWrapper<com.btr.platform.entity.Award>()
+                    .eq("contest_id", c.getId())).stream()
+                    .map(com.btr.platform.entity.Award::getPrizeAmount)
+                    .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add));
+            out.add(s);
+        }
+        return ApiResponse.ok(out);
     }
 
     @GetMapping("/export/signups")
