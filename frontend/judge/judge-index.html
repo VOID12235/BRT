@@ -32,13 +32,13 @@
     <div class="judge-hero row-between wrap">
       <div>
         <h1>评审任务</h1>
-        <p>仅显示分配给你的作品。请在评审期内完成打分，评语将作为结果依据留存。</p>
+        <p>管理员按项目（赛事）整体分配。点击项目卡片进入该项目作品进行评审。</p>
       </div>
       <a class="btn btn-primary" href="/judge/judge-score.html">开始打分 →</a>
     </div>
 
     <div class="grid-3" id="judgeStats">
-      <div class="stat-card"><div class="label"><span class="dot"></span>分配作品</div><div class="value">—</div></div>
+      <div class="stat-card"><div class="label"><span class="dot"></span>分配项目</div><div class="value">—</div></div>
       <div class="stat-card"><div class="label"><span class="dot"></span>已完成</div><div class="value">—</div></div>
       <div class="stat-card accent"><div class="label"><span class="dot"></span>待评分</div><div class="value">—</div></div>
     </div>
@@ -46,18 +46,10 @@
     <div class="split" style="margin-top: 22px">
       <div class="card">
         <div class="card-head">
-          <div><h3>任务列表</h3><p>按赛事筛选，点击行进入打分</p></div>
-          <select class="select" id="contestFilter" style="width: auto; min-width: 200px; height: 36px; padding-top: 0; padding-bottom: 0"></select>
+          <div><h3>我的项目</h3><p>点击项目进入该赛事作品评审</p></div>
         </div>
-        <div class="table-wrap">
-          <table class="table">
-            <thead>
-              <tr><th>作品</th><th>赛事</th><th>选手</th><th>状态</th><th>分数</th><th></th></tr>
-            </thead>
-            <tbody id="taskTable">
-              <tr><td colspan="6"><div class="skeleton" style="height: 60px"></div></td></tr>
-            </tbody>
-          </table>
+        <div class="project-grid" id="projectGrid">
+          <div class="skeleton" style="height: 140px"></div>
         </div>
       </div>
 

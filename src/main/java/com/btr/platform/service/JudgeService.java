@@ -150,6 +150,83 @@ public class JudgeService {
                 .sorted(Comparator.comparing(Contest::getId).reversed()).toList();
     }
 
+    /** 评委端项目视图：按赛事聚合分配与评分进度 */
+    public List<com.btr.platform.dto.Views.JudgeProject> projects(Long judgeId) {
+        List<JudgeTask> tasks = tasks(judgeId, null);
+        if (tasks.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, List<JudgeTask>> byContest = tasks.stream()
+                .collect(Collectors.groupingBy(JudgeTask::getContestId));
+        Map<Long, Contest> contests = contestMapper.selectBatchIds(byContest.keySet()).stream()
+                .collect(Collectors.toMap(Contest::getId, Function.identity()));
+        List<com.btr.platform.dto.Views.JudgeProject> list = new ArrayList<>();
+        for (Map.Entry<Long, List<JudgeTask>> entry : byContest.entrySet()) {
+            List<JudgeTask> items = entry.getValue();
+            Contest contest = contests.get(entry.getKey());
+            com.btr.platform.dto.Views.JudgeProject project = new com.btr.platform.dto.Views.JudgeProject();
+            project.setContestId(entry.getKey());
+            project.setContestTitle(contest == null ? "" : contest.getTitle());
+            project.setContestStatus(contest == null ? "" : contest.getStatus());
+            project.setCover(contest == null ? null : contest.getCover());
+            project.setAssigned(items.size());
+            long scored = items.stream().filter(t -> t.getScore() != null).count();
+            project.setScored(scored);
+            project.setPending(items.size() - scored);
+            list.add(project);
+        }
+        list.sort(Comparator.comparing(com.btr.platform.dto.Views.JudgeProject::getContestId).reversed());
+        return list;
+    }
+
+    /** 管理端项目级分配视图：按「评委 × 赛事」聚合 */
+    public List<com.btr.platform.dto.Views.AdminAssignProject> adminProjects(Long contestId) {
+        QueryWrapper<JudgeAssign> query = new QueryWrapper<>();
+        if (contestId != null) {
+            query.eq("contest_id", contestId);
+        }
+        List<JudgeAssign> assigns = assignMapper.selectList(query.orderByDesc("created_at"));
+        if (assigns.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, User> judges = userMapper.selectBatchIds(assigns.stream()
+                        .map(JudgeAssign::getJudgeId).distinct().toList()).stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+        Map<Long, Contest> contests = contestMapper.selectBatchIds(assigns.stream()
+                        .map(JudgeAssign::getContestId).distinct().toList()).stream()
+                .collect(Collectors.toMap(Contest::getId, Function.identity()));
+        Set<String> scoredWorkIds = scoreMapper.selectList(new QueryWrapper<Score>()
+                        .in("judge_id", assigns.stream().map(JudgeAssign::getJudgeId).distinct().toList())
+                        .in("work_id", assigns.stream().map(JudgeAssign::getWorkId).distinct().toList())).stream()
+                .map(s -> s.getJudgeId() + ":" + s.getWorkId()).collect(Collectors.toSet());
+
+        Map<String, com.btr.platform.dto.Views.AdminAssignProject> grouped = new java.util.LinkedHashMap<>();
+        for (JudgeAssign assign : assigns) {
+            String key = assign.getJudgeId() + ":" + assign.getContestId();
+            com.btr.platform.dto.Views.AdminAssignProject project =
+                    grouped.computeIfAbsent(key, k -> {
+                        com.btr.platform.dto.Views.AdminAssignProject p =
+                                new com.btr.platform.dto.Views.AdminAssignProject();
+                        p.setJudgeId(assign.getJudgeId());
+                        User judge = judges.get(assign.getJudgeId());
+                        p.setJudgeName(judge == null ? "" : judge.getNickname());
+                        p.setContestId(assign.getContestId());
+                        Contest contest = contests.get(assign.getContestId());
+                        p.setContestTitle(contest == null ? "" : contest.getTitle());
+                        p.setContestStatus(contest == null ? "" : contest.getStatus());
+                        p.setCreatedAt(assign.getCreatedAt());
+                        p.setAssignIds(new ArrayList<>());
+                        return p;
+                    });
+            project.setWorkCount(project.getWorkCount() + 1);
+            if (scoredWorkIds.contains(assign.getJudgeId() + ":" + assign.getWorkId())) {
+                project.setScoredCount(project.getScoredCount() + 1);
+            }
+            project.getAssignIds().add(assign.getId());
+        }
+        return new ArrayList<>(grouped.values());
+    }
+
     @Transactional
     public Score score(ScoreReq req, Long judgeId) {
         JudgeAssign assign = assignMapper.selectOne(new QueryWrapper<JudgeAssign>()

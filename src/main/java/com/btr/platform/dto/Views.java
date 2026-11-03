@@ -264,6 +264,32 @@ public final class Views {
         private List<AwardItem> items;
     }
 
+    /** 评委端：分配给当前评委的赛事项目 */
+    @Data
+    public static class JudgeProject {
+        private Long contestId;
+        private String contestTitle;
+        private String contestStatus;
+        private String cover;
+        private long assigned;
+        private long scored;
+        private long pending;
+    }
+
+    /** 管理端：按「评委 × 赛事」聚合的项目级分配记录 */
+    @Data
+    public static class AdminAssignProject {
+        private Long judgeId;
+        private String judgeName;
+        private Long contestId;
+        private String contestTitle;
+        private String contestStatus;
+        private long workCount;
+        private long scoredCount;
+        private LocalDateTime createdAt;
+        private List<Long> assignIds;
+    }
+
     @Data
     public static class SiteConfig {
         private String name;

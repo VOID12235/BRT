@@ -6,6 +6,7 @@ import com.btr.platform.common.ApiResponse;
 import com.btr.platform.common.PageResult;
 import com.btr.platform.dto.Requests.AdminCreateUserReq;
 import com.btr.platform.dto.Requests.AssignReq;
+import com.btr.platform.dto.Views;
 import com.btr.platform.dto.Requests.ChangeRoleReq;
 import com.btr.platform.dto.Requests.LockReq;
 import com.btr.platform.dto.Requests.DbConfigReq;
@@ -164,6 +165,12 @@ public class AdminController {
     @GetMapping("/judge-assign")
     public ApiResponse<List<AssignView>> assignments(@RequestParam(required = false) Long contestId) {
         return ApiResponse.ok(judgeService.assignments(contestId));
+    }
+
+    @GetMapping("/judge-assign/projects")
+    public ApiResponse<List<Views.AdminAssignProject>> assignProjects(
+            @RequestParam(required = false) Long contestId) {
+        return ApiResponse.ok(judgeService.adminProjects(contestId));
     }
 
     @PostMapping("/judge-assign")

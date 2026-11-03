@@ -870,33 +870,39 @@
 
   async function loadAssignments() {
     const tbody = document.getElementById("assignTable");
-    tbody.innerHTML = '<tr><td colspan="5"><div class="skeleton" style="height: 60px"></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6"><div class="skeleton" style="height: 60px"></div></td></tr>';
     try {
       const suffix = assignState.contestId ? "?contestId=" + assignState.contestId : "";
-      const list = await B.api.get("/admin/judge-assign" + suffix);
-      document.getElementById("assignCount").textContent = "共 " + list.length + " 条分配";
-      document.getElementById("assignFoot").textContent = "共 " + list.length + " 条分配记录";
+      const list = await B.api.get("/admin/judge-assign/projects" + suffix);
+      document.getElementById("assignCount").textContent = "共 " + list.length + " 条项目分配";
+      document.getElementById("assignFoot").textContent = "共 " + list.length + " 条项目分配记录";
       if (!list.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="muted center" style="padding:28px">暂无分配记录</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="6" class="muted center" style="padding:28px">暂无分配记录</td></tr>';
         return;
       }
       tbody.innerHTML = list
         .map(
           (a) => `<tr>
             <td class="title-cell">${B.escapeHtml(a.judgeName || "—")}</td>
-            <td>${B.escapeHtml(a.contestTitle || "—")}</td>
-            <td>${B.escapeHtml(a.workTitle || "—")}</td>
+            <td>
+              <b>${B.escapeHtml(a.contestTitle || "—")}</b>
+              ${a.contestStatus === "REVIEW" ? '<span class="badge badge-review">评审中</span>' : ""}
+            </td>
+            <td>${a.workCount} 件</td>
+            <td>${a.scoredCount} / ${a.workCount}</td>
             <td>${B.formatDate(a.createdAt, true)}</td>
-            <td><button class="btn btn-ghost btn-xs" data-unassign="${a.id}" style="color:var(--brand)">移除</button></td>
+            <td><button class="btn btn-ghost btn-xs" data-unassign="${(a.assignIds || []).join(",")}" style="color:var(--brand)">移除</button></td>
           </tr>`
         )
         .join("");
       tbody.querySelectorAll("[data-unassign]").forEach((btn) => {
         btn.addEventListener("click", () =>
-          confirmAction("确定移除这条分配吗？", async () => {
+          confirmAction("移除该评委在此项目下的全部分配？", async () => {
             try {
-              await B.api.del("/admin/judge-assign/" + btn.dataset.unassign);
-              B.toast("已移除分配", "success");
+              for (const id of btn.dataset.unassign.split(",").filter(Boolean)) {
+                await B.api.del("/admin/judge-assign/" + id);
+              }
+              B.toast("已移除项目分配", "success");
               loadAssignments();
             } catch (e) {
               B.toast(e.message || "移除失败", "error");
@@ -905,7 +911,7 @@
         );
       });
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="5" class="muted center" style="padding:28px">${B.escapeHtml(
+      tbody.innerHTML = `<tr><td colspan="6" class="muted center" style="padding:28px">${B.escapeHtml(
         e.message || "加载失败"
       )}</td></tr>`;
     }
@@ -917,13 +923,13 @@
       return;
     }
     openModal({
-      title: "分配作品给评委",
-      size: "modal-lg",
+      title: "分配项目给评委",
+      size: "modal-md",
       submitText: "确认分配",
       body: `
         <div class="form-grid">
           <div class="field">
-            <label>赛事 *</label>
+            <label>赛事项目 *</label>
             <select class="select" name="contestId" id="assignContestSelect">
               <option value="">请选择赛事</option>
               ${state.contests
@@ -940,54 +946,22 @@
             </select>
           </div>
           <div class="field span-2">
-            <label>作品范围</label>
-            <div class="check-list" id="assignWorkList">
-              <div class="empty-mini">请先选择赛事</div>
+            <div class="alert" style="margin: 4px 0 0">
+              项目为整体分发：确认后，该评委将获得该项目（赛事）下<strong>全部已提交作品</strong>的评审任务。
             </div>
-            <span class="hint">不勾选任何作品时，默认分配该赛事全部已提交作品。</span>
           </div>
         </div>`,
-      onMount: (form) => {
-        const select = form.querySelector("#assignContestSelect");
-        const list = form.querySelector("#assignWorkList");
-        const loadWorks = async () => {
-          if (!select.value) {
-            list.innerHTML = '<div class="empty-mini">请先选择赛事</div>';
-            return;
-          }
-          list.innerHTML = '<div class="empty-mini">加载作品中…</div>';
-          try {
-            const data = await B.api.get("/admin/works?contestId=" + select.value + "&page=1&size=100");
-            const works = data.records || [];
-            if (!works.length) {
-              list.innerHTML = '<div class="empty-mini">该赛事暂无作品</div>';
-              return;
-            }
-            list.innerHTML = works
-              .map(
-                (w) => `<label><input type="checkbox" name="workIds" value="${w.id}" />
-                  <span>${B.escapeHtml(w.title)} <span class="muted tiny">· ${B.escapeHtml(w.author || "")}</span></span>
-                </label>`
-              )
-              .join("");
-          } catch (e) {
-            list.innerHTML = `<div class="empty-mini">${B.escapeHtml(e.message || "加载失败")}</div>`;
-          }
-        };
-        select.addEventListener("change", loadWorks);
-      },
       onSubmit: async (form) => {
         const contestId = Number(formValue(form, "contestId"));
         const judgeId = Number(formValue(form, "judgeId"));
         if (!contestId) throw new Error("请选择赛事");
         if (!judgeId) throw new Error("请选择评委");
-        const workIds = [...form.querySelectorAll('[name="workIds"]:checked')].map((el) => Number(el.value));
         await B.api.post("/admin/judge-assign", {
           contestId,
           judgeId,
-          workIds: workIds.length ? workIds : null,
+          workIds: null,
         });
-        B.toast("分配完成", "success");
+        B.toast("项目分配完成", "success");
         loadAssignments();
       },
     });

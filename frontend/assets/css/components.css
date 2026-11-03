@@ -1355,3 +1355,62 @@ input[type="range"] {
 .award-info h4 { margin: 0 0 4px; font-size: 15px; }
 .award-info p { margin: 0; font-size: 13px; color: var(--muted); }
 .award-info .award-tag { font-weight: 700; color: var(--brand); }
+
+/* ------------------------------ 评委项目卡片 ------------------------------ */
+.project-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 4px 4px 16px;
+}
+.judge-project-card {
+  flex: 1 1 300px;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.judge-project-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.jp-cover {
+  height: 132px;
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+.jp-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.jp-body {
+  padding: 14px 16px 16px;
+}
+.jp-title {
+  font-size: 15px;
+  line-height: 1.4;
+  margin: 0;
+}
+.jp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--muted);
+}
+.jp-meta span::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+  margin-right: 6px;
+  vertical-align: 1px;
+  opacity: 0.55;
+}

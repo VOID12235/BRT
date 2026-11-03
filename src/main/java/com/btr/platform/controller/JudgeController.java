@@ -2,6 +2,7 @@ package com.btr.platform.controller;
 
 import com.btr.platform.common.ApiResponse;
 import com.btr.platform.dto.Requests.ScoreReq;
+import com.btr.platform.dto.Views;
 import com.btr.platform.dto.Views.JudgeProgress;
 import com.btr.platform.dto.Views.JudgeTask;
 import com.btr.platform.entity.Contest;
@@ -41,6 +42,11 @@ public class JudgeController {
     @GetMapping("/contests")
     public ApiResponse<List<Contest>> contests() {
         return ApiResponse.ok(judgeService.contests(SecurityUtils.current().id()));
+    }
+
+    @GetMapping("/projects")
+    public ApiResponse<List<Views.JudgeProject>> projects() {
+        return ApiResponse.ok(judgeService.projects(SecurityUtils.current().id()));
     }
 
     @PostMapping("/scores")

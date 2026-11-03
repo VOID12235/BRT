@@ -20,10 +20,10 @@
         <div class="admin-page-head">
           <div>
             <h2>评委分配</h2>
-            <p>把赛事作品派发给评委。评委只能看到分配给自己的作品。</p>
+            <p>按项目（赛事）整体派发给评委，评委进入项目后评审该赛事全部已提交作品。</p>
           </div>
           <div class="actions">
-            <button class="btn btn-primary" id="assignBtn">+ 分配作品</button>
+            <button class="btn btn-primary" id="assignBtn">+ 分配项目</button>
           </div>
         </div>
 
@@ -40,16 +40,16 @@
           <div class="table-wrap">
             <table class="table">
               <thead>
-                <tr><th>评委</th><th>赛事</th><th>作品</th><th>分配时间</th><th>操作</th></tr>
+                <tr><th>评委</th><th>赛事项目</th><th>作品</th><th>已评</th><th>分配时间</th><th>操作</th></tr>
               </thead>
               <tbody id="assignTable">
-                <tr><td colspan="5"><div class="skeleton" style="height: 60px"></div></td></tr>
+                <tr><td colspan="6"><div class="skeleton" style="height: 60px"></div></td></tr>
               </tbody>
             </table>
           </div>
           <div class="admin-table-foot">
             <span id="assignFoot">—</span>
-            <span class="tiny muted">同一评委与作品不会重复分配</span>
+            <span class="tiny muted">分配按赛事整体进行，评委可评审该赛事全部已提交作品</span>
           </div>
         </div>
       </div>

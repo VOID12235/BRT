@@ -3,6 +3,7 @@
   const state = {
     tasks: [],
     progress: [],
+    projects: [],
     contests: {},
     contestId: "",
     activeWorkId: null,
@@ -32,6 +33,11 @@
     }
 
     await loadAll();
+    // 打分页支持 ?contestId= 直达项目
+    const queryContestId = B.qs("contestId");
+    if (isScorePage() && queryContestId) {
+      state.contestId = queryContestId;
+    }
     bindFilter();
     if (isScorePage()) {
       initScorePage();
@@ -41,13 +47,15 @@
   }
 
   async function loadAll() {
-    const [tasks, progress, contests] = await Promise.allSettled([
+    const [tasks, progress, projects, contests] = await Promise.allSettled([
       B.api.get("/judge/tasks"),
       B.api.get("/judge/progress"),
+      B.api.get("/judge/projects"),
       B.api.get("/judge/contests"),
     ]);
     state.tasks = tasks.status === "fulfilled" ? tasks.value || [] : [];
     state.progress = progress.status === "fulfilled" ? progress.value || [] : [];
+    state.projects = projects.status === "fulfilled" ? projects.value || [] : [];
     if (contests.status === "fulfilled") {
       (contests.value || []).forEach((c) => (state.contests[c.id] = c));
     }
@@ -87,49 +95,68 @@
     return task.score !== null && task.score !== undefined;
   }
 
-  /* ------------------------------ 任务列表页 ------------------------------ */
+  function statusLabel(status) {
+    if (status === "REVIEW") return "评审中";
+    if (status === "FINISHED") return "已结束";
+    return "报名中";
+  }
+
+  /* ------------------------------ 评审任务页（项目列表） ------------------------------ */
   function renderIndex() {
-    const tasks = filteredTasks();
-    const scored = tasks.filter(isScored).length;
+    const projects = state.projects;
+    const totalAssigned = projects.reduce((s, p) => s + p.assigned, 0);
+    const totalScored = projects.reduce((s, p) => s + p.scored, 0);
     const stats = document.querySelectorAll("#judgeStats .stat-card .value");
     if (stats.length === 3) {
-      stats[0].textContent = tasks.length;
-      stats[1].textContent = scored;
-      stats[2].textContent = tasks.length - scored;
+      stats[0].textContent = projects.length;
+      stats[1].textContent = totalScored;
+      stats[2].textContent = totalAssigned - totalScored;
     }
 
-    const tbody = document.getElementById("taskTable");
-    if (!tasks.length) {
-      tbody.innerHTML = `<tr><td colspan="6">${B.emptyState(
-        "暂无评审任务",
-        "管理员分配作品后，任务会出现在这里"
-      )}</td></tr>`;
-    } else {
-      tbody.innerHTML = tasks
-        .map((task) => {
-          const done = isScored(task);
-          return `<tr data-work="${task.workId}">
-            <td class="title-cell">${B.escapeHtml(task.workTitle)}</td>
-            <td>${B.escapeHtml(task.contestTitle)}</td>
-            <td>${B.escapeHtml(task.realName || "—")}${task.school ? `<span class="muted tiny"> · ${B.escapeHtml(task.school)}</span>` : ""}</td>
-            <td>${done ? '<span class="badge badge-signup">已评分</span>' : '<span class="badge badge-review">待评分</span>'}</td>
-            <td>${done ? `<b class="mono">${Number(task.score).toFixed(2)}</b>` : '<span class="muted">—</span>'}</td>
-            <td><a class="btn btn-outline btn-xs" href="/judge/judge-score.html?workId=${task.workId}">${done ? "修改" : "打分"}</a></td>
-          </tr>`;
-        })
-        .join("");
-      tbody.querySelectorAll("tr[data-work]").forEach((row) => {
-        row.style.cursor = "pointer";
-        row.addEventListener("click", (e) => {
-          if (e.target.closest("a")) return;
-          location.href = "/judge/judge-score.html?workId=" + row.dataset.work;
-        });
-      });
+    const host = document.getElementById("projectGrid");
+    if (!projects.length) {
+      host.innerHTML = B.emptyState(
+        "暂无评审项目",
+        "管理员按项目整体分配后，项目会出现在这里。"
+      );
+      return;
     }
+    host.innerHTML = projects
+      .map((p) => {
+        const percent = p.assigned ? Math.round((p.scored / p.assigned) * 100) : 0;
+        const done = p.assigned > 0 && p.scored >= p.assigned;
+        return `<div class="judge-project-card" data-contest="${p.contestId}">
+          ${p.cover ? `<div class="jp-cover"><img src="${B.escapeHtml(p.cover)}" alt="" loading="lazy" /></div>` : ""}
+          <div class="jp-body">
+            <div class="row-between wrap">
+              <b class="jp-title">${B.escapeHtml(p.contestTitle || "赛事 " + p.contestId)}</b>
+              <span class="badge ${p.contestStatus === "REVIEW" ? "badge-review" : ""}">${statusLabel(p.contestStatus)}</span>
+            </div>
+            <div class="jp-meta">
+              <span>作品 ${p.assigned} 件</span>
+              <span>已评 ${p.scored}</span>
+              <span>待评 ${p.pending}</span>
+            </div>
+            <div class="progress"><i style="width:${percent}%" class="${done ? "green" : ""}"></i></div>
+            <div class="row-between" style="margin-top: 14px">
+              <span class="tiny muted">${percent}% 已完成</span>
+              <a class="btn btn-primary btn-xs" href="/judge/judge-score.html?contestId=${p.contestId}">进入评审 →</a>
+            </div>
+          </div>
+        </div>`;
+      })
+      .join("");
+    host.querySelectorAll("[data-contest]").forEach((card) => {
+      card.style.cursor = "pointer";
+      card.addEventListener("click", (e) => {
+        if (e.target.closest("a")) return;
+        location.href = "/judge/judge-score.html?contestId=" + card.dataset.contest;
+      });
+    });
 
     const progressHost = document.getElementById("progressList");
     if (!state.progress.length) {
-      progressHost.innerHTML = B.emptyState("暂无进度", "分配作品后开始统计");
+      progressHost.innerHTML = B.emptyState("暂无进度", "分配项目后开始统计");
     } else {
       progressHost.innerHTML = state.progress
         .map((p) => {
@@ -149,6 +176,15 @@
   /* ------------------------------ 打分页 ------------------------------ */
   function initScorePage() {
     const queryWorkId = Number(B.qs("workId"));
+    // 若带 workId 但不在当前赛事过滤内，清空过滤以包含该作品
+    if (queryWorkId && state.contestId) {
+      const exists = state.tasks.some(
+        (t) => t.workId === queryWorkId && String(t.contestId) === String(state.contestId)
+      );
+      if (!exists) state.contestId = "";
+      const filter = document.getElementById("contestFilter");
+      if (filter) filter.value = state.contestId;
+    }
     renderTaskList();
     const target =
       state.tasks.find((t) => t.workId === queryWorkId) || filteredTasks()[0] || state.tasks[0];
@@ -156,8 +192,8 @@
       selectWork(target.workId);
     } else {
       document.getElementById("workPanel").innerHTML = `<div class="card">${B.emptyState(
-        "暂无可评审作品",
-        "管理员分配作品后即可开始打分"
+        "暂无可评作品",
+        "该赛事暂无已提交作品，或管理员尚未分配。"
       )}</div>`;
     }
   }
@@ -197,7 +233,11 @@
     });
     const task = state.tasks.find((t) => t.workId === workId);
     if (!task) return;
-    history.replaceState(null, "", "/judge/judge-score.html?workId=" + workId);
+    history.replaceState(
+      null,
+      "",
+      "/judge/judge-score.html?contestId=" + task.contestId + "&workId=" + workId
+    );
     renderWork(task);
   }
 
@@ -218,7 +258,7 @@
             <div class="meta">
               <span>${B.escapeHtml(task.contestTitle)}</span>
               <span>选手：${B.escapeHtml(task.realName || "—")}${
-      task.school ? " · " + B.escapeHtml(task.school) : ""
+      task.school ? "  · " + B.escapeHtml(task.school) : ""
     }</span>
               <span>提交于 ${B.formatDate(task.submittedAt, true)}</span>
             </div>
