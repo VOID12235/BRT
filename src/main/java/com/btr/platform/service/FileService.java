@@ -25,17 +25,30 @@ import java.util.Set;
 @Service
 public class FileService {
 
-    private static final Set<String> ALLOWED = Set.of(
+    private static final Set<String> DEFAULT_ALLOWED = Set.of(
             "jpg", "jpeg", "png", "gif", "webp", "svg", "pdf", "zip", "rar", "7z",
             "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt", "md", "mp4", "mov");
 
     private final UploadFileMapper uploadFileMapper;
+    private final ConfigService configService;
 
     @Value("${app.upload.dir:./uploads}")
     private String uploadDir;
 
-    public FileService(UploadFileMapper uploadFileMapper) {
+    public FileService(UploadFileMapper uploadFileMapper, ConfigService configService) {
         this.uploadFileMapper = uploadFileMapper;
+        this.configService = configService;
+    }
+
+    /** 可上传类型白名单：管理后台配置优先，未配置回退默认 */
+    private Set<String> allowedTypes() {
+        String types = configService.getUpload().getAllowedTypes();
+        if (types == null || types.isBlank()) {
+            return DEFAULT_ALLOWED;
+        }
+        Set<String> parsed = java.util.Arrays.stream(types.split(","))
+                .map(String::trim).filter(s -> !s.isEmpty()).collect(java.util.stream.Collectors.toSet());
+        return parsed.isEmpty() ? DEFAULT_ALLOWED : parsed;
     }
 
     @Transactional
@@ -45,7 +58,7 @@ public class FileService {
         }
         String original = file.getOriginalFilename() == null ? "file" : file.getOriginalFilename();
         String ext = extension(original);
-        if (!ALLOWED.contains(ext)) {
+        if (!allowedTypes().contains(ext)) {
             throw new BizException("不支持的文件类型：" + ext);
         }
         try (InputStream in = file.getInputStream()) {

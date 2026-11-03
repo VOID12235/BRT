@@ -113,4 +113,75 @@ public final class Requests {
 
     public record UserStatusReq(@NotBlank(message = "缺少状态") String status) {
     }
+
+    /* ------------------------- 系统配置请求 ------------------------- */
+
+    public record MailConfigReq(
+            String host,
+            Integer port,
+            String username,
+            /** 为空或 "******" 时表示保留原密码 */
+            String password,
+            String from,
+            Boolean ssl,
+            Boolean enabled) {
+    }
+
+    public record MailTestReq(
+            @NotBlank(message = "请输入收件邮箱") @Email(message = "邮箱格式不正确") String to) {
+    }
+
+    public record SiteConfigReq(String name, String logoUrl, String footer) {
+    }
+
+    public record SwitchesConfigReq(Boolean registerEnabled, Boolean captchaEnabled) {
+    }
+
+    public record TemplateConfigReq(@NotBlank(message = "模板内容不能为空") String content) {
+    }
+
+    public record UploadConfigReq(Integer maxSizeMb, String allowedTypes) {
+    }
+
+    public record SecurityConfigReq(Integer loginFailLimit, Integer loginLockMinutes) {
+    }
+
+    /* ------------------------- 账号管理请求 ------------------------- */
+
+    public record AdminCreateUserReq(
+            @NotBlank(message = "请输入账号")
+            @Pattern(regexp = "^[a-zA-Z0-9_]{4,32}$", message = "账号为 4-32 位字母、数字或下划线")
+            String account,
+            @NotBlank(message = "请输入密码")
+            @Size(min = 6, max = 32, message = "密码长度为 6-32 位")
+            String password,
+            @NotBlank(message = "请输入昵称")
+            @Size(max = 32, message = "昵称最长 32 个字符")
+            String nickname,
+            @Email(message = "邮箱格式不正确") String email,
+            @NotBlank(message = "请选择角色") String role) {
+    }
+
+    public record ResetPasswordReq(
+            @NotBlank(message = "请输入新密码")
+            @Size(min = 6, max = 32, message = "密码长度为 6-32 位")
+            String newPassword) {
+    }
+
+    public record ChangeRoleReq(@NotBlank(message = "请选择角色") String role) {
+    }
+
+    /* ------------------------- 忘记密码请求 ------------------------- */
+
+    public record ForgotPasswordReq(
+            @NotBlank(message = "请输入邮箱") @Email(message = "邮箱格式不正确") String email) {
+    }
+
+    public record ResetPasswordByCodeReq(
+            @NotBlank(message = "请输入邮箱") @Email(message = "邮箱格式不正确") String email,
+            @NotBlank(message = "请输入验证码") String code,
+            @NotBlank(message = "请输入新密码")
+            @Size(min = 6, max = 32, message = "密码长度为 6-32 位")
+            String newPassword) {
+    }
 }

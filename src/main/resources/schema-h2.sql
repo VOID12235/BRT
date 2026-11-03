@@ -1,4 +1,5 @@
 -- BTR 赛事平台 · H2 开发库结构（MySQL 兼容模式）
+DROP TABLE IF EXISTS sys_config;
 DROP TABLE IF EXISTS sys_log;
 DROP TABLE IF EXISTS sys_email_record;
 DROP TABLE IF EXISTS upload_file;
@@ -149,6 +150,15 @@ CREATE TABLE sys_email_record (
     status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
     error VARCHAR(500),
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE sys_config (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    config_key VARCHAR(64) NOT NULL,
+    config_value VARCHAR(2000),
+    description VARCHAR(255),
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_config_key UNIQUE (config_key)
 );
 
 CREATE TABLE sys_log (

@@ -26,6 +26,14 @@
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>',
     export:
       '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>',
+    settings:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+    users:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+    logs:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>',
+    mails:
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></svg>',
   };
 
   const NAV = [
@@ -45,6 +53,15 @@
         { key: "judges", label: "评委分配", href: "/admin/judge-manage.html", icon: "judge" },
         { key: "notices", label: "公告管理", href: "/admin/notice-manage.html", icon: "notice" },
         { key: "export", label: "数据导出", href: "/admin/export.html", icon: "export" },
+      ],
+    },
+    {
+      group: "系统",
+      items: [
+        { key: "settings", label: "基础配置", href: "/admin/settings.html", icon: "settings" },
+        { key: "userManage", label: "账号权限", href: "/admin/user-manage.html", icon: "users" },
+        { key: "logs", label: "操作日志", href: "/admin/logs.html", icon: "logs" },
+        { key: "mails", label: "邮件记录", href: "/admin/mails.html", icon: "mails" },
       ],
     },
   ];
@@ -1236,6 +1253,609 @@
     });
   }
 
+  /* ------------------------------- 基础配置 ------------------------------- */
+  function bindSettingsTabs(host, panels, onSwitch) {
+    const buttons = host.querySelectorAll("button[data-tab]");
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        const target = btn.dataset.tab;
+        panels.forEach((panel) => panel.classList.toggle("is-active", panel.id === "panel-" + target));
+        if (onSwitch) onSwitch(target);
+      });
+    });
+  }
+
+  async function initSettings() {
+    const host = document.getElementById("settingsTabs");
+    const panels = host.parentElement.querySelectorAll(".tab-panel");
+    bindSettingsTabs(host, panels, (tab) => {
+      if (tab === "mail") loadMailConfig();
+      if (tab === "site") loadSiteConfig();
+      if (tab === "switches") loadSwitchesConfig();
+      if (tab === "templates") loadTemplates();
+      if (tab === "uploads") loadUploadConfig();
+      if (tab === "security") loadSecurityConfig();
+    });
+
+    document.getElementById("saveMailBtn").addEventListener("click", saveMailConfig);
+    document.getElementById("testMailBtn").addEventListener("click", testMail);
+    document.getElementById("saveSiteBtn").addEventListener("click", saveSiteConfig);
+    document.getElementById("saveSwitchesBtn").addEventListener("click", saveSwitchesConfig);
+    document.getElementById("saveTemplateBtn").addEventListener("click", saveTemplate);
+    document.getElementById("saveUploadsBtn").addEventListener("click", saveUploadConfig);
+    document.getElementById("saveSecurityBtn").addEventListener("click", saveSecurityConfig);
+
+    const tplTabs = document.getElementById("templateTabs");
+    tplTabs.querySelectorAll("button[data-tpl]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        tplTabs.querySelectorAll("button").forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        setTemplateFields(btn.dataset.tpl);
+      });
+    });
+
+    loadMailConfig();
+  }
+
+  function setSaving(btn, saving) {
+    if (!btn) return;
+    btn.disabled = saving;
+    btn.textContent = saving ? "保存中…" : btn.dataset.origin || btn.textContent;
+  }
+
+  async function loadMailConfig() {
+    try {
+      const data = await B.api.get("/admin/config/mail");
+      document.getElementById("mailHost").value = data.host || "";
+      document.getElementById("mailPort").value = data.port || 465;
+      document.getElementById("mailFrom").value = data.from || "";
+      document.getElementById("mailUsername").value = data.username || "";
+      document.getElementById("mailPassword").value = "";
+      document.getElementById("mailPassword").placeholder = data.password ? "已设置（留空不修改）" : "未设置";
+      document.getElementById("mailSsl").value = String(data.ssl ?? true);
+      document.getElementById("mailEnabled").value = String(!!data.enabled);
+    } catch (e) {
+      B.toast(e.message || "邮件配置加载失败", "error");
+    }
+  }
+
+  async function saveMailConfig() {
+    const btn = document.getElementById("saveMailBtn");
+    btn.dataset.origin = btn.textContent;
+    setSaving(btn, true);
+    try {
+      await B.api.put("/admin/config/mail", {
+        host: document.getElementById("mailHost").value.trim(),
+        port: Number(document.getElementById("mailPort").value) || 465,
+        username: document.getElementById("mailUsername").value.trim(),
+        password: document.getElementById("mailPassword").value,
+        from: document.getElementById("mailFrom").value.trim(),
+        ssl: document.getElementById("mailSsl").value === "true",
+        enabled: document.getElementById("mailEnabled").value === "true",
+      });
+      B.toast("邮件配置已保存", "success");
+      loadMailConfig();
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      setSaving(btn, false);
+    }
+  }
+
+  async function testMail() {
+    const to = document.getElementById("mailTestTo").value.trim();
+    if (!to) {
+      B.toast("请输入测试收件邮箱", "warn");
+      return;
+    }
+    const btn = document.getElementById("testMailBtn");
+    btn.disabled = true;
+    btn.textContent = "发送中…";
+    try {
+      const data = await B.api.post("/admin/config/mail/test", { to });
+      B.toast(data.message || (data.success ? "测试邮件已发送" : "发送失败"), data.success ? "success" : "error");
+    } catch (e) {
+      B.toast(e.message || "发送失败", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "发送测试邮件";
+    }
+  }
+
+  async function loadSiteConfig() {
+    try {
+      const data = await B.api.get("/admin/config/site");
+      document.getElementById("siteName").value = data.name || "";
+      document.getElementById("siteLogo").value = data.logoUrl || "";
+      document.getElementById("siteFooter").value = data.footer || "";
+    } catch (e) {
+      B.toast(e.message || "站点信息加载失败", "error");
+    }
+  }
+
+  async function saveSiteConfig() {
+    const btn = document.getElementById("saveSiteBtn");
+    btn.dataset.origin = btn.textContent;
+    setSaving(btn, true);
+    try {
+      await B.api.put("/admin/config/site", {
+        name: document.getElementById("siteName").value.trim(),
+        logoUrl: document.getElementById("siteLogo").value.trim(),
+        footer: document.getElementById("siteFooter").value.trim(),
+      });
+      B.toast("站点信息已保存", "success");
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      setSaving(btn, false);
+    }
+  }
+
+  async function loadSwitchesConfig() {
+    try {
+      const data = await B.api.get("/admin/config/switches");
+      document.getElementById("switchRegister").value = String(!!data.registerEnabled);
+      document.getElementById("switchCaptcha").value =
+        data.captchaEnabled === null || data.captchaEnabled === undefined ? "" : String(!!data.captchaEnabled);
+    } catch (e) {
+      B.toast(e.message || "开关设置加载失败", "error");
+    }
+  }
+
+  async function saveSwitchesConfig() {
+    const btn = document.getElementById("saveSwitchesBtn");
+    btn.dataset.origin = btn.textContent;
+    setSaving(btn, true);
+    try {
+      const captcha = document.getElementById("switchCaptcha").value;
+      await B.api.put("/admin/config/switches", {
+        registerEnabled: document.getElementById("switchRegister").value === "true",
+        captchaEnabled: captcha === "" ? null : captcha === "true",
+      });
+      B.toast("开关设置已保存", "success");
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      setSaving(btn, false);
+    }
+  }
+
+  const templateTitles = {
+    "template.signup_receipt": "报名成功邮件",
+    "template.review_reminder": "评审提醒邮件",
+    "template.winner_notice": "获奖通知邮件",
+    "template.verify_code": "验证码邮件",
+  };
+  let currentTemplateKey = "template.signup_receipt";
+
+  function setTemplateFields(key) {
+    currentTemplateKey = key;
+    const panel = document.getElementById("panel-templates");
+    const content = panel.querySelector('textarea[name="tpl_' + key + '"]');
+    document.getElementById("templateName").textContent = templateTitles[key] || key;
+    document.getElementById("templateContent").value = content ? content.value : "";
+  }
+
+  async function loadTemplates() {
+    try {
+      const list = await B.api.get("/admin/config/templates");
+      const panel = document.getElementById("panel-templates");
+      list.forEach((tpl) => {
+        let area = panel.querySelector('textarea[name="tpl_' + tpl.key + '"]');
+        if (!area) {
+          area = document.createElement("textarea");
+          area.style.display = "none";
+          area.name = "tpl_" + tpl.key;
+          panel.appendChild(area);
+        }
+        area.value = tpl.content || "";
+      });
+      setTemplateFields(currentTemplateKey);
+    } catch (e) {
+      B.toast(e.message || "模板加载失败", "error");
+    }
+  }
+
+  async function saveTemplate() {
+    const btn = document.getElementById("saveTemplateBtn");
+    btn.dataset.origin = btn.textContent;
+    setSaving(btn, true);
+    try {
+      const panel = document.getElementById("panel-templates");
+      const area = panel.querySelector('textarea[name="tpl_' + currentTemplateKey + '"]');
+      await B.api.put("/admin/config/templates/" + encodeURIComponent(currentTemplateKey), {
+        content: document.getElementById("templateContent").value,
+      });
+      if (area) area.value = document.getElementById("templateContent").value;
+      B.toast("模板已保存", "success");
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      setSaving(btn, false);
+    }
+  }
+
+  async function loadUploadConfig() {
+    try {
+      const data = await B.api.get("/admin/config/uploads");
+      document.getElementById("uploadMaxMb").value = data.maxSizeMb || 50;
+      document.getElementById("uploadTypes").value = data.allowedTypes || "";
+    } catch (e) {
+      B.toast(e.message || "上传参数加载失败", "error");
+    }
+  }
+
+  async function saveUploadConfig() {
+    const btn = document.getElementById("saveUploadsBtn");
+    btn.dataset.origin = btn.textContent;
+    setSaving(btn, true);
+    try {
+      await B.api.put("/admin/config/uploads", {
+        maxSizeMb: Number(document.getElementById("uploadMaxMb").value) || 50,
+        allowedTypes: document.getElementById("uploadTypes").value.trim(),
+      });
+      B.toast("上传参数已保存", "success");
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      setSaving(btn, false);
+    }
+  }
+
+  async function loadSecurityConfig() {
+    try {
+      const data = await B.api.get("/admin/config/security");
+      document.getElementById("secFailLimit").value = data.loginFailLimit || 5;
+      document.getElementById("secLockMinutes").value = data.loginLockMinutes || 10;
+    } catch (e) {
+      B.toast(e.message || "安全策略加载失败", "error");
+    }
+  }
+
+  async function saveSecurityConfig() {
+    const btn = document.getElementById("saveSecurityBtn");
+    btn.dataset.origin = btn.textContent;
+    setSaving(btn, true);
+    try {
+      await B.api.put("/admin/config/security", {
+        loginFailLimit: Number(document.getElementById("secFailLimit").value) || 5,
+        loginLockMinutes: Number(document.getElementById("secLockMinutes").value) || 10,
+      });
+      B.toast("安全策略已保存", "success");
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      setSaving(btn, false);
+    }
+  }
+
+  /* ------------------------------- 账号权限 ------------------------------- */
+  const userState = { page: 1, size: 10, role: "", keyword: "" };
+  const ROLE_LABEL = { ADMIN: "管理员", JUDGE: "评委", PLAYER: "选手" };
+
+  async function initUserManage() {
+    document.getElementById("newUserBtn").addEventListener("click", openCreateUserModal);
+    const role = document.getElementById("userRoleFilter");
+    role.addEventListener("change", () => {
+      userState.role = role.value;
+      userState.page = 1;
+      loadUserTable();
+    });
+    const keyword = document.getElementById("userKeyword");
+    keyword.addEventListener(
+      "input",
+      B.debounce(() => {
+        userState.keyword = keyword.value.trim();
+        userState.page = 1;
+        loadUserTable();
+      }, 320)
+    );
+    loadUserTable();
+  }
+
+  async function loadUserTable() {
+    const tbody = document.getElementById("userTable");
+    tbody.innerHTML = '<tr><td colspan="7"><div class="skeleton" style="height: 60px"></div></td></tr>';
+    try {
+      const params = new URLSearchParams({ page: userState.page, size: userState.size });
+      if (userState.role) params.set("role", userState.role);
+      if (userState.keyword) params.set("keyword", userState.keyword);
+      const data = await B.api.get("/admin/users?" + params.toString());
+      const list = data.records || [];
+      document.getElementById("userCount").textContent = "共 " + data.total + " 个账号";
+      document.getElementById("userFoot").textContent =
+        "第 " + userState.page + " / " + Math.max(1, Math.ceil(data.total / userState.size)) + " 页";
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="muted center" style="padding:28px">暂无账号</td></tr>';
+      } else {
+        tbody.innerHTML = list
+          .map(
+            (u) => `<tr>
+              <td class="title-cell">${B.escapeHtml(u.account)}</td>
+              <td>${B.escapeHtml(u.nickname || "—")}</td>
+              <td><span class="badge badge-soft ${
+                u.role === "ADMIN" ? "badge-warn" : u.role === "JUDGE" ? "" : "badge-plain"
+              }">${ROLE_LABEL[u.role] || u.role}</span></td>
+              <td><span class="badge ${u.status === "ACTIVE" ? "badge-ok" : ""}">${
+              u.status === "ACTIVE" ? "启用" : "禁用"
+            }</span></td>
+              <td>${B.escapeHtml(u.email || "—")}</td>
+              <td>${B.formatDate(u.createdAt)}</td>
+              <td>
+                <div class="actions-cell">
+                  <button class="btn btn-outline btn-xs" data-role="${u.id}">角色</button>
+                  <button class="btn btn-ghost btn-xs" data-pwd="${u.id}">重置密码</button>
+                  <button class="btn btn-ghost btn-xs" data-toggle="${u.id}" data-status="${u.status}">${
+              u.status === "ACTIVE" ? "禁用" : "启用"
+            }</button>
+                </div>
+              </td>
+            </tr>`
+          )
+          .join("");
+        tbody.querySelectorAll("[data-role]").forEach((btn) => {
+          const user = list.find((u) => u.id === Number(btn.dataset.role));
+          btn.addEventListener("click", () => openRoleModal(user));
+        });
+        tbody.querySelectorAll("[data-pwd]").forEach((btn) => {
+          const user = list.find((u) => u.id === Number(btn.dataset.pwd));
+          btn.addEventListener("click", () => openResetPasswordModal(user));
+        });
+        tbody.querySelectorAll("[data-toggle]").forEach((btn) => {
+          const user = list.find((u) => u.id === Number(btn.dataset.toggle));
+          btn.addEventListener("click", () =>
+            confirmAction("确定" + (user.status === "ACTIVE" ? "禁用" : "启用") + "账号 " + user.account + " 吗？", async () => {
+              try {
+                await B.api.put("/admin/users/" + user.id + "/status", {
+                  status: user.status === "ACTIVE" ? "DISABLED" : "ACTIVE",
+                });
+                B.toast("账号状态已更新", "success");
+                loadUserTable();
+              } catch (e) {
+                B.toast(e.message || "操作失败", "error");
+              }
+            })
+          );
+        });
+      }
+      renderPagination(
+        document.getElementById("userPagination"),
+        userState.page,
+        data.total,
+        userState.size,
+        (page) => {
+          userState.page = page;
+          loadUserTable();
+        }
+      );
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7" class="muted center" style="padding:28px">${B.escapeHtml(
+        e.message || "加载失败"
+      )}</td></tr>`;
+    }
+  }
+
+  function openCreateUserModal() {
+    openModal({
+      title: "创建账号",
+      submitText: "创建账号",
+      body: `
+        <div class="form-grid">
+          <div class="field">
+            <label>账号 *</label>
+            <input class="input" name="account" maxlength="32" required placeholder="4-32 位字母、数字或下划线" />
+          </div>
+          <div class="field">
+            <label>密码 *</label>
+            <input class="input" name="password" type="password" maxlength="32" required autocomplete="new-password" placeholder="6-32 位" />
+          </div>
+          <div class="field">
+            <label>昵称 *</label>
+            <input class="input" name="nickname" maxlength="32" required />
+          </div>
+          <div class="field">
+            <label>邮箱</label>
+            <input class="input" name="email" type="email" maxlength="64" placeholder="选填" />
+          </div>
+          <div class="field span-2">
+            <label>角色 *</label>
+            <select class="select" name="role">
+              <option value="PLAYER">选手</option>
+              <option value="JUDGE">评委</option>
+              <option value="ADMIN">管理员</option>
+            </select>
+          </div>
+        </div>`,
+      onSubmit: async (form) => {
+        await B.api.post("/admin/users", {
+          account: formValue(form, "account").trim(),
+          password: formValue(form, "password"),
+          nickname: formValue(form, "nickname").trim(),
+          email: formValue(form, "email").trim() || null,
+          role: formValue(form, "role"),
+        });
+        B.toast("账号已创建", "success");
+        loadUserTable();
+      },
+    });
+  }
+
+  function openRoleModal(user) {
+    openModal({
+      title: "调整角色 · " + user.account,
+      submitText: "保存",
+      body: `
+        <div class="field">
+          <label>新角色 *</label>
+          <select class="select" name="role">
+            <option value="PLAYER" ${user.role === "PLAYER" ? "selected" : ""}>选手</option>
+            <option value="JUDGE" ${user.role === "JUDGE" ? "selected" : ""}>评委</option>
+            <option value="ADMIN" ${user.role === "ADMIN" ? "selected" : ""}>管理员</option>
+          </select>
+        </div>
+        <p class="tiny muted" style="margin-top:10px">系统会阻止将最后一个启用中的管理员降级或禁用。</p>`,
+      onSubmit: async (form) => {
+        await B.api.put("/admin/users/" + user.id + "/role", { role: formValue(form, "role") });
+        B.toast("角色已更新", "success");
+        loadUserTable();
+      },
+    });
+  }
+
+  function openResetPasswordModal(user) {
+    openModal({
+      title: "重置密码 · " + user.account,
+      submitText: "重置密码",
+      body: `
+        <div class="field">
+          <label>新密码 *</label>
+          <input class="input" name="newPassword" type="password" maxlength="32" required autocomplete="new-password" placeholder="6-32 位" />
+        </div>
+        <p class="tiny muted" style="margin-top:10px">重置后该账号需使用新密码登录。</p>`,
+      onSubmit: async (form) => {
+        const pwd = formValue(form, "newPassword");
+        if (pwd.length < 6) throw new Error("密码至少 6 位");
+        await B.api.put("/admin/users/" + user.id + "/password", { newPassword: pwd });
+        B.toast("密码已重置", "success");
+        loadUserTable();
+      },
+    });
+  }
+
+  /* ------------------------------- 操作日志 ------------------------------- */
+  const logState = { page: 1, size: 20, action: "", keyword: "" };
+
+  async function initLogs() {
+    const action = document.getElementById("logActionFilter");
+    const keyword = document.getElementById("logKeyword");
+    const search = () => {
+      logState.action = action.value;
+      logState.keyword = keyword.value.trim();
+      logState.page = 1;
+      loadLogTable();
+    };
+    action.addEventListener("change", search);
+    keyword.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") search();
+    });
+    document.getElementById("logSearchBtn").addEventListener("click", search);
+    loadLogTable();
+  }
+
+  async function loadLogTable() {
+    const tbody = document.getElementById("logTable");
+    tbody.innerHTML = '<tr><td colspan="5"><div class="skeleton" style="height: 60px"></div></td></tr>';
+    try {
+      const params = new URLSearchParams({ page: logState.page, size: logState.size });
+      if (logState.action) params.set("action", logState.action);
+      if (logState.keyword) params.set("keyword", logState.keyword);
+      const data = await B.api.get("/admin/logs?" + params.toString());
+      const list = data.records || [];
+      document.getElementById("logCount").textContent = "共 " + data.total + " 条";
+      document.getElementById("logFoot").textContent =
+        "第 " + logState.page + " / " + Math.max(1, Math.ceil(data.total / logState.size)) + " 页";
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="muted center" style="padding:28px">暂无日志</td></tr>';
+      } else {
+        tbody.innerHTML = list
+          .map(
+            (l) => `<tr>
+              <td style="white-space:nowrap">${B.formatDate(l.createdAt, true)}</td>
+              <td>${B.escapeHtml(l.nickname || l.account || "—")}</td>
+              <td><code>${B.escapeHtml(l.action || "")}</code></td>
+              <td class="muted" style="max-width: 320px; white-space: normal">${B.escapeHtml(l.target || "—")}</td>
+              <td class="muted">${B.escapeHtml(l.ip || "—")}</td>
+            </tr>`
+          )
+          .join("");
+      }
+      renderPagination(
+        document.getElementById("logPagination"),
+        logState.page,
+        data.total,
+        logState.size,
+        (page) => {
+          logState.page = page;
+          loadLogTable();
+        }
+      );
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="5" class="muted center" style="padding:28px">${B.escapeHtml(
+        e.message || "加载失败"
+      )}</td></tr>`;
+    }
+  }
+
+  /* ------------------------------- 邮件记录 ------------------------------- */
+  const mailState = { page: 1, size: 20, status: "", recipient: "" };
+  const MAIL_STATUS = { PENDING: "待发送", SENT: "已发送", SKIPPED: "已跳过", FAILED: "失败" };
+
+  async function initMails() {
+    const status = document.getElementById("mailStatusFilter");
+    const recipient = document.getElementById("mailRecipient");
+    const search = () => {
+      mailState.status = status.value;
+      mailState.recipient = recipient.value.trim();
+      mailState.page = 1;
+      loadMailTable();
+    };
+    status.addEventListener("change", search);
+    recipient.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") search();
+    });
+    document.getElementById("mailSearchBtn").addEventListener("click", search);
+    loadMailTable();
+  }
+
+  async function loadMailTable() {
+    const tbody = document.getElementById("mailTable");
+    tbody.innerHTML = '<tr><td colspan="6"><div class="skeleton" style="height: 60px"></div></td></tr>';
+    try {
+      const params = new URLSearchParams({ page: mailState.page, size: mailState.size });
+      if (mailState.status) params.set("status", mailState.status);
+      if (mailState.recipient) params.set("recipient", mailState.recipient);
+      const data = await B.api.get("/admin/mails?" + params.toString());
+      const list = data.records || [];
+      document.getElementById("mailCount").textContent = "共 " + data.total + " 封";
+      document.getElementById("mailFoot").textContent =
+        "第 " + mailState.page + " / " + Math.max(1, Math.ceil(data.total / mailState.size)) + " 页";
+      if (!list.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="muted center" style="padding:28px">暂无邮件记录</td></tr>';
+      } else {
+        tbody.innerHTML = list
+          .map(
+            (m) => `<tr>
+              <td style="white-space:nowrap">${B.formatDate(m.createdAt, true)}</td>
+              <td>${B.escapeHtml(m.recipient || "—")}</td>
+              <td><code>${B.escapeHtml(m.template || "")}</code></td>
+              <td class="muted" style="max-width: 240px; white-space: normal">${B.escapeHtml(m.subject || "—")}</td>
+              <td><span class="badge ${
+                m.status === "SENT" ? "badge-ok" : m.status === "FAILED" ? "badge-danger" : "badge-plain"
+              }">${MAIL_STATUS[m.status] || m.status}</span></td>
+              <td class="muted" style="max-width: 200px; white-space: normal">${B.escapeHtml(m.error || "—")}</td>
+            </tr>`
+          )
+          .join("");
+      }
+      renderPagination(
+        document.getElementById("mailPagination"),
+        mailState.page,
+        data.total,
+        mailState.size,
+        (page) => {
+          mailState.page = page;
+          loadMailTable();
+        }
+      );
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="6" class="muted center" style="padding:28px">${B.escapeHtml(
+        e.message || "加载失败"
+      )}</td></tr>`;
+    }
+  }
+
   /* ------------------------------- 启动 ------------------------------- */
   async function init() {
     const user = B.requireAuth(["ADMIN"]);
@@ -1253,6 +1873,10 @@
       awards: initAwards,
       notices: initNotices,
       export: initExport,
+      settings: initSettings,
+      userManage: initUserManage,
+      logs: initLogs,
+      mails: initMails,
     };
     const handler = pages[document.body.dataset.page];
     if (handler) handler();

@@ -133,7 +133,7 @@ CREATE TABLE sys_config (
 | 接口 | 说明 |
 |---|---|
 | `POST /api/v1/admin/users` | body `{ account, password, nickname, email, role }`；role 白名单 `ADMIN/JUDGE/PLAYER`；账号/邮箱唯一校验（复用注册逻辑） |
-| `PUT /api/v1/admin/users/{id}/password` | body `{ newPassword }`；禁止对当前登录账号操作（防误锁死） |
+| `PUT /api/v1/admin/users/{id}/password` | body `{ newPassword }`；允许重置任意账号（含自己，等价于改自己密码）；重置后旧登录态仍有效，下一次登录使用新密码 |
 | `PUT /api/v1/admin/users/{id}/role` | body `{ role }`；**最后一个启用 ADMIN 不可降级** |
 | `PUT /api/v1/admin/users/{id}/status` | 复用现有接口；**最后一个启用 ADMIN 不可禁用** |
 | `GET /api/v1/admin/users` | 复用现有接口，按 role 筛选 |

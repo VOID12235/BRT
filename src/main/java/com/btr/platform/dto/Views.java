@@ -207,4 +207,73 @@ public final class Views {
         private String name;
         private long size;
     }
+
+    /* ------------------------- 系统配置视图 ------------------------- */
+
+    @Data
+    public static class MailConfig {
+        private String host;
+        private Integer port;
+        private String username;
+        /** 回显时一律为脱敏值，不暴露真实密码 */
+        private String password;
+        private String from;
+        private Boolean ssl;
+        private Boolean enabled;
+    }
+
+    @Data
+    public static class SiteConfig {
+        private String name;
+        private String logoUrl;
+        private String footer;
+    }
+
+    @Data
+    public static class SwitchesConfig {
+        private Boolean registerEnabled;
+        private Boolean captchaEnabled;
+    }
+
+    @Data
+    public static class TemplateConfig {
+        private String key;
+        private String content;
+        private String description;
+    }
+
+    @Data
+    public static class UploadConfig {
+        private Integer maxSizeMb;
+        private String allowedTypes;
+    }
+
+    @Data
+    public static class SecurityConfig {
+        private Integer loginFailLimit;
+        private Integer loginLockMinutes;
+    }
+
+    @Data
+    public static class LogView {
+        private Long id;
+        private Long userId;
+        private String account;
+        private String nickname;
+        private String action;
+        private String target;
+        private String ip;
+        private LocalDateTime createdAt;
+    }
+
+    @Data
+    public static class MailRecordView {
+        private Long id;
+        private String recipient;
+        private String template;
+        private String subject;
+        private String status;
+        private String error;
+        private LocalDateTime createdAt;
+    }
 }

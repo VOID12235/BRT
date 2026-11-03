@@ -16,6 +16,40 @@
       footerHost.innerHTML = await fetchPartial("/common/footer.html", "");
     }
     markActiveNav();
+    applySiteConfig();
+  }
+
+  /** 从公开配置接口动态注入站点名称 / Logo / 页脚 */
+  async function applySiteConfig() {
+    try {
+      const res = await fetch("/api/v1/config/public-site", { cache: "no-store" });
+      if (!res.ok) return;
+      const body = await res.json();
+      const data = body && body.data ? body.data : null;
+      if (!data) return;
+      const name = String(data.name || "BTR 赛事平台").trim();
+      document.querySelectorAll(".brand-name").forEach((el) => {
+        el.textContent = name;
+      });
+      document.querySelectorAll(".site-header .brand, .site-footer .brand").forEach((el) => {
+        el.setAttribute("aria-label", name + "首页");
+      });
+      if (data.logoUrl && /^https?:\/\//i.test(String(data.logoUrl))) {
+        const logo = '<img src="' + B.escapeHtml(String(data.logoUrl)) + '" alt="' +
+          B.escapeHtml(name) + '" style="height:30px;width:auto;margin-right:8px;border-radius:6px" />';
+        document.querySelectorAll(".site-header .brand, .site-footer .brand").forEach((el) => {
+          const mark = el.querySelector(".brand-mark");
+          if (mark) mark.style.display = "none";
+          el.insertAdjacentHTML("afterbegin", logo);
+        });
+      }
+      if (data.footer) {
+        const bottom = document.querySelector(".footer-bottom span:first-child");
+        if (bottom) bottom.textContent = String(data.footer);
+      }
+    } catch (e) {
+      /* 接口不可用时保持默认文案 */
+    }
   }
 
   async function fetchPartial(url, fallback) {

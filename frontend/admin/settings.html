@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>基础配置 · BTR 管理后台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="admin-body" data-page="settings" data-title="基础配置" data-crumb="系统 / 基础配置">
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="adminTopbar"></header>
+      <div class="admin-content">
+        <div class="admin-page-head">
+          <div>
+            <h2>基础配置</h2>
+            <p>邮件服务、站点信息、系统开关、通知模板、上传参数与安全策略，保存后即时生效。</p>
+          </div>
+        </div>
+
+        <div class="tabs" id="settingsTabs" style="margin: 20px 0 4px">
+          <button class="is-active" data-tab="mail">邮件服务</button>
+          <button data-tab="site">站点信息</button>
+          <button data-tab="switches">系统开关</button>
+          <button data-tab="templates">通知模板</button>
+          <button data-tab="uploads">上传参数</button>
+          <button data-tab="security">安全策略</button>
+        </div>
+
+        <!-- 邮件服务 -->
+        <section class="tab-panel is-active" id="panel-mail">
+          <div class="form-card">
+            <h2>SMTP 邮件服务</h2>
+            <p class="muted" style="margin: 6px 0 18px">用于发送验证码、报名确认、评审提醒与获奖通知。邮箱密码以加密形式存储，回显均为占位符。</p>
+            <div class="form-grid">
+              <div class="field span-2">
+                <label>SMTP 服务器地址 *</label>
+                <input class="input" id="mailHost" placeholder="例如 smtp.qq.com" />
+              </div>
+              <div class="field">
+                <label>端口</label>
+                <input class="input" id="mailPort" type="number" min="1" max="65535" />
+              </div>
+              <div class="field">
+                <label>发件人显示名</label>
+                <input class="input" id="mailFrom" placeholder="BTR 赛事平台" />
+              </div>
+              <div class="field">
+                <label>邮箱账号</label>
+                <input class="input" id="mailUsername" placeholder="发件邮箱地址" />
+              </div>
+              <div class="field">
+                <label>邮箱密码 / 授权码</label>
+                <input class="input" id="mailPassword" type="password" placeholder="留空表示不修改" autocomplete="new-password" />
+              </div>
+              <div class="field">
+                <label>SSL 加密</label>
+                <select class="select" id="mailSsl">
+                  <option value="true">使用 SSL（推荐，如 465 端口）</option>
+                  <option value="false">使用 STARTTLS（如 587 端口）</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>邮件总开关</label>
+                <select class="select" id="mailEnabled">
+                  <option value="false">关闭（开发环境跳过发送）</option>
+                  <option value="true">开启</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px">
+              <button class="btn btn-primary" id="saveMailBtn">保存邮件配置</button>
+              <div style="display:flex;gap:8px;align-items:center">
+                <input class="input" id="mailTestTo" placeholder="测试收件邮箱" style="width:220px" />
+                <button class="btn btn-outline" id="testMailBtn">发送测试邮件</button>
+              </div>
+              <span class="tiny muted" id="mailHint">未保存的修改不会生效</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 站点信息 -->
+        <section class="tab-panel" id="panel-site">
+          <div class="form-card">
+            <h2>站点信息</h2>
+            <p class="muted" style="margin: 6px 0 18px">配置后前台页面头部与页脚自动同步显示，无需改动代码。</p>
+            <div class="form-grid">
+              <div class="field">
+                <label>站点名称 *</label>
+                <input class="input" id="siteName" maxlength="32" />
+              </div>
+              <div class="field">
+                <label>Logo URL</label>
+                <input class="input" id="siteLogo" placeholder="留空使用默认 Logo" />
+              </div>
+              <div class="field span-2">
+                <label>页脚信息</label>
+                <input class="input" id="siteFooter" maxlength="120" />
+              </div>
+            </div>
+            <div style="margin-top:8px">
+              <button class="btn btn-primary" id="saveSiteBtn">保存站点信息</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 系统开关 -->
+        <section class="tab-panel" id="panel-switches">
+          <div class="form-card">
+            <h2>系统开关</h2>
+            <p class="muted" style="margin: 6px 0 18px">控制注册入口与图形验证码等全局能力。</p>
+            <div class="form-grid">
+              <div class="field">
+                <label>开放注册</label>
+                <select class="select" id="switchRegister">
+                  <option value="true">开启（允许新用户注册）</option>
+                  <option value="false">关闭（仅管理员可创建账号）</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>图形验证码</label>
+                <select class="select" id="switchCaptcha">
+                  <option value="">跟随环境配置</option>
+                  <option value="true">开启</option>
+                  <option value="false">关闭</option>
+                </select>
+              </div>
+            </div>
+            <div style="margin-top:8px">
+              <button class="btn btn-primary" id="saveSwitchesBtn">保存开关设置</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 通知模板 -->
+        <section class="tab-panel" id="panel-templates">
+          <div class="form-card">
+            <h2>通知模板</h2>
+            <p class="muted" style="margin: 6px 0 18px">支持占位符：<code>{nickname}</code> <code>{contestTitle}</code> <code>{awardName}</code> <code>{code}</code>，HTML 内容。</p>
+            <div class="tabs" id="templateTabs" style="margin-bottom: 16px">
+              <button class="is-active" data-tpl="template.signup_receipt">报名成功</button>
+              <button data-tpl="template.review_reminder">评审提醒</button>
+              <button data-tpl="template.winner_notice">获奖通知</button>
+              <button data-tpl="template.verify_code">验证码邮件</button>
+            </div>
+            <div class="field">
+              <label id="templateName">模板内容</label>
+              <textarea class="textarea" id="templateContent" style="min-height:200px"></textarea>
+            </div>
+            <div style="margin-top:12px">
+              <button class="btn btn-primary" id="saveTemplateBtn">保存当前模板</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 上传参数 -->
+        <section class="tab-panel" id="panel-uploads">
+          <div class="form-card">
+            <h2>上传参数</h2>
+            <p class="muted" style="margin: 6px 0 18px">限制文件大小与允许的类型白名单，保存后立即对后续上传生效。</p>
+            <div class="form-grid">
+              <div class="field">
+                <label>单文件上限（MB）</label>
+                <input class="input" id="uploadMaxMb" type="number" min="1" max="2048" />
+              </div>
+              <div class="field span-2">
+                <label>允许的文件类型（逗号分隔）</label>
+                <input class="input" id="uploadTypes" />
+              </div>
+            </div>
+            <div style="margin-top:8px">
+              <button class="btn btn-primary" id="saveUploadsBtn">保存上传参数</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 安全策略 -->
+        <section class="tab-panel" id="panel-security">
+          <div class="form-card">
+            <h2>安全策略</h2>
+            <p class="muted" style="margin: 6px 0 18px">登录失败达到阈值后账号临时锁定。系统会始终保留至少一个启用中的管理员。</p>
+            <div class="form-grid">
+              <div class="field">
+                <label>登录失败锁定阈值（次）</label>
+                <input class="input" id="secFailLimit" type="number" min="1" max="20" />
+              </div>
+              <div class="field">
+                <label>锁定时长（分钟）</label>
+                <input class="input" id="secLockMinutes" type="number" min="1" max="1440" />
+              </div>
+            </div>
+            <div style="margin-top:8px">
+              <button class="btn btn-primary" id="saveSecurityBtn">保存安全策略</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <div class="admin-backdrop" id="adminBackdrop"></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>操作日志 · BTR 管理后台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="admin-body" data-page="logs" data-title="操作日志" data-crumb="系统 / 操作日志">
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="adminTopbar"></header>
+      <div class="admin-content">
+        <div class="admin-page-head">
+          <div>
+            <h2>操作日志</h2>
+            <p>审计登录、注册与管理员关键操作，用于问题排查与合规留痕。</p>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <select class="select" id="logActionFilter" style="width: 200px">
+            <option value="">全部动作</option>
+            <option value="LOGIN">登录</option>
+            <option value="REGISTER">注册</option>
+            <option value="FORGOT_PASSWORD">申请重置密码</option>
+            <option value="RESET_PASSWORD">重置密码</option>
+            <option value="ADMIN_CREATE_USER">创建账号</option>
+            <option value="ADMIN_RESET_PASSWORD">管理员重置密码</option>
+            <option value="ADMIN_CHANGE_ROLE">调整角色</option>
+            <option value="CONFIG_MAIL">修改邮件配置</option>
+            <option value="CONFIG_SITE">修改站点信息</option>
+            <option value="CONFIG_SWITCHES">修改系统开关</option>
+            <option value="CONFIG_TEMPLATE">修改通知模板</option>
+            <option value="CONFIG_UPLOAD">修改上传参数</option>
+            <option value="CONFIG_SECURITY">修改安全策略</option>
+          </select>
+          <div class="admin-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="input" id="logKeyword" type="search" placeholder="搜索详情或 IP" />
+          </div>
+          <button class="btn btn-outline" id="logSearchBtn">查询</button>
+          <span class="tiny muted" id="logCount" style="margin-left:auto"></span>
+        </div>
+
+        <div class="admin-table-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>时间</th><th>操作者</th><th>动作</th><th>详情</th><th>IP</th></tr>
+              </thead>
+              <tbody id="logTable">
+                <tr><td colspan="5"><div class="skeleton" style="height: 60px"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="admin-table-foot">
+            <span id="logFoot">—</span>
+            <div class="pagination" id="logPagination"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="admin-backdrop" id="adminBackdrop"></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

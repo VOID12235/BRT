@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>账号权限 · BTR 管理后台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="admin-body" data-page="userManage" data-title="账号权限" data-crumb="系统 / 账号权限">
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="adminTopbar"></header>
+      <div class="admin-content">
+        <div class="admin-page-head">
+          <div>
+            <h2>账号权限</h2>
+            <p>创建账号、分配角色、重置密码与启用/禁用。系统始终保留至少一个启用中的管理员。</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" id="newUserBtn">+ 创建账号</button>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <select class="select" id="userRoleFilter" style="width: 140px">
+            <option value="">全部角色</option>
+            <option value="ADMIN">管理员</option>
+            <option value="JUDGE">评委</option>
+            <option value="PLAYER">选手</option>
+          </select>
+          <div class="admin-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="input" id="userKeyword" type="search" placeholder="搜索账号、昵称或邮箱" />
+          </div>
+          <span class="tiny muted" id="userCount" style="margin-left:auto"></span>
+        </div>
+
+        <div class="admin-table-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>账号</th><th>昵称</th><th>角色</th><th>状态</th><th>邮箱</th><th>注册时间</th><th>操作</th></tr>
+              </thead>
+              <tbody id="userTable">
+                <tr><td colspan="7"><div class="skeleton" style="height: 60px"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="admin-table-foot">
+            <span id="userFoot">—</span>
+            <div class="pagination" id="userPagination"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="admin-backdrop" id="adminBackdrop"></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>
