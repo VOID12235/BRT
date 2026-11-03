@@ -160,6 +160,10 @@ ol {
   display: none !important;
 }
 
+[hidden] {
+  display: none !important;
+}
+
 .stack {
   display: flex;
   flex-direction: column;
