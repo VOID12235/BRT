@@ -39,6 +39,14 @@ public class AuthController {
         return ApiResponse.ok(authService.register(req, ip(request)));
     }
 
+    @PostMapping("/send-register-code")
+    public ApiResponse<Map<String, String>> sendRegisterCode(@Valid @RequestBody ForgotPasswordReq req,
+                                                             HttpServletRequest request) {
+        String result = authService.sendRegisterCode(req, ip(request));
+        return ApiResponse.ok(Map.of("message",
+                result == null ? "验证码已发送，请查收邮件" : "验证码已发送至 " + result));
+    }
+
     @PostMapping("/login")
     public ApiResponse<AuthResult> login(@Valid @RequestBody LoginReq req, HttpServletRequest request) {
         return ApiResponse.ok(authService.login(req, ip(request)));

@@ -35,6 +35,8 @@ public class AuthService {
     private static final Set<String> ROLES = Set.of("PLAYER", "JUDGE", "ADMIN");
     private static final String VERIFY_KEY_PREFIX = "pwd:code:";
     private static final String VERIFY_FAIL_PREFIX = "pwd:fail:";
+    private static final String REG_KEY_PREFIX = "reg:code:";
+    private static final String REG_FAIL_PREFIX = "reg:fail:";
     private static final Duration VERIFY_TTL = Duration.ofMinutes(10);
     private static final int VERIFY_FAIL_LIMIT = 5;
 
@@ -68,34 +70,89 @@ public class AuthService {
         if (!configService.getBool(ConfigService.KEY_SWITCH_REGISTER, true)) {
             throw new BizException(403, "当前暂未开放注册，请联系管理员");
         }
-        if (userMapper.selectCount(new QueryWrapper<User>()
-                .eq("account", req.account())) > 0) {
-            throw new BizException("该账号已被注册");
-        }
-        if (req.email() != null && !req.email().isBlank()
-                && userMapper.selectCount(new QueryWrapper<User>()
-                .eq("email", req.email())) > 0) {
+        String email = req.email().trim().toLowerCase();
+        if (userMapper.selectCount(new QueryWrapper<User>().eq("email", email)) > 0) {
             throw new BizException("该邮箱已被注册");
         }
+        verifyRegisterCode(email, req.code());
+        // 账号即注册邮箱，无需单独设置账号
+        String account = email;
+        if (userMapper.selectCount(new QueryWrapper<User>().eq("account", account)) > 0) {
+            throw new BizException("该账号已被注册");
+        }
         User user = new User();
-        user.setAccount(req.account().trim());
+        user.setAccount(account);
         user.setPassword(passwordEncoder.encode(req.password()));
         user.setNickname(req.nickname().trim());
-        user.setEmail(req.email());
+        user.setEmail(email);
         user.setPhone(req.phone());
         user.setRole("PLAYER");
         user.setStatus("ACTIVE");
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(user);
-        logService.record(user.getId(), "REGISTER", user.getAccount(), ip);
-        emailService.send(user.getEmail(), "WELCOME", "欢迎加入 BTR",
-                "<p>Hi " + user.getNickname() + "，欢迎加入 BTR 赛事平台。</p>");
+        cacheService.delete(REG_KEY_PREFIX + email);
+        cacheService.delete(REG_FAIL_PREFIX + email);
+        logService.record(user.getId(), "REGISTER", account, ip);
+        emailService.send(email, "WELCOME", "欢迎加入 BTR",
+                "<p>Hi " + user.getNickname() + "，欢迎加入 BTR 赛事平台。</p>"
+                        + "<p>你的登录账号即注册邮箱：<b>" + account + "</b>，登录时输入邮箱与密码即可。</p>");
         return issue(user);
     }
 
+    /** 发送注册验证码邮件。邮箱已注册时返回 null（统一提示已发送，防账号枚举） */
+    public String sendRegisterCode(ForgotPasswordReq req, String ip) {
+        String email = req.email().trim().toLowerCase();
+        if (userMapper.selectCount(new QueryWrapper<User>().eq("email", email)) > 0) {
+            logService.record(null, "REGISTER_CODE", "exists:" + email, ip);
+            return null;
+        }
+        ConfigService.MailRuntime mail = configService.mailRuntime();
+        if (!mail.enabled || mail.host.isBlank()) {
+            throw new BizException("管理员暂未配置邮件服务，暂不支持邮箱注册");
+        }
+        if (cacheService.get(REG_KEY_PREFIX + email) != null) {
+            throw new BizException("发送过于频繁，请 1 分钟后再试");
+        }
+        String code = String.format("%06d", new SecureRandom().nextInt(1_000_000));
+        cacheService.set(REG_KEY_PREFIX + email, code, VERIFY_TTL);
+        cacheService.delete(REG_FAIL_PREFIX + email);
+        emailService.sendVerifyCode(email, email.split("@")[0], code);
+        logService.record(null, "REGISTER_CODE", email, ip);
+        return email;
+    }
+
+    /** 校验注册验证码，错误 5 次作废 */
+    private void verifyRegisterCode(String email, String code) {
+        String key = REG_KEY_PREFIX + email;
+        String expected = cacheService.get(key);
+        if (expected == null) {
+            throw new BizException("验证码已过期，请重新获取");
+        }
+        if (!expected.equals(code.trim())) {
+            String failKey = REG_FAIL_PREFIX + email;
+            int fails = 0;
+            String current = cacheService.get(failKey);
+            if (current != null) {
+                try {
+                    fails = Integer.parseInt(current);
+                } catch (NumberFormatException ignored) {
+                    fails = 0;
+                }
+            }
+            fails++;
+            if (fails >= VERIFY_FAIL_LIMIT) {
+                cacheService.delete(key);
+                cacheService.delete(failKey);
+                throw new BizException("验证码错误次数过多，已失效，请重新获取");
+            }
+            cacheService.set(failKey, String.valueOf(fails), VERIFY_TTL);
+            throw new BizException("验证码错误");
+        }
+    }
+
     public AuthResult login(LoginReq req, String ip) {
-        String account = req.account().trim();
+        String account = req.account().trim().toLowerCase();
         String lockKey = "login:lock:" + account;
         if (cacheService.get(lockKey) != null) {
             throw new BizException(403, "登录失败次数过多，账号已临时锁定，请稍后再试");
@@ -104,7 +161,7 @@ public class AuthService {
             throw new BizException("验证码错误或已过期");
         }
         User user = userMapper.selectOne(new QueryWrapper<User>()
-                .eq("account", account));
+                .and(w -> w.eq("account", account).or().eq("email", account)).last("limit 1"));
         if (user == null || !passwordEncoder.matches(req.password(), user.getPassword())) {
             registerLoginFail(account);
             throw new BizException(401, "账号或密码错误");
@@ -284,7 +341,7 @@ public class AuthService {
 
     /** 发送重置验证码邮件 */
     public String forgotPassword(ForgotPasswordReq req, String ip) {
-        String email = req.email().trim();
+        String email = req.email().trim().toLowerCase();
         User user = userMapper.selectOne(new QueryWrapper<User>().eq("email", email).last("limit 1"));
         // 邮箱不存在也返回成功，防止账号枚举
         if (user == null) {
@@ -309,7 +366,7 @@ public class AuthService {
     /** 校验验证码并重置密码 */
     @Transactional
     public void resetPassword(ResetPasswordByCodeReq req, String ip) {
-        String email = req.email().trim();
+        String email = req.email().trim().toLowerCase();
         String key = VERIFY_KEY_PREFIX + email;
         String expected = cacheService.get(key);
         if (expected == null) {

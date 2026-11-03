@@ -20,16 +20,14 @@ public final class Requests {
     }
 
     public record RegisterReq(
-            @NotBlank(message = "请输入账号")
-            @Pattern(regexp = "^[a-zA-Z0-9_]{4,32}$", message = "账号为 4-32 位字母、数字或下划线")
-            String account,
+            @NotBlank(message = "请输入邮箱") @Email(message = "邮箱格式不正确") String email,
+            @NotBlank(message = "请输入验证码") String code,
             @NotBlank(message = "请输入密码")
             @Size(min = 6, max = 32, message = "密码长度为 6-32 位")
             String password,
             @NotBlank(message = "请输入昵称")
             @Size(max = 32, message = "昵称最长 32 个字符")
             String nickname,
-            @Email(message = "邮箱格式不正确") String email,
             String phone) {
     }
 

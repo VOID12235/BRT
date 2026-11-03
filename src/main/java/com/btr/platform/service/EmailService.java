@@ -83,12 +83,15 @@ public class EmailService {
                 JavaMailSenderImpl sender = new JavaMailSenderImpl();
                 sender.setHost(runtime.host);
                 sender.setPort(runtime.port);
-                if (runtime.username != null && !runtime.username.isBlank()) {
+                Properties props = sender.getJavaMailProperties();
+                boolean hasAuth = runtime.username != null && !runtime.username.isBlank();
+                if (hasAuth) {
                     sender.setUsername(runtime.username);
                     sender.setPassword(runtime.password);
+                    props.put("mail.smtp.auth", "true");
+                } else {
+                    props.put("mail.smtp.auth", "false");
                 }
-                Properties props = sender.getJavaMailProperties();
-                props.put("mail.smtp.auth", "true");
                 if (runtime.ssl) {
                     props.put("mail.smtp.ssl.enable", "true");
                 } else {

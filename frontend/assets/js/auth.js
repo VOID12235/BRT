@@ -24,6 +24,7 @@
 
     document.getElementById("loginForm").addEventListener("submit", login);
     document.getElementById("registerForm").addEventListener("submit", register);
+    document.getElementById("sendRegCodeBtn").addEventListener("click", sendRegisterCode);
     loadCaptcha();
   }
 
@@ -86,13 +87,17 @@
 
   async function register(e) {
     e.preventDefault();
-    const account = document.getElementById("regAccount").value.trim();
-    const nickname = document.getElementById("regNickname").value.trim();
     const email = document.getElementById("regEmail").value.trim();
+    const nickname = document.getElementById("regNickname").value.trim();
+    const code = document.getElementById("regCode").value.trim();
     const password = document.getElementById("regPassword").value;
     const confirm = document.getElementById("regConfirm").value;
-    if (!account || !nickname || !password) {
-      B.toast("请填写账号、昵称和密码", "warn");
+    if (!email || !nickname || !code || !password) {
+      B.toast("请填写邮箱、昵称、验证码和密码", "warn");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      B.toast("邮箱格式不正确", "warn");
       return;
     }
     if (password.length < 6) {
@@ -107,17 +112,54 @@
     btn.disabled = true;
     btn.textContent = "注册中…";
     try {
-      const data = await B.api.post("/auth/register", { account, nickname, email, password });
+      const data = await B.api.post("/auth/register", { email, code, password, nickname });
       B.storage.save(data);
-      B.toast("注册成功，正在进入个人中心…", "success", 1200);
+      B.toast("注册成功！登录账号即邮箱 " + email + "，正在进入…", "success", 2600);
       setTimeout(() => {
         location.href = B.qs("redirect") || "/user-center.html";
-      }, 400);
+      }, 500);
     } catch (err) {
       B.toast(err.message || "注册失败", "error");
       btn.disabled = false;
       btn.textContent = "注册并登录";
     }
+  }
+
+  async function sendRegisterCode() {
+    const email = document.getElementById("regEmail").value.trim();
+    if (!email) {
+      B.toast("请先填写邮箱", "warn");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      B.toast("邮箱格式不正确", "warn");
+      return;
+    }
+    const btn = document.getElementById("sendRegCodeBtn");
+    btn.disabled = true;
+    try {
+      const data = await B.api.post("/auth/send-register-code", { email });
+      B.toast(data.message || "验证码已发送，请查收邮件", "success");
+      countdown(btn, 60);
+    } catch (err) {
+      B.toast(err.message || "发送失败", "error");
+      btn.disabled = false;
+    }
+  }
+
+  function countdown(btn, seconds) {
+    const origin = btn.textContent;
+    btn.textContent = seconds + "s 后重发";
+    const timer = setInterval(() => {
+      seconds--;
+      if (seconds <= 0) {
+        clearInterval(timer);
+        btn.disabled = false;
+        btn.textContent = origin;
+      } else {
+        btn.textContent = seconds + "s 后重发";
+      }
+    }, 1000);
   }
 
   document.addEventListener("DOMContentLoaded", init);
