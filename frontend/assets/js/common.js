@@ -151,8 +151,8 @@
     const prize = Number(contest.prizeAmount || 0);
     const prizeHtml =
       prize > 0
-        ? `<span class="stat contest-prize">奖金 <b>¥${prize.toLocaleString("zh-CN", { maximumFractionDigits: 0 })}</b></span>`
-        : `<span class="stat">${contest.signupCount || 0} 人报名</span>`;
+        ? `<span class="stat contest-prize">奖金总额 <b>¥${prize.toLocaleString("zh-CN", { maximumFractionDigits: 0 })}</b></span>`
+        : `<span class="stat contest-prize">奖金总额 <b class="no-prize">暂无</b></span>`;
     const signupAction =
       contest.status === "SIGNUP"
         ? `<a class="btn btn-primary btn-sm" href="/signup.html?contestId=${contest.id}">立即报名</a>`

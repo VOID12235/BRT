@@ -187,6 +187,12 @@
   font-size: 14px;
 }
 
+.contest-meta .contest-prize b.no-prize {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 450;
+}
+
 .summary-list .prize-amount {
   color: var(--brand, #e8a33d);
   font-weight: 700;
