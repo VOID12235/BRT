@@ -2,6 +2,28 @@
   const B = window.BTR;
   let captchaEnabled = false;
 
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  /** 切换按钮 loading 状态，防止重复提交 */
+  function setBusy(btn, busy, busyText, idleText) {
+    if (!btn) return;
+    btn.disabled = busy;
+    btn.textContent = busy ? busyText : idleText;
+  }
+
+  /** 校验邮箱格式并提示 */
+  function checkEmail(email) {
+    if (!email) {
+      B.toast("请先填写邮箱", "warn");
+      return false;
+    }
+    if (!EMAIL_RE.test(email)) {
+      B.toast("邮箱格式不正确", "warn");
+      return false;
+    }
+    return true;
+  }
+
   function init() {
     const user = B.storage.user;
     if (user && B.storage.token && !B.qs("switch")) {
@@ -17,7 +39,11 @@
       btn.addEventListener("click", () => {
         document.getElementById("loginAccount").value = btn.dataset.account;
         document.getElementById("loginPassword").value = btn.dataset.password;
-        document.getElementById("captchaCode").focus();
+        if (captchaEnabled) {
+          document.getElementById("captchaCode").focus();
+        } else {
+          document.getElementById("loginSubmit").focus();
+        }
         B.toast("已填入演示账号，点击登录即可", "info");
       });
     });
@@ -34,6 +60,9 @@
     );
     document.getElementById("loginPanel").classList.toggle("hidden", tab !== "login");
     document.getElementById("registerPanel").classList.toggle("hidden", tab !== "register");
+    const first = tab === "login" ? "loginAccount" : "regNickname";
+    const el = document.getElementById(first);
+    if (el && !el.value) el.focus();
   }
 
   async function loadCaptcha() {
@@ -50,6 +79,8 @@
       }
     } catch (e) {
       captchaEnabled = false;
+      const field = document.getElementById("captchaField");
+      if (field) field.classList.add("hidden");
     }
   }
 
@@ -62,8 +93,7 @@
       return;
     }
     const btn = document.getElementById("loginSubmit");
-    btn.disabled = true;
-    btn.textContent = "登录中…";
+    setBusy(btn, true, "登录中…", "登录");
     try {
       const body = { account, password };
       if (captchaEnabled) {
@@ -80,8 +110,7 @@
     } catch (err) {
       B.toast(err.message || "登录失败", "error");
       if (captchaEnabled) loadCaptcha();
-      btn.disabled = false;
-      btn.textContent = "登录";
+      setBusy(btn, false, "登录中…", "登录");
     }
   }
 
@@ -96,7 +125,7 @@
       B.toast("请填写邮箱、昵称、验证码和密码", "warn");
       return;
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    if (!EMAIL_RE.test(email)) {
       B.toast("邮箱格式不正确", "warn");
       return;
     }
@@ -109,8 +138,7 @@
       return;
     }
     const btn = document.getElementById("registerSubmit");
-    btn.disabled = true;
-    btn.textContent = "注册中…";
+    setBusy(btn, true, "注册中…", "注册并登录");
     try {
       const data = await B.api.post("/auth/register", { email, code, password, nickname });
       B.storage.save(data);
@@ -120,30 +148,22 @@
       }, 500);
     } catch (err) {
       B.toast(err.message || "注册失败", "error");
-      btn.disabled = false;
-      btn.textContent = "注册并登录";
+      setBusy(btn, false, "注册中…", "注册并登录");
     }
   }
 
   async function sendRegisterCode() {
     const email = document.getElementById("regEmail").value.trim();
-    if (!email) {
-      B.toast("请先填写邮箱", "warn");
-      return;
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      B.toast("邮箱格式不正确", "warn");
-      return;
-    }
+    if (!checkEmail(email)) return;
     const btn = document.getElementById("sendRegCodeBtn");
-    btn.disabled = true;
+    setBusy(btn, true, "发送中…", "获取验证码");
     try {
       const data = await B.api.post("/auth/send-register-code", { email });
       B.toast(data.message || "验证码已发送，请查收邮件", "success");
       countdown(btn, 60);
     } catch (err) {
       B.toast(err.message || "发送失败", "error");
-      btn.disabled = false;
+      setBusy(btn, false, "发送中…", "获取验证码");
     }
   }
 
@@ -160,6 +180,8 @@
         btn.textContent = seconds + "s 后重发";
       }
     }, 1000);
+    // 页面离开时停止倒计时，避免定时器泄漏
+    window.addEventListener("beforeunload", () => clearInterval(timer), { once: true });
   }
 
   document.addEventListener("DOMContentLoaded", init);

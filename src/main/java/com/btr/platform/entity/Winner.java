@@ -15,6 +15,8 @@ public class Winner {
     private Long contestId;
     private Long awardId;
     private Long workId;
+    /** 线下赛事获奖对象为报名选手 */
+    private Long signupId;
     private Integer rankNo;
     private Boolean published;
     private LocalDateTime createdAt;

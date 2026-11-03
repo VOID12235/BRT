@@ -183,10 +183,7 @@
             a.rankNo === 1 ? "gold" : a.rankNo === 2 ? "silver" : a.rankNo === 3 ? "bronze" : "other";
           const medalText =
             a.rankNo && a.rankNo <= 3 ? a.rankNo : (a.awardName || "奖").slice(0, 1);
-          const prize =
-            a.prizeAmount && Number(a.prizeAmount) > 0
-              ? " · 奖金 ¥" + Number(a.prizeAmount).toLocaleString()
-              : "";
+          const prize = B.formatPrize(a) ? " · " + B.escapeHtml(B.formatPrize(a)) : "";
           return `<div class="award-item">
             <div class="award-medal ${medalCls}">${B.escapeHtml(medalText)}</div>
             <div class="award-info">

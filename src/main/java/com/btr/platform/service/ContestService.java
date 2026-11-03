@@ -28,6 +28,7 @@ import java.util.Set;
 public class ContestService {
 
     public static final Set<String> STATUSES = Set.of("DRAFT", "SIGNUP", "REVIEW", "PUBLISHED", "FINISHED");
+    public static final Set<String> MODES = Set.of("ONLINE", "OFFLINE");
 
     private final ContestMapper contestMapper;
     private final AwardMapper awardMapper;
@@ -131,7 +132,7 @@ public class ContestService {
         contest.setStatus(status);
         contest.setUpdatedAt(LocalDateTime.now());
         contestMapper.updateById(contest);
-        if ("REVIEW".equals(status)) {
+        if ("REVIEW".equals(status) && "ONLINE".equals(contest.getMode())) {
             Work lock = new Work();
             lock.setLocked(true);
             workMapper.update(lock, new QueryWrapper<Work>().eq("contest_id", id));
@@ -165,6 +166,7 @@ public class ContestService {
         award.setName(req.name());
         award.setQuota(req.quota());
         award.setPrizeAmount(req.prizeAmount());
+        award.setGift(req.gift());
         award.setSortOrder(req.sortOrder() == null ? 0 : req.sortOrder());
         awardMapper.insert(award);
         rankService.evict(contestId);
@@ -180,6 +182,7 @@ public class ContestService {
         award.setName(req.name());
         award.setQuota(req.quota());
         award.setPrizeAmount(req.prizeAmount());
+        award.setGift(req.gift());
         award.setSortOrder(req.sortOrder() == null ? 0 : req.sortOrder());
         awardMapper.updateById(award);
         rankService.evict(contestId);
@@ -203,6 +206,14 @@ public class ContestService {
         contest.setDescription(req.description());
         contest.setRules(req.rules());
         contest.setPrizeAmount(req.prizeAmount());
+        if (req.mode() != null && !req.mode().isBlank()) {
+            if (!MODES.contains(req.mode())) {
+                throw new BizException("非法比赛类型：" + req.mode());
+            }
+            contest.setMode(req.mode());
+        } else if (contest.getMode() == null) {
+            contest.setMode("ONLINE");
+        }
         contest.setSignupStart(req.signupStart());
         contest.setSignupEnd(req.signupEnd());
         contest.setReviewStart(req.reviewStart());
@@ -227,6 +238,7 @@ public class ContestService {
         card.setDescription(contest.getDescription());
         card.setRules(contest.getRules());
         card.setPrizeAmount(contest.getPrizeAmount());
+        card.setMode(contest.getMode() == null ? "ONLINE" : contest.getMode());
         card.setSignupStart(contest.getSignupStart());
         card.setSignupEnd(contest.getSignupEnd());
         card.setReviewStart(contest.getReviewStart());

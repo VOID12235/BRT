@@ -52,7 +52,8 @@
       return;
     }
     const c = detail.contest;
-    renderSummary(c);
+    const offline = c.mode === "OFFLINE";
+    renderSummary(c, offline);
     document.getElementById("cancelLink").href = "/contest-detail.html?id=" + c.id;
     if (c.status !== "SIGNUP") {
       showClosed("报名已结束", "该赛事当前状态为「" + B.statusInfo(c.status).label + "」，无法继续报名。");
@@ -61,19 +62,22 @@
     if (detail.mySignup && detail.mySignup.status !== "CANCELED") {
       showClosed(
         "你已报名该赛事",
-        "无需重复报名，可直接提交或修改作品。",
+        offline ? "无需重复报名，线下比赛报名后直接参赛，等待评审结果。" : "无需重复报名，可直接提交或修改作品。",
         detail.mySignup.status === "APPROVED"
-          ? `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">去提交作品</a>`
+          ? offline
+            ? `<a class="btn btn-outline" href="/user-center.html">查看报名状态</a>`
+            : `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">去提交作品</a>`
           : `<a class="btn btn-outline" href="/user-center.html">查看报名状态</a>`
       );
     }
   }
 
-  function renderSummary(c) {
+  function renderSummary(c, offline) {
     const host = document.getElementById("summaryCard");
     host.innerHTML = `
       <div class="summary-cover"><img src="${B.escapeHtml(c.cover || "/assets/img/cover-1.svg")}" alt="${B.escapeHtml(c.title)}" /></div>
       <span class="badge ${B.statusInfo(c.status).cls}">${B.statusInfo(c.status).label}</span>
+      ${offline ? '<span class="badge badge-plain" style="margin-left:6px">线下比赛</span>' : ""}
       <h3 style="margin-top:10px">${B.escapeHtml(c.title)}</h3>
       <p class="small muted">${B.escapeHtml(c.summary || "")}</p>
       <div class="summary-list">
@@ -82,7 +86,11 @@
         <div><span>当前报名</span><b>${c.signupCount || 0} 人</b></div>
         <div><span>奖项设置</span><b>${(detail.awards || []).length} 项</b></div>
       </div>
-      <div class="alert alert-info" style="margin-top:16px">报名成功后，请在截止前完成作品提交。</div>`;
+      <div class="alert ${offline ? "alert-warn" : "alert-info"}" style="margin-top:16px">${
+        offline
+          ? "线下比赛报名须实名制，请填写真实姓名，凭本人身份信息参赛与领奖。"
+          : "报名成功后，请在截止前完成作品提交。"
+      }</div>`;
   }
 
   function showClosed(title, desc, action) {
@@ -127,8 +135,16 @@
       document.getElementById("formCard").classList.add("hidden");
       document.getElementById("summaryCard").classList.add("hidden");
       document.getElementById("successPanel").classList.remove("hidden");
+      const offline = detail && detail.contest && detail.contest.mode === "OFFLINE";
       const goWork = document.getElementById("goWork");
-      goWork.href = "/work-submit.html?contestId=" + contestId;
+      if (offline) {
+        goWork.textContent = "查看我的报名";
+        goWork.href = "/user-center.html";
+        document.querySelector("#successPanel p").textContent =
+          "你已成功报名该线下赛事。线下比赛无需提交作品，报名实名制已生效，请关注后续评审安排。";
+      } else {
+        goWork.href = "/work-submit.html?contestId=" + contestId;
+      }
       B.toast("报名成功", "success");
     } catch (err) {
       B.toast(err.message || "报名失败", "error");

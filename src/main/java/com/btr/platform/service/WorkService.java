@@ -54,6 +54,9 @@ public class WorkService {
         if (contest == null || !"SIGNUP".equals(contest.getStatus())) {
             throw new BizException("赛事已进入评审阶段，作品已锁定");
         }
+        if ("OFFLINE".equals(contest.getMode())) {
+            throw new BizException("线下比赛不提交作品，报名后由评委按选手表现打分");
+        }
         if (contest.getSignupEnd() != null && LocalDateTime.now().isAfter(contest.getSignupEnd())) {
             throw new BizException("作品提交已截止");
         }

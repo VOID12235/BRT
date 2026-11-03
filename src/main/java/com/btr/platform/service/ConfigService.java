@@ -52,6 +52,9 @@ public class ConfigService {
     public static final String KEY_SITE_NAME = "site.name";
     public static final String KEY_SITE_LOGO = "site.logo_url";
     public static final String KEY_SITE_FOOTER = "site.footer";
+    public static final String KEY_ABOUT_INTRO = "about.intro";
+    public static final String KEY_ABOUT_RULES = "about.rules";
+    public static final String KEY_ABOUT_CONTACT = "about.contact";
     public static final String KEY_SWITCH_REGISTER = "switch.register_enabled";
     public static final String KEY_SWITCH_CAPTCHA = "switch.captcha_enabled";
     public static final String KEY_TPL_SIGNUP = "template.signup_receipt";
@@ -88,7 +91,7 @@ public class ConfigService {
                     + "兹证明 {nickname} 同学\n"
                     + "在「{contestTitle}」赛事中，作品《{workTitle}》表现优异，荣获\n"
                     + "##{awardName}\n"
-                    + "第 {rankNo} 名　·　奖金 ¥{prizeAmount}\n"
+                    + "第 {rankNo} 名　·　奖励 {prizeText}\n"
                     + "颁发日期：{date}\n"
                     + "BTR 赛事平台 · 本证书以公示获奖名单为准";
 
@@ -115,6 +118,22 @@ public class ConfigService {
         setDefault(KEY_SITE_NAME, "BTR 赛事平台", "站点名称");
         setDefault(KEY_SITE_LOGO, "", "站点 Logo URL");
         setDefault(KEY_SITE_FOOTER, "© 2026 BTR Competition Platform. All rights reserved.", "页脚信息");
+        setDefault(KEY_ABOUT_INTRO,
+                "BTR 赛事平台面向赛事组织者、选手与评委，提供赛事发布、在线报名、作品提交、评委打分与榜单公示的一站式服务。\n"
+                        + "平台致力于用清晰的流程与可靠的数据，让每一场比赛被认真对待。",
+                "关于页 · 平台介绍");
+        setDefault(KEY_ABOUT_RULES,
+                "1. 参赛者须为本人真实信息报名，线下赛事实行实名制；\n"
+                        + "2. 线上作品须为本人原创，禁止抄袭、代打与违规合作；\n"
+                        + "3. 评委按分配任务独立打分，评语全程留痕；\n"
+                        + "4. 榜单以公示结果为准，获奖证书与奖金按公示名单发放；\n"
+                        + "5. 违规行为一经查实，平台有权取消成绩并保留追责权利。",
+                "关于页 · 规则说明");
+        setDefault(KEY_ABOUT_CONTACT,
+                "平台邮箱：support@btr.dev\n"
+                        + "工作时间：周一至周五 9:00 - 18:00\n"
+                        + "商务合作：business@btr.dev",
+                "关于页 · 联系我们");
         setDefault(KEY_SWITCH_REGISTER, "true", "是否开放注册");
         setDefault(KEY_SWITCH_CAPTCHA, "", "图形验证码开关（留空跟随环境配置）");
         setDefault(KEY_TPL_SIGNUP, DEFAULT_TPL_SIGNUP, "报名成功邮件模板，占位符 {nickname} {contestTitle}");
@@ -268,6 +287,9 @@ public class ConfigService {
         config.setName(get(KEY_SITE_NAME, "BTR 赛事平台"));
         config.setLogoUrl(get(KEY_SITE_LOGO, ""));
         config.setFooter(get(KEY_SITE_FOOTER, "© 2026 BTR Competition Platform. All rights reserved."));
+        config.setAboutIntro(get(KEY_ABOUT_INTRO, ""));
+        config.setAboutRules(get(KEY_ABOUT_RULES, ""));
+        config.setAboutContact(get(KEY_ABOUT_CONTACT, ""));
         return config;
     }
 
@@ -280,6 +302,15 @@ public class ConfigService {
         }
         if (req.footer() != null) {
             set(KEY_SITE_FOOTER, req.footer().trim(), "页脚信息");
+        }
+        if (req.aboutIntro() != null) {
+            set(KEY_ABOUT_INTRO, req.aboutIntro(), "关于页 · 平台介绍");
+        }
+        if (req.aboutRules() != null) {
+            set(KEY_ABOUT_RULES, req.aboutRules(), "关于页 · 规则说明");
+        }
+        if (req.aboutContact() != null) {
+            set(KEY_ABOUT_CONTACT, req.aboutContact(), "关于页 · 联系我们");
         }
     }
 

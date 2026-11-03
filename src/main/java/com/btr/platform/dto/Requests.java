@@ -49,6 +49,7 @@ public final class Requests {
             String rules,
             @DecimalMin(value = "0.00", message = "奖金不能为负") @DecimalMax(value = "999999999.99", message = "奖金数额过大")
             BigDecimal prizeAmount,
+            String mode,
             LocalDateTime signupStart,
             LocalDateTime signupEnd,
             LocalDateTime reviewStart,
@@ -80,7 +81,9 @@ public final class Requests {
     }
 
     public record ScoreReq(
-            @NotNull(message = "缺少作品") Long workId,
+            Long workId,
+            /** 线下赛事打分对象为报名选手 */
+            Long signupId,
             @NotNull(message = "请输入分数")
             @DecimalMin(value = "0", message = "分数不能低于 0")
             @DecimalMax(value = "100", message = "分数不能高于 100")
@@ -93,6 +96,7 @@ public final class Requests {
             @NotNull(message = "请填写名额") @Min(value = 1, message = "名额至少 1 个") @Max(value = 100, message = "名额过多") Integer quota,
             @DecimalMin(value = "0.00", message = "奖金不能为负")
             @DecimalMax(value = "999999999.99", message = "奖金数额过大") BigDecimal prizeAmount,
+            @Size(max = 255, message = "奖品描述过长") String gift,
             Integer sortOrder) {
     }
 
@@ -106,6 +110,13 @@ public final class Requests {
             @NotNull(message = "请选择赛事") Long contestId,
             @NotNull(message = "请选择评委") Long judgeId,
             List<Long> workIds) {
+    }
+
+    /** 管理员手动调整榜单：每条指定获奖对象（workId 或 signupId 二选一）、奖项与名次 */
+    public record WinnerEditReq(
+            @NotNull(message = "缺少获奖对象") Long subjectId,
+            @NotNull(message = "请选择奖项") Long awardId,
+            @NotNull(message = "请填写名次") Integer rankNo) {
     }
 
     public record LockReq(@NotNull(message = "缺少锁定状态") Boolean locked) {
@@ -148,7 +159,8 @@ public final class Requests {
             @Min(value = 0, message = "数据库索引不能为负") @Max(value = 15, message = "数据库索引最大 15") Integer database) {
     }
 
-    public record SiteConfigReq(String name, String logoUrl, String footer) {
+    public record SiteConfigReq(String name, String logoUrl, String footer,
+                                String aboutIntro, String aboutRules, String aboutContact) {
     }
 
     public record SwitchesConfigReq(Boolean registerEnabled, Boolean captchaEnabled) {

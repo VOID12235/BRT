@@ -17,6 +17,7 @@ public final class Views {
     @Data
     public static class WorkScore {
         private Long workId;
+        private Long signupId;
         private BigDecimal avgScore;
         private Long scoreCount;
     }
@@ -31,6 +32,8 @@ public final class Views {
         private String rules;
         /** 赛事奖金总额（元） */
         private BigDecimal prizeAmount;
+        /** 比赛类型：ONLINE 线上 / OFFLINE 线下 */
+        private String mode;
         private LocalDateTime signupStart;
         private LocalDateTime signupEnd;
         private LocalDateTime reviewStart;
@@ -113,6 +116,7 @@ public final class Views {
     public static class JudgeTask {
         private Long assignId;
         private Long workId;
+        private Long signupId;
         private String workTitle;
         private String workDescription;
         private String fileUrl;
@@ -151,14 +155,18 @@ public final class Views {
     public static class RankRow {
         private int rank;
         private Long workId;
+        private Long signupId;
         private String workTitle;
         private String author;
+        private String realName;
         private String school;
         private BigDecimal avgScore;
         private long scoreCount;
         private String awardName;
         /** 该获奖者所得奖金（元），未获奖为 null */
         private BigDecimal prizeAmount;
+        /** 该获奖者所得奖品描述，未获奖为 null */
+        private String gift;
     }
 
     @Data
@@ -167,6 +175,7 @@ public final class Views {
         private String awardName;
         private Integer quota;
         private BigDecimal prizeAmount;
+        private String gift;
         private List<RankRow> items;
     }
 
@@ -175,6 +184,7 @@ public final class Views {
         private Long contestId;
         private String contestTitle;
         private String status;
+        private String mode;
         private boolean published;
         private LocalDateTime updatedAt;
         private List<RankRow> rows;
@@ -182,6 +192,13 @@ public final class Views {
         private long workCount;
         private long judgeCount;
         private long scoredCount;
+    }
+
+    /** 管理端榜单编辑页数据：实时榜单 + 赛事奖项配置 */
+    @Data
+    public static class RankingAdmin {
+        private RankResult ranking;
+        private List<Award> awards;
     }
 
     @Data
@@ -252,6 +269,8 @@ public final class Views {
         private Long awardId;
         private String awardName;
         private BigDecimal prizeAmount;
+        /** 奖品描述，可空 */
+        private String gift;
         private Integer rankNo;
         private Long workId;
         private String workTitle;
@@ -284,6 +303,7 @@ public final class Views {
         private Long contestId;
         private String contestTitle;
         private String contestStatus;
+        private String contestMode;
         private long workCount;
         private long scoredCount;
         private LocalDateTime createdAt;
@@ -295,6 +315,9 @@ public final class Views {
         private String name;
         private String logoUrl;
         private String footer;
+        private String aboutIntro;
+        private String aboutRules;
+        private String aboutContact;
     }
 
     @Data

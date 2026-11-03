@@ -107,6 +107,8 @@ public class SeedService implements CommandLineRunner {
                 "面向创客与硬件爱好者的线下黑客松，提供开发板、传感器与 3D 打印支持。",
                 "1. 3 人以内组队；\n2. 现场完成原型；\n3. 代码与硬件设计开源；\n4. 决赛进行 5 分钟路演。",
                 now.minusDays(3), now.plusDays(20), now.plusDays(21), now.plusDays(28), "SIGNUP", true);
+        c6.setMode("OFFLINE");
+        contestMapper.updateById(c6);
 
         awards(c1);
         awards(c2);
@@ -143,7 +145,6 @@ public class SeedService implements CommandLineRunner {
         Work w8 = work(s10, c3, kai, "北纬三十一度", "后摇 / 5:18，记录一次长途骑行。", now.minusDays(43));
         Work w9 = work(s11, c4, luna, "慢下来 · 城市公共座椅计划", "产品设计 / 可移动的社区座椅系统。", now.minusDays(125));
         Work w10 = work(s12, c4, mia, "纸上的风", "视觉传达 / 以风为线索的书籍设计。", now.minusDays(124));
-        Work w11 = work(s14, c6, kai, "桌面级空气质量站", "基于 ESP32 的桌面监测站，3D 打印外壳。", now.minusDays(1));
 
         assign(c2, judge, List.of(w2, w3, w4, w5));
         assign(c2, judge2, List.of(w2, w3, w4, w5));
@@ -151,6 +152,14 @@ public class SeedService implements CommandLineRunner {
         assign(c3, judge2, List.of(w6, w7, w8));
         assign(c4, judge, List.of(w9, w10));
         assign(c4, judge2, List.of(w9, w10));
+
+        // 线下赛事：评委按选手打分（无作品环节）
+        assignSignup(c6, judge, List.of(s13, s14));
+        assignSignup(c6, judge2, List.of(s13, s14));
+        scoreSignup(c6, s13, judge, "89", "现场原型完整，方案可落地。");
+        scoreSignup(c6, s13, judge2, "91", "硬件选型合理，演示流畅。");
+        scoreSignup(c6, s14, judge, "84", "想法有亮点，完成度稍欠。");
+        scoreSignup(c6, s14, judge2, "86", "路演表达清晰。");
 
         score(c2, w2, judge, "86", "雾气层次很好，主体可以再明确。");
         score(c2, w2, judge2, "90", "情绪准确，构图克制。");
@@ -221,17 +230,24 @@ public class SeedService implements CommandLineRunner {
     }
 
     private void awards(Contest contest) {
-        award(contest, "一等奖", 1, "5000", 1);
-        award(contest, "二等奖", 2, "3000", 2);
-        award(contest, "三等奖", 3, "1000", 3);
+        boolean isGiftContest = "城市青年摄影大赛 · 秋季赛".equals(contest.getTitle());
+        award(contest, "一等奖", 1, "5000", 1, "定制奖杯");
+        if (isGiftContest) {
+            // 演示纯奖品形式：二等奖不发奖金，发奖品
+            award(contest, "二等奖", 2, null, 2, "专业评审证书 + 品牌手绘板");
+        } else {
+            award(contest, "二等奖", 2, "3000", 2, null);
+        }
+        award(contest, "三等奖", 3, "1000", 3, null);
     }
 
-    private void award(Contest contest, String name, int quota, String prizeAmount, int order) {
+    private void award(Contest contest, String name, int quota, String prizeAmount, int order, String gift) {
         Award award = new Award();
         award.setContestId(contest.getId());
         award.setName(name);
         award.setQuota(quota);
-        award.setPrizeAmount(new BigDecimal(prizeAmount));
+        award.setPrizeAmount(prizeAmount == null ? null : new BigDecimal(prizeAmount));
+        award.setGift(gift);
         award.setSortOrder(order);
         awardMapper.insert(award);
     }
@@ -282,6 +298,29 @@ public class SeedService implements CommandLineRunner {
         Score score = new Score();
         score.setContestId(contest.getId());
         score.setWorkId(work.getId());
+        score.setJudgeId(judge.getId());
+        score.setScore(new BigDecimal(value));
+        score.setComment(comment);
+        score.setCreatedAt(LocalDateTime.now().minusDays(1));
+        score.setUpdatedAt(LocalDateTime.now().minusDays(1));
+        scoreMapper.insert(score);
+    }
+
+    private void assignSignup(Contest contest, User judge, List<Signup> signups) {
+        for (Signup signup : signups) {
+            JudgeAssign assign = new JudgeAssign();
+            assign.setContestId(contest.getId());
+            assign.setJudgeId(judge.getId());
+            assign.setSignupId(signup.getId());
+            assign.setCreatedAt(LocalDateTime.now().minusDays(2));
+            assignMapper.insert(assign);
+        }
+    }
+
+    private void scoreSignup(Contest contest, Signup signup, User judge, String value, String comment) {
+        Score score = new Score();
+        score.setContestId(contest.getId());
+        score.setSignupId(signup.getId());
         score.setJudgeId(judge.getId());
         score.setScore(new BigDecimal(value));
         score.setComment(comment);

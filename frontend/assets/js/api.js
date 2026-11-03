@@ -159,6 +159,16 @@
 
   async function download(path, filename) {
     const res = await api.raw(path);
+    if (!res.ok) {
+      const body = await res.json().catch(() => null);
+      throw new ApiError(body?.message || "下载失败（" + res.status + "）", res.status, body?.code);
+    }
+    const type = res.headers.get("content-type") || "";
+    if (!type.includes("application/octet-stream") && !type.includes("pdf") && !type.includes("excel") && !type.includes("spreadsheet")) {
+      // 非文件响应，尝试读取 JSON 错误信息
+      const body = await res.json().catch(() => null);
+      throw new ApiError(body?.message || "下载失败", res.status, body?.code);
+    }
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -194,6 +204,18 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+  }
+
+  /** 奖励文案：奖金 ¥X / 奖品 Y / 奖金 ¥X + 奖品 Y */
+  function formatPrize(a) {
+    const money = a && a.prizeAmount != null && Number(a.prizeAmount) > 0;
+    const gift = a && a.gift && String(a.gift).trim();
+    const m = money
+      ? "奖金 ¥" + Number(a.prizeAmount).toLocaleString("zh-CN", { maximumFractionDigits: 0 })
+      : "";
+    const g = gift ? "奖品 " + gift : "";
+    if (money && g) return m + " + " + g;
+    return m || g || "";
   }
 
   function parseDate(value) {
@@ -312,5 +334,6 @@
     debounce,
     ApiError,
     API_BASE,
+    formatPrize,
   };
 })();

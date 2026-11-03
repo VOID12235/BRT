@@ -19,6 +19,14 @@ public interface ScoreMapper extends BaseMapper<Score> {
     List<WorkScore> avgByContest(@Param("contestId") Long contestId);
 
     @Select("""
+            SELECT signup_id AS signupId, AVG(score) AS avgScore, COUNT(*) AS scoreCount
+            FROM contest_score
+            WHERE contest_id = #{contestId} AND signup_id IS NOT NULL
+            GROUP BY signup_id
+            """)
+    List<WorkScore> avgByContestSignup(@Param("contestId") Long contestId);
+
+    @Select("""
             SELECT COUNT(DISTINCT judge_id) FROM contest_score WHERE contest_id = #{contestId}
             """)
     long judgeCount(@Param("contestId") Long contestId);

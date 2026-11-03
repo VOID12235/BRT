@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>榜单管理 · BTR 管理后台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="admin-body" data-page="rankManage" data-title="榜单管理" data-crumb="评审 / 榜单">
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="adminTopbar"></header>
+      <div class="admin-content">
+        <div class="admin-page-head">
+          <div>
+            <h2>榜单管理</h2>
+            <p>调整各比赛项目的最终名次与奖项归属。名次与奖项保存后立即生效，前台榜单同步更新；获奖选手可按排名导出获奖证书。</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-outline" id="rankRecomputeBtn">按分数重算</button>
+            <button class="btn btn-primary" id="rankSaveBtn">保存调整</button>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <select class="select" id="rankContestFilter">
+            <option value="">选择赛事…</option>
+          </select>
+          <span class="tiny muted" id="rankFoot" style="margin-left:auto"></span>
+        </div>
+
+        <div class="admin-table-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th style="width:70px">名次</th>
+                  <th style="width:160px">奖项</th>
+                  <th>选手 / 作品</th>
+                  <th>学校 / 单位</th>
+                  <th style="width:100px">平均分</th>
+                  <th style="width:90px">评委数</th>
+                </tr>
+              </thead>
+              <tbody id="rankEditHost">
+                <tr><td colspan="6"><div class="skeleton" style="height: 60px"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="admin-table-foot">
+            <span id="rankHint">先选择赛事，再调整名次与奖项。</span>
+            <span class="tiny muted">分数由评审自动汇总，名次与奖项可由管理员手动指定</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="admin-backdrop" id="adminBackdrop"></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

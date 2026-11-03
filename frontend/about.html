@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>关于我们 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="page-head">
+        <div>
+          <div class="breadcrumb"><a href="/index.html">首页</a><span>/</span><span>关于我们</span></div>
+          <h1>关于我们</h1>
+          <p>平台介绍、规则说明与联系方式，由平台运营方维护。</p>
+        </div>
+      </div>
+
+      <div class="about-tabs row-between" style="gap: 10px; flex-wrap: wrap; max-width: 560px">
+        <button class="btn about-tab" data-about-tab="intro" type="button">平台介绍</button>
+        <button class="btn about-tab" data-about-tab="rules" type="button">规则说明</button>
+        <button class="btn about-tab" data-about-tab="contact" type="button">联系我们</button>
+      </div>
+
+      <div class="card about-body">
+        <div class="prose" id="aboutContent">
+          <div class="skeleton" style="height: 18px; width: 60%"></div>
+          <div class="skeleton" style="height: 18px; width: 90%; margin-top: 12px"></div>
+          <div class="skeleton" style="height: 18px; width: 80%; margin-top: 12px"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/about.js"></script>
+</body>
+</html>

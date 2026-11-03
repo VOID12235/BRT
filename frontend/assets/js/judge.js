@@ -79,7 +79,7 @@
       if (isScorePage()) {
         renderTaskList();
         const first = filteredTasks()[0];
-        if (first) selectWork(first.workId);
+        if (first) selectTask(taskKey(first));
       } else {
         renderIndex();
       }
@@ -133,7 +133,7 @@
               <span class="badge ${p.contestStatus === "REVIEW" ? "badge-review" : ""}">${statusLabel(p.contestStatus)}</span>
             </div>
             <div class="jp-meta">
-              <span>作品 ${p.assigned} 件</span>
+              <span>${state.contests[p.contestId] && state.contests[p.contestId].mode === "OFFLINE" ? "选手" : "作品"} ${p.assigned} 件</span>
               <span>已评 ${p.scored}</span>
               <span>待评 ${p.pending}</span>
             </div>
@@ -174,12 +174,18 @@
   }
 
   /* ------------------------------ 打分页 ------------------------------ */
+  function taskKey(task) {
+    return task.workId != null ? task.workId : task.signupId;
+  }
+  function taskHasWork(task) {
+    return task.workId != null;
+  }
   function initScorePage() {
-    const queryWorkId = Number(B.qs("workId"));
-    // 若带 workId 但不在当前赛事过滤内，清空过滤以包含该作品
-    if (queryWorkId && state.contestId) {
+    const queryKey = Number(B.qs("workId") || B.qs("signupId"));
+    // 若带任务 id 但不在当前赛事过滤内，清空过滤以包含该任务
+    if (queryKey && state.contestId) {
       const exists = state.tasks.some(
-        (t) => t.workId === queryWorkId && String(t.contestId) === String(state.contestId)
+        (t) => taskKey(t) === queryKey && String(t.contestId) === String(state.contestId)
       );
       if (!exists) state.contestId = "";
       const filter = document.getElementById("contestFilter");
@@ -187,13 +193,13 @@
     }
     renderTaskList();
     const target =
-      state.tasks.find((t) => t.workId === queryWorkId) || filteredTasks()[0] || state.tasks[0];
+      state.tasks.find((t) => taskKey(t) === queryKey) || filteredTasks()[0] || state.tasks[0];
     if (target) {
-      selectWork(target.workId);
+      selectTask(taskKey(target));
     } else {
       document.getElementById("workPanel").innerHTML = `<div class="card">${B.emptyState(
-        "暂无可评作品",
-        "该赛事暂无已提交作品，或管理员尚未分配。"
+        "暂无可评任务",
+        "该赛事暂无已分配任务，或管理员尚未分配。"
       )}</div>`;
     }
   }
@@ -210,9 +216,10 @@
     host.innerHTML = tasks
       .map((task) => {
         const done = isScored(task);
+        const key = taskKey(task);
         return `<button type="button" class="task-item ${
-          task.workId === state.activeWorkId ? "is-active" : ""
-        }" data-work="${task.workId}">
+          key === state.activeWorkId ? "is-active" : ""
+        }" data-work="${key}">
           <b>${B.escapeHtml(task.workTitle)}</b>
           <span>${B.escapeHtml(task.contestTitle)}</span>
           <span class="${done ? "done" : ""}" style="float:right">${
@@ -222,22 +229,19 @@
       })
       .join("");
     host.querySelectorAll("[data-work]").forEach((btn) => {
-      btn.addEventListener("click", () => selectWork(Number(btn.dataset.work)));
+      btn.addEventListener("click", () => selectTask(Number(btn.dataset.work)));
     });
   }
 
-  function selectWork(workId) {
-    state.activeWorkId = workId;
+  function selectTask(key) {
+    state.activeWorkId = key;
     document.querySelectorAll("#taskList [data-work]").forEach((btn) => {
-      btn.classList.toggle("is-active", Number(btn.dataset.work) === workId);
+      btn.classList.toggle("is-active", Number(btn.dataset.work) === key);
     });
-    const task = state.tasks.find((t) => t.workId === workId);
+    const task = state.tasks.find((t) => taskKey(t) === key);
     if (!task) return;
-    history.replaceState(
-      null,
-      "",
-      "/judge/judge-score.html?contestId=" + task.contestId + "&workId=" + workId
-    );
+    const param = taskHasWork(task) ? "workId=" + task.workId : "signupId=" + task.signupId;
+    history.replaceState(null, "", "/judge/judge-score.html?contestId=" + task.contestId + "&" + param);
     renderWork(task);
   }
 
@@ -260,19 +264,23 @@
               <span>选手：${B.escapeHtml(task.realName || "—")}${
       task.school ? "  · " + B.escapeHtml(task.school) : ""
     }</span>
-              <span>提交于 ${B.formatDate(task.submittedAt, true)}</span>
+              ${taskHasWork(task) ? `<span>提交于 ${B.formatDate(task.submittedAt, true)}</span>` : '<span class="muted">线下比赛 · 无作品</span>'}
             </div>
           </div>
           ${
-            task.fileUrl
-              ? `<a class="btn btn-outline btn-sm" href="${B.escapeHtml(
-                  task.fileUrl
-                )}" target="_blank" rel="noopener">查看作品文件</a>`
-              : '<span class="muted tiny">未上传文件</span>'
+            taskHasWork(task)
+              ? task.fileUrl
+                ? `<a class="btn btn-outline btn-sm" href="${B.escapeHtml(
+                    task.fileUrl
+                  )}" target="_blank" rel="noopener">查看作品文件</a>`
+                : '<span class="muted tiny">未上传文件</span>'
+              : '<span class="muted tiny">线下比赛按选手表现打分</span>'
           }
         </div>
 
-        <div class="desc">${B.escapeHtml(task.workDescription || "作者未填写作品简介。")}</div>
+        <div class="desc">${B.escapeHtml(
+          taskHasWork(task) ? task.workDescription || "作者未填写作品简介。" : task.workDescription || "选手未填写自我介绍。"
+        )}</div>
 
         ${
           locked
@@ -346,10 +354,13 @@
       btn.disabled = true;
       btn.textContent = "提交中…";
       try {
-        await B.api.post("/judge/scores", { workId: task.workId, score, comment: text });
+        const body = taskHasWork(task)
+          ? { workId: task.workId, score, comment: text }
+          : { signupId: task.signupId, score, comment: text };
+        await B.api.post("/judge/scores", body);
         B.toast("评分已提交", "success");
         await loadAll();
-        const updated = state.tasks.find((t) => t.workId === task.workId);
+        const updated = state.tasks.find((t) => taskKey(t) === taskKey(task));
         if (updated) renderWork(updated);
         renderTaskList();
       } catch (err) {
@@ -366,9 +377,9 @@
   function move(step) {
     const tasks = filteredTasks();
     if (!tasks.length) return;
-    const index = tasks.findIndex((t) => t.workId === state.activeWorkId);
+    const index = tasks.findIndex((t) => taskKey(t) === state.activeWorkId);
     const next = tasks[(index + step + tasks.length) % tasks.length];
-    if (next) selectWork(next.workId);
+    if (next) selectTask(taskKey(next));
   }
 
   document.addEventListener("DOMContentLoaded", init);

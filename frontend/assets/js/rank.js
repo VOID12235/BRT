@@ -73,15 +73,13 @@
     const podium = podiumOrder
       .map((row) => {
         const isFirst = row.rank === 1;
-        const prize = Number(row.prizeAmount || 0);
+        const prize = B.formatPrize(row);
         return `<div class="podium-card ${isFirst ? "first" : ""}">
           <div class="podium-rank">${row.rank}</div>
           <h4>${B.escapeHtml(row.workTitle)}</h4>
           <p>${B.escapeHtml(row.author || "匿名选手")}${row.school ? " · " + B.escapeHtml(row.school) : ""}</p>
           <div class="podium-score">${
-            prize > 0
-              ? "¥" + prize.toLocaleString("zh-CN", { maximumFractionDigits: 0 })
-              : '<span class="muted">—</span>'
+            prize ? B.escapeHtml(prize) : '<span class="muted">—</span>'
           }</div>
           ${row.awardName ? `<span class="award-pill ${isFirst ? "gold" : "silver"}" style="margin-top:10px">${B.escapeHtml(row.awardName)}</span>` : ""}
         </div>`;
@@ -92,7 +90,7 @@
     const table = `<div class="admin-table-card" style="margin-top: 24px">
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>排名</th><th>作品</th><th>选手</th><th>学校</th><th>奖金</th><th>评审人数</th><th>奖项</th></tr></thead>
+          <thead><tr><th>排名</th><th>作品</th><th>选手</th><th>学校</th><th>奖励</th><th>评审人数</th><th>奖项</th></tr></thead>
           <tbody>${rows
             .map(
               (row) => `<tr>
@@ -101,8 +99,8 @@
                 <td>${B.escapeHtml(row.author || "—")}</td>
                 <td>${B.escapeHtml(row.school || "—")}</td>
                 <td>${
-                  Number(row.prizeAmount || 0) > 0
-                    ? `<b class="mono" style="color:var(--brand,#e8a33d)">¥${Number(row.prizeAmount).toLocaleString("zh-CN", { maximumFractionDigits: 0 })}</b>`
+                  B.formatPrize(row)
+                    ? `<b class="mono" style="color:var(--brand,#e8a33d)">${B.escapeHtml(B.formatPrize(row))}</b>`
                     : '<span class="muted">—</span>'
                 }</td>
                 <td class="num">${row.scoreCount}</td>
@@ -123,8 +121,8 @@
                 <div class="row-between" style="margin-bottom: 8px">
                   <span class="award-pill ${g.awardName.includes("一") ? "gold" : g.awardName.includes("二") ? "silver" : "bronze"}">${B.escapeHtml(g.awardName)}</span>
                   <span class="tiny muted">${
-                    Number(g.prizeAmount || 0) > 0
-                      ? "奖金 ¥" + Number(g.prizeAmount).toLocaleString("zh-CN", { maximumFractionDigits: 0 }) + " · "
+                    B.formatPrize(g)
+                      ? B.escapeHtml(B.formatPrize(g)) + " · "
                       : ""
                   }${g.items.length} / ${g.quota} 个名额</span>
                 </div>
@@ -134,8 +132,8 @@
                       <span class="muted mono">#${item.rank}</span>
                       <span class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${B.escapeHtml(item.workTitle)}</span>
                       <b class="mono" style="color:var(--brand,#e8a33d)">${
-                        Number(item.prizeAmount || 0) > 0
-                          ? "¥" + Number(item.prizeAmount).toLocaleString("zh-CN", { maximumFractionDigits: 0 })
+                        B.formatPrize(item)
+                          ? B.escapeHtml(B.formatPrize(item))
                           : "—"
                       }</b>
                     </div>`

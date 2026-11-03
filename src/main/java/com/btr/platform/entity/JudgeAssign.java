@@ -15,5 +15,7 @@ public class JudgeAssign {
     private Long contestId;
     private Long judgeId;
     private Long workId;
+    /** 线下赛事分配对象为报名选手（signup_id），此时 work_id 为空 */
+    private Long signupId;
     private LocalDateTime createdAt;
 }

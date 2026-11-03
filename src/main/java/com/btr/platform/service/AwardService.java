@@ -6,11 +6,13 @@ import com.btr.platform.dto.Views.AwardItem;
 import com.btr.platform.dto.Views.MyAwards;
 import com.btr.platform.entity.Award;
 import com.btr.platform.entity.Contest;
+import com.btr.platform.entity.Signup;
 import com.btr.platform.entity.User;
 import com.btr.platform.entity.Winner;
 import com.btr.platform.entity.Work;
 import com.btr.platform.mapper.AwardMapper;
 import com.btr.platform.mapper.ContestMapper;
+import com.btr.platform.mapper.SignupMapper;
 import com.btr.platform.mapper.WinnerMapper;
 import com.btr.platform.mapper.WorkMapper;
 import com.lowagie.text.Document;
@@ -44,15 +46,17 @@ public class AwardService {
 
     private final WinnerMapper winnerMapper;
     private final WorkMapper workMapper;
+    private final SignupMapper signupMapper;
     private final ContestMapper contestMapper;
     private final AwardMapper awardMapper;
     private final ConfigService configService;
 
-    public AwardService(WinnerMapper winnerMapper, WorkMapper workMapper,
+    public AwardService(WinnerMapper winnerMapper, WorkMapper workMapper, SignupMapper signupMapper,
                         ContestMapper contestMapper, AwardMapper awardMapper,
                         ConfigService configService) {
         this.winnerMapper = winnerMapper;
         this.workMapper = workMapper;
+        this.signupMapper = signupMapper;
         this.contestMapper = contestMapper;
         this.awardMapper = awardMapper;
         this.configService = configService;
@@ -84,9 +88,14 @@ public class AwardService {
         if (winners.isEmpty()) {
             return List.of();
         }
-        List<Long> workIds = winners.stream().map(Winner::getWorkId).distinct().toList();
-        Map<Long, Work> works = workMapper.selectBatchIds(workIds).stream()
+        List<Long> workIds = winners.stream().map(Winner::getWorkId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        List<Long> signupIds = winners.stream().map(Winner::getSignupId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, Work> works = workIds.isEmpty() ? Map.of() : workMapper.selectBatchIds(workIds).stream()
                 .collect(Collectors.toMap(Work::getId, Function.identity(), (a, b) -> a));
+        Map<Long, Signup> signups = signupIds.isEmpty() ? Map.of() : signupMapper.selectBatchIds(signupIds).stream()
+                .collect(Collectors.toMap(Signup::getId, Function.identity(), (a, b) -> a));
         List<Long> contestIds = winners.stream().map(Winner::getContestId).distinct().toList();
         Map<Long, Contest> contests = contestMapper.selectBatchIds(contestIds).stream()
                 .collect(Collectors.toMap(Contest::getId, Function.identity(), (a, b) -> a));
@@ -96,8 +105,29 @@ public class AwardService {
 
         List<AwardItem> items = new ArrayList<>();
         for (Winner winner : winners) {
-            Work work = works.get(winner.getWorkId());
-            if (work == null || !userId.equals(work.getUserId())) {
+            Long ownerUserId;
+            String workTitle;
+            Long workId;
+            if (winner.getWorkId() != null) {
+                Work work = works.get(winner.getWorkId());
+                if (work == null) {
+                    continue;
+                }
+                ownerUserId = work.getUserId();
+                workTitle = work.getTitle();
+                workId = work.getId();
+            } else if (winner.getSignupId() != null) {
+                Signup signup = signups.get(winner.getSignupId());
+                if (signup == null) {
+                    continue;
+                }
+                ownerUserId = signup.getUserId();
+                workTitle = "选手：" + signup.getRealName();
+                workId = null;
+            } else {
+                continue;
+            }
+            if (!userId.equals(ownerUserId)) {
                 continue;
             }
             AwardItem item = new AwardItem();
@@ -108,9 +138,10 @@ public class AwardService {
             Award award = awards.get(winner.getAwardId());
             item.setAwardName(award == null ? "获奖" : award.getName());
             item.setPrizeAmount(award == null ? null : award.getPrizeAmount());
+            item.setGift(award == null ? null : award.getGift());
             item.setRankNo(winner.getRankNo());
-            item.setWorkId(work.getId());
-            item.setWorkTitle(work.getTitle());
+            item.setWorkId(workId);
+            item.setWorkTitle(workTitle);
             item.setPublishedAt(winner.getCreatedAt());
             items.add(item);
         }
@@ -139,6 +170,8 @@ public class AwardService {
             vars.put("rankNo", item.getRankNo() == null ? "" : String.valueOf(item.getRankNo()));
             vars.put("prizeAmount", item.getPrizeAmount() == null ? ""
                     : item.getPrizeAmount().stripTrailingZeros().toPlainString());
+            vars.put("gift", item.getGift() == null ? "" : safe(item.getGift()));
+            vars.put("prizeText", prizeText(item));
             vars.put("date", item.getPublishedAt() == null ? "—"
                     : item.getPublishedAt().format(DATE_FMT));
             String rendered = ConfigService.render(template, vars);
@@ -194,6 +227,23 @@ public class AwardService {
 
     private String safe(String value) {
         return value == null ? "—" : value;
+    }
+
+    /** 组合奖励文案：奖金 ¥X / 奖品 Y / 奖金 ¥X + 奖品 Y */
+    public static String prizeText(AwardItem item) {
+        boolean money = item.getPrizeAmount() != null
+                && item.getPrizeAmount().compareTo(java.math.BigDecimal.ZERO) > 0;
+        String gift = item.getGift() == null ? "" : item.getGift().trim();
+        String moneyText = money
+                ? "奖金 ¥" + item.getPrizeAmount().stripTrailingZeros().toPlainString()
+                : "";
+        if (money && !gift.isEmpty()) {
+            return moneyText + " + 奖品 " + gift;
+        }
+        if (money) {
+            return moneyText;
+        }
+        return gift.isEmpty() ? "" : "奖品 " + gift;
     }
 
     /** 解析支持中文的字体：优先系统黑体，其次宋体/雅黑，最后 Linux 常见 CJK 字体 */

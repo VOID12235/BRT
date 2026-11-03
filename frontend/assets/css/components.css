@@ -126,6 +126,17 @@
   color: var(--ink-2);
 }
 
+.contest-cover .mode-badge {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  left: auto;
+  background: rgba(17, 24, 39, 0.82);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 11px;
+}
+
 .contest-cover .badge-signup {
   color: var(--green);
 }

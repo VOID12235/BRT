@@ -20,7 +20,7 @@
         <div class="admin-page-head">
           <div>
             <h2>奖项管理</h2>
-            <p>按赛事配置奖项名称、名额与奖金。公示时按排序自动固化获奖名单。</p>
+            <p>按赛事配置奖项名称、名额与奖励（奖金 / 奖品 / 奖金加奖品）。公示时按排序自动固化获奖名单。</p>
           </div>
           <div class="actions">
             <button class="btn btn-primary" id="newAwardBtn">+ 新增奖项</button>
@@ -37,7 +37,7 @@
             <div class="table-wrap">
               <table class="table">
                 <thead>
-                  <tr><th>排序</th><th>奖项名称</th><th>名额</th><th>奖金</th><th>操作</th></tr>
+                  <tr><th>排序</th><th>奖项名称</th><th>名额</th><th>奖励</th><th>操作</th></tr>
                 </thead>
                 <tbody id="awardTable">
                   <tr><td colspan="5"><div class="skeleton" style="height: 60px"></div></td></tr>
@@ -50,7 +50,7 @@
             <h3>奖项说明</h3>
             <div class="prose" style="font-size: 12.5px">
               <p>榜单按评委平均分从高到低排序，依次落入各奖项名额，名额发完即止。</p>
-              <p>奖金为该奖项每位获奖者获得的数额，单位：元。</p>
+              <p>奖励支持三种形式：仅奖金（填奖金）、仅奖品（填奖品描述）、奖金加奖品（两者都填）。</p>
               <p>排序值越小越靠前，例如一等奖 1、二等奖 2、三等奖 3。</p>
             </div>
             <div class="alert alert-info" style="margin-top: 16px">

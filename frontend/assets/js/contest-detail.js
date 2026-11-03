@@ -42,6 +42,7 @@
       <img src="${B.escapeHtml(c.cover || "/assets/img/cover-1.svg")}" alt="${B.escapeHtml(c.title)}" />
       <div class="detail-banner-copy">
         <span class="badge badge-plain">${B.statusInfo(c.status).label}</span>
+        ${c.mode === "OFFLINE" ? '<span class="badge badge-plain" style="margin-left:6px">线下比赛</span>' : '<span class="badge badge-soft" style="margin-left:6px">线上比赛</span>'}
         <h1>${B.escapeHtml(c.title)}</h1>
         <p>${B.escapeHtml(c.summary || "")}</p>
         <div class="detail-banner-meta">
@@ -84,15 +85,16 @@
       host.innerHTML = B.emptyState("暂未设置奖项", "管理员配置奖项后会在这里展示");
       return;
     }
+    const contest = detail.contest || {};
     host.innerHTML = `<div class="stack">${awards
       .map(
         (a, i) => `<div class="work-item" style="display:flex;align-items:center;gap:16px">
           <span class="award-pill ${i === 0 ? "gold" : i === 1 ? "silver" : "bronze"}">${B.escapeHtml(a.name)}</span>
           <div style="flex:1">
             <h4 style="margin:0">${B.escapeHtml(a.name)}</h4>
-            <p>名额 ${a.quota} 个 · 奖金 ¥${Number(a.prizeAmount || 0).toLocaleString("zh-CN", { maximumFractionDigits: 0 })}</p>
+            <p>名额 ${a.quota} 个${B.formatPrize(a) ? " · " + B.escapeHtml(B.formatPrize(a)) : ""}</p>
           </div>
-          <span class="muted small">按综合评分排序</span>
+          <span class="muted small">${contest.mode === "OFFLINE" ? "按评委评分排序" : "按综合评分排序"}</span>
         </div>`
       )
       .join("")}</div>`;
@@ -117,11 +119,17 @@
       actions.push(`<a class="btn btn-outline" href="/rank.html?contestId=${c.id}">查看榜单</a>`);
     } else if (mySignup && mySignup.status === "APPROVED") {
       if (c.status === "SIGNUP") {
-        actions.push(
-          myWork
-            ? `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">修改我的作品</a>`
-            : `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">提交作品</a>`
-        );
+        if (c.mode === "OFFLINE") {
+          actions.push(`<button class="btn btn-primary" disabled>已报名 · 等待评审</button>`);
+        } else {
+          actions.push(
+            myWork
+              ? `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">修改我的作品</a>`
+              : `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">提交作品</a>`
+          );
+        }
+      } else if (c.mode === "OFFLINE") {
+        actions.push(`<a class="btn btn-outline" href="/rank.html?contestId=${c.id}">查看榜单</a>`);
       } else {
         actions.push(`<a class="btn btn-outline" href="/user-center.html">查看我的作品</a>`);
       }
@@ -180,13 +188,17 @@
   function renderStats(c) {
     document.getElementById("sideStats").innerHTML = `
       <div><span>报名人数</span><b>${c.signupCount || 0}</b></div>
-      <div><span>提交作品</span><b>${c.workCount || 0}</b></div>
+      <div><span>${c.mode === "OFFLINE" ? "线下比赛" : "提交作品"}</span><b>${c.mode === "OFFLINE" ? "—" : c.workCount || 0}</b></div>
       <div><span>参与评委</span><b>${detail.judgeCount || 0}</b></div>
       <div><span>奖项数量</span><b>${(detail.awards || []).length}</b></div>`;
   }
 
   async function loadWorks() {
     const host = document.getElementById("panelWorks");
+    if (detail && detail.contest && detail.contest.mode === "OFFLINE") {
+      host.innerHTML = B.emptyState("线下比赛不提交作品", "报名选手由评委现场/综合打分，最终以榜单公示为准");
+      return;
+    }
     host.innerHTML = '<div class="skeleton" style="height: 90px"></div>';
     try {
       const data = await B.api.get("/works?contestId=" + contestId + "&page=1&size=20");

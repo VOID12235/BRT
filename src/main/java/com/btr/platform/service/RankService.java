@@ -121,34 +121,69 @@ public class RankService {
 
     private RankResult compute(Contest contest) {
         Long contestId = contest.getId();
-        List<Work> works = workMapper.selectList(new QueryWrapper<Work>()
-                .eq("contest_id", contestId).eq("status", "SUBMITTED"));
-        Map<Long, WorkScore> scoreMap = scoreMapper.avgByContest(contestId).stream()
-                .collect(Collectors.toMap(WorkScore::getWorkId, Function.identity(), (a, b) -> a));
-        Map<Long, Signup> signups = signupMapper.selectList(new QueryWrapper<Signup>()
-                        .eq("contest_id", contestId)).stream()
-                .collect(Collectors.toMap(Signup::getId, Function.identity(), (a, b) -> a));
+        boolean offline = "OFFLINE".equals(contest.getMode());
+        Map<Long, WorkScore> scoreMap;
+        Map<Long, Work> works = new HashMap<>();
+        Map<Long, Signup> signups = new HashMap<>();
+        List<Signup> allSignups = signupMapper.selectList(new QueryWrapper<Signup>()
+                .eq("contest_id", contestId));
+        for (Signup signup : allSignups) {
+            signups.put(signup.getId(), signup);
+        }
+        if (offline) {
+            scoreMap = scoreMapper.avgByContestSignup(contestId).stream()
+                    .collect(Collectors.toMap(WorkScore::getSignupId, Function.identity(), (a, b) -> a));
+        } else {
+            List<Work> workList = workMapper.selectList(new QueryWrapper<Work>()
+                    .eq("contest_id", contestId).eq("status", "SUBMITTED"));
+            for (Work work : workList) {
+                works.put(work.getId(), work);
+            }
+            scoreMap = scoreMapper.avgByContest(contestId).stream()
+                    .collect(Collectors.toMap(WorkScore::getWorkId, Function.identity(), (a, b) -> a));
+        }
 
         List<RankRow> rows = new ArrayList<>();
-        for (Work work : works) {
-            WorkScore score = scoreMap.get(work.getId());
-            if (score == null || score.getScoreCount() == null || score.getScoreCount() == 0) {
-                continue;
-            }
-            RankRow row = new RankRow();
-            row.setWorkId(work.getId());
-            row.setWorkTitle(work.getTitle());
-            Signup signup = signups.get(work.getSignupId());
-            if (signup != null) {
+        if (offline) {
+            for (Map.Entry<Long, WorkScore> entry : scoreMap.entrySet()) {
+                Signup signup = signups.get(entry.getKey());
+                if (signup == null) {
+                    continue;
+                }
+                WorkScore score = entry.getValue();
+                RankRow row = new RankRow();
+                row.setSignupId(signup.getId());
+                row.setWorkTitle("选手：" + signup.getRealName());
                 row.setAuthor(signup.getRealName());
+                row.setRealName(signup.getRealName());
                 row.setSchool(signup.getSchool());
-            } else {
-                User user = userMapper.selectById(work.getUserId());
-                row.setAuthor(user == null ? "匿名选手" : user.getNickname());
+                row.setAvgScore(score.getAvgScore().setScale(2, RoundingMode.HALF_UP));
+                row.setScoreCount(score.getScoreCount());
+                rows.add(row);
             }
-            row.setAvgScore(score.getAvgScore().setScale(2, RoundingMode.HALF_UP));
-            row.setScoreCount(score.getScoreCount());
-            rows.add(row);
+        } else {
+            for (Work work : works.values()) {
+                WorkScore score = scoreMap.get(work.getId());
+                if (score == null || score.getScoreCount() == null || score.getScoreCount() == 0) {
+                    continue;
+                }
+                RankRow row = new RankRow();
+                row.setWorkId(work.getId());
+                row.setWorkTitle(work.getTitle());
+                Signup signup = signups.get(work.getSignupId());
+                if (signup != null) {
+                    row.setAuthor(signup.getRealName());
+                    row.setRealName(signup.getRealName());
+                    row.setSchool(signup.getSchool());
+                } else {
+                    User user = userMapper.selectById(work.getUserId());
+                    row.setAuthor(user == null ? "匿名选手" : user.getNickname());
+                    row.setRealName(row.getAuthor());
+                }
+                row.setAvgScore(score.getAvgScore().setScale(2, RoundingMode.HALF_UP));
+                row.setScoreCount(score.getScoreCount());
+                rows.add(row);
+            }
         }
         rows.sort(Comparator.comparing(RankRow::getAvgScore).reversed()
                 .thenComparing(Comparator.comparingLong(RankRow::getScoreCount).reversed()));
@@ -166,6 +201,7 @@ public class RankService {
                 RankRow row = rows.get(cursor);
                 row.setAwardName(award.getName());
                 row.setPrizeAmount(award.getPrizeAmount());
+                row.setGift(award.getGift());
                 grouped.computeIfAbsent(award.getId(), k -> new ArrayList<>()).add(row);
                 cursor++;
                 taken++;
@@ -179,6 +215,7 @@ public class RankService {
             group.setAwardName(award.getName());
             group.setQuota(award.getQuota());
             group.setPrizeAmount(award.getPrizeAmount());
+            group.setGift(award.getGift());
             group.setItems(grouped.getOrDefault(award.getId(), List.of()));
             if (!group.getItems().isEmpty()) {
                 groups.add(group);
@@ -189,11 +226,12 @@ public class RankService {
         result.setContestId(contestId);
         result.setContestTitle(contest.getTitle());
         result.setStatus(contest.getStatus());
+        result.setMode(contest.getMode());
         result.setPublished("PUBLISHED".equals(contest.getStatus()) || "FINISHED".equals(contest.getStatus()));
         result.setUpdatedAt(LocalDateTime.now());
         result.setRows(rows);
         result.setGroups(groups);
-        result.setWorkCount(works.size());
+        result.setWorkCount(offline ? allSignups.size() : works.size());
         result.setJudgeCount(scoreMapper.judgeCount(contestId));
         result.setScoredCount(rows.size());
         return result;
@@ -231,6 +269,8 @@ public class RankService {
     /** 公示时固化获奖结果，保证后续改分不影响已公示名单。 */
     @Transactional
     public void snapshotWinners(Long contestId) {
+        Contest contest = contestMapper.selectById(contestId);
+        boolean offline = contest != null && "OFFLINE".equals(contest.getMode());
         RankResult result = computeAndCache(contestId);
         winnerMapper.delete(new QueryWrapper<Winner>().eq("contest_id", contestId));
         for (RankGroup group : result.getGroups()) {
@@ -238,21 +278,76 @@ public class RankService {
                 Winner winner = new Winner();
                 winner.setContestId(contestId);
                 winner.setAwardId(group.getAwardId());
-                winner.setWorkId(row.getWorkId());
+                if (offline) {
+                    winner.setSignupId(row.getSignupId());
+                } else {
+                    winner.setWorkId(row.getWorkId());
+                }
                 winner.setRankNo(row.getRank());
                 winner.setPublished(true);
                 winner.setCreatedAt(LocalDateTime.now());
                 winnerMapper.insert(winner);
 
-                Work work = workMapper.selectById(row.getWorkId());
-                if (work != null) {
-                    User user = userMapper.selectById(work.getUserId());
-                    if (user != null) {
-                        emailService.winnerNotice(user.getEmail(), user.getNickname(),
-                                result.getContestTitle(), group.getAwardName());
+                User user = null;
+                if (offline && row.getSignupId() != null) {
+                    Signup signup = signupMapper.selectById(row.getSignupId());
+                    if (signup != null) {
+                        user = userMapper.selectById(signup.getUserId());
+                    }
+                } else if (row.getWorkId() != null) {
+                    Work work = workMapper.selectById(row.getWorkId());
+                    if (work != null) {
+                        user = userMapper.selectById(work.getUserId());
                     }
                 }
+                if (user != null) {
+                    emailService.winnerNotice(user.getEmail(), user.getNickname(),
+                            result.getContestTitle(), group.getAwardName());
+                }
             }
+        }
+    }
+
+    /** 管理员手动调整排名：按奖项与名次覆盖公示获奖名单。 */
+    @Transactional
+    public void adminUpdateWinners(Long contestId, List<com.btr.platform.dto.Requests.WinnerEditReq> items) {
+        Contest contest = contestMapper.selectById(contestId);
+        if (contest == null) {
+            throw new BizException(404, "赛事不存在");
+        }
+        boolean offline = "OFFLINE".equals(contest.getMode());
+        winnerMapper.delete(new QueryWrapper<Winner>().eq("contest_id", contestId));
+        if (items != null) {
+            for (com.btr.platform.dto.Requests.WinnerEditReq item : items) {
+                Award award = awardMapper.selectById(item.awardId());
+                if (award == null || !award.getContestId().equals(contestId)) {
+                    throw new BizException("奖项不存在或不属于该赛事");
+                }
+                Winner winner = new Winner();
+                winner.setContestId(contestId);
+                winner.setAwardId(item.awardId());
+                if (offline) {
+                    Signup signup = signupMapper.selectById(item.subjectId());
+                    if (signup == null || !signup.getContestId().equals(contestId)) {
+                        throw new BizException("选手报名记录不存在");
+                    }
+                    winner.setSignupId(item.subjectId());
+                } else {
+                    Work work = workMapper.selectById(item.subjectId());
+                    if (work == null || !work.getContestId().equals(contestId)) {
+                        throw new BizException("作品不存在");
+                    }
+                    winner.setWorkId(item.subjectId());
+                }
+                winner.setRankNo(item.rankNo());
+                winner.setPublished(true);
+                winner.setCreatedAt(LocalDateTime.now());
+                winnerMapper.insert(winner);
+            }
+        }
+        evict(contestId);
+        if ("PUBLISHED".equals(contest.getStatus()) || "FINISHED".equals(contest.getStatus())) {
+            computeAndCache(contestId);
         }
     }
 

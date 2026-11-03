@@ -37,6 +37,7 @@ CREATE TABLE contest (
     description TEXT,
     rules TEXT,
     prize_amount DECIMAL(14,2) DEFAULT 0.00,
+    mode VARCHAR(10) NOT NULL DEFAULT 'ONLINE',
     signup_start DATETIME,
     signup_end DATETIME,
     review_start DATETIME,
@@ -83,16 +84,18 @@ CREATE TABLE contest_judge_assign (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     contest_id BIGINT NOT NULL,
     judge_id BIGINT NOT NULL,
-    work_id BIGINT NOT NULL,
+    work_id BIGINT,
+    signup_id BIGINT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT uk_assign_judge_work UNIQUE (judge_id, work_id)
+    CONSTRAINT uk_assign_judge_work UNIQUE (judge_id, work_id, signup_id)
 );
 CREATE INDEX idx_assign_contest ON contest_judge_assign (contest_id);
 
 CREATE TABLE contest_score (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     contest_id BIGINT NOT NULL,
-    work_id BIGINT NOT NULL,
+    work_id BIGINT,
+    signup_id BIGINT,
     judge_id BIGINT NOT NULL,
     score DECIMAL(5,2) NOT NULL,
     comment VARCHAR(1000),
@@ -108,6 +111,7 @@ CREATE TABLE contest_award (
     name VARCHAR(64) NOT NULL,
     quota INT NOT NULL DEFAULT 1,
     prize_amount DECIMAL(14,2) NOT NULL DEFAULT 0.00,
+    gift VARCHAR(255),
     sort_order INT NOT NULL DEFAULT 0
 );
 CREATE INDEX idx_award_contest ON contest_award (contest_id);
@@ -116,7 +120,8 @@ CREATE TABLE contest_winner (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     contest_id BIGINT NOT NULL,
     award_id BIGINT NOT NULL,
-    work_id BIGINT NOT NULL,
+    work_id BIGINT,
+    signup_id BIGINT,
     rank_no INT NOT NULL,
     published BOOLEAN NOT NULL DEFAULT FALSE,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP

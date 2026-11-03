@@ -65,49 +65,78 @@ public class JudgeService {
         if (assigns.isEmpty()) {
             return List.of();
         }
-        List<Long> workIds = assigns.stream().map(JudgeAssign::getWorkId).distinct().toList();
-        Map<Long, Work> works = workMapper.selectBatchIds(workIds).stream()
+        List<Long> workIds = assigns.stream().map(JudgeAssign::getWorkId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        List<Long> signupIds = assigns.stream().map(JudgeAssign::getSignupId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, Work> works = workIds.isEmpty() ? Map.of() : workMapper.selectBatchIds(workIds).stream()
                 .collect(Collectors.toMap(Work::getId, Function.identity()));
         Map<Long, Contest> contests = contestMapper.selectBatchIds(assigns.stream()
                         .map(JudgeAssign::getContestId).distinct().toList()).stream()
                 .collect(Collectors.toMap(Contest::getId, Function.identity()));
-        Map<Long, Signup> signups = signupMapper.selectBatchIds(works.values().stream()
-                        .map(Work::getSignupId).distinct().toList()).stream()
+        Map<Long, Signup> signups = signupMapper.selectBatchIds(
+                        java.util.stream.Stream.concat(works.values().stream().map(Work::getSignupId),
+                                signupIds.stream()).distinct().toList()).stream()
                 .collect(Collectors.toMap(Signup::getId, Function.identity()));
-        Map<Long, Score> scores = scoreMapper.selectList(new QueryWrapper<Score>()
-                        .eq("judge_id", judgeId).in("work_id", workIds)).stream()
-                .collect(Collectors.toMap(Score::getWorkId, Function.identity(), (a, b) -> a));
+        Map<String, Score> scores = scoreMapper.selectList(new QueryWrapper<Score>()
+                        .eq("judge_id", judgeId)).stream()
+                .collect(Collectors.toMap(s -> s.getWorkId() != null
+                        ? "W:" + s.getWorkId() : "S:" + s.getSignupId(), Function.identity(), (a, b) -> a));
 
         List<JudgeTask> tasks = new ArrayList<>();
         for (JudgeAssign assign : assigns) {
-            Work work = works.get(assign.getWorkId());
-            if (work == null || !"SUBMITTED".equals(work.getStatus())) {
-                continue;
+            if (assign.getWorkId() != null) {
+                Work work = works.get(assign.getWorkId());
+                if (work == null || !"SUBMITTED".equals(work.getStatus())) {
+                    continue;
+                }
+                JudgeTask task = new JudgeTask();
+                task.setAssignId(assign.getId());
+                task.setWorkId(work.getId());
+                task.setWorkTitle(work.getTitle());
+                task.setWorkDescription(work.getDescription());
+                task.setFileUrl(work.getFileUrl());
+                task.setFileName(work.getFileName());
+                task.setSubmittedAt(work.getSubmittedAt());
+                task.setContestId(assign.getContestId());
+                Contest contest = contests.get(assign.getContestId());
+                task.setContestTitle(contest == null ? "" : contest.getTitle());
+                Signup signup = signups.get(work.getSignupId());
+                task.setRealName(signup == null ? "" : signup.getRealName());
+                task.setSchool(signup == null ? "" : signup.getSchool());
+                Score score = scores.get("W:" + work.getId());
+                if (score != null) {
+                    task.setScoreId(score.getId());
+                    task.setScore(score.getScore());
+                    task.setComment(score.getComment());
+                }
+                tasks.add(task);
+            } else if (assign.getSignupId() != null) {
+                Signup signup = signups.get(assign.getSignupId());
+                if (signup == null) {
+                    continue;
+                }
+                JudgeTask task = new JudgeTask();
+                task.setAssignId(assign.getId());
+                task.setSignupId(signup.getId());
+                task.setWorkTitle("选手：" + signup.getRealName());
+                task.setWorkDescription(signup.getIntro());
+                task.setContestId(assign.getContestId());
+                Contest contest = contests.get(assign.getContestId());
+                task.setContestTitle(contest == null ? "" : contest.getTitle());
+                task.setRealName(signup.getRealName());
+                task.setSchool(signup.getSchool());
+                Score score = scores.get("S:" + signup.getId());
+                if (score != null) {
+                    task.setScoreId(score.getId());
+                    task.setScore(score.getScore());
+                    task.setComment(score.getComment());
+                }
+                tasks.add(task);
             }
-            JudgeTask task = new JudgeTask();
-            task.setAssignId(assign.getId());
-            task.setWorkId(work.getId());
-            task.setWorkTitle(work.getTitle());
-            task.setWorkDescription(work.getDescription());
-            task.setFileUrl(work.getFileUrl());
-            task.setFileName(work.getFileName());
-            task.setSubmittedAt(work.getSubmittedAt());
-            task.setContestId(assign.getContestId());
-            Contest contest = contests.get(assign.getContestId());
-            task.setContestTitle(contest == null ? "" : contest.getTitle());
-            Signup signup = signups.get(work.getSignupId());
-            task.setRealName(signup == null ? "" : signup.getRealName());
-            task.setSchool(signup == null ? "" : signup.getSchool());
-            Score score = scores.get(work.getId());
-            if (score != null) {
-                task.setScoreId(score.getId());
-                task.setScore(score.getScore());
-                task.setComment(score.getComment());
-            }
-            tasks.add(task);
         }
         tasks.sort(Comparator.comparing(JudgeTask::getContestId).reversed()
-                .thenComparing(JudgeTask::getWorkId));
+                .thenComparing(t -> t.getWorkId() != null ? t.getWorkId() : -t.getSignupId()));
         return tasks;
     }
 
@@ -117,9 +146,10 @@ public class JudgeService {
         if (assigns.isEmpty()) {
             return List.of();
         }
-        Set<Long> scored = scoreMapper.selectList(new QueryWrapper<Score>()
+        Set<String> scored = scoreMapper.selectList(new QueryWrapper<Score>()
                         .eq("judge_id", judgeId)).stream()
-                .map(Score::getWorkId).collect(Collectors.toSet());
+                .map(s -> s.getWorkId() != null ? "W:" + s.getWorkId() : "S:" + s.getSignupId())
+                .collect(Collectors.toSet());
         Map<Long, List<JudgeAssign>> byContest = assigns.stream()
                 .collect(Collectors.groupingBy(JudgeAssign::getContestId));
         Map<Long, Contest> contests = contestMapper.selectBatchIds(byContest.keySet()).stream()
@@ -132,7 +162,8 @@ public class JudgeService {
             progress.setContestTitle(contest == null ? "" : contest.getTitle());
             progress.setAssigned(entry.getValue().size());
             progress.setScored(entry.getValue().stream()
-                    .filter(a -> scored.contains(a.getWorkId())).count());
+                    .filter(a -> scored.contains(a.getWorkId() != null
+                            ? "W:" + a.getWorkId() : "S:" + a.getSignupId())).count());
             list.add(progress);
         }
         list.sort(Comparator.comparing(JudgeProgress::getContestId).reversed());
@@ -195,10 +226,26 @@ public class JudgeService {
         Map<Long, Contest> contests = contestMapper.selectBatchIds(assigns.stream()
                         .map(JudgeAssign::getContestId).distinct().toList()).stream()
                 .collect(Collectors.toMap(Contest::getId, Function.identity()));
-        Set<String> scoredWorkIds = scoreMapper.selectList(new QueryWrapper<Score>()
-                        .in("judge_id", assigns.stream().map(JudgeAssign::getJudgeId).distinct().toList())
-                        .in("work_id", assigns.stream().map(JudgeAssign::getWorkId).distinct().toList())).stream()
-                .map(s -> s.getJudgeId() + ":" + s.getWorkId()).collect(Collectors.toSet());
+        List<Long> wIds = assigns.stream().map(JudgeAssign::getWorkId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        List<Long> sIds = assigns.stream().map(JudgeAssign::getSignupId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        QueryWrapper<Score> scoreQuery = new QueryWrapper<Score>()
+                .in("judge_id", assigns.stream().map(JudgeAssign::getJudgeId).distinct().toList());
+        scoreQuery.and(q -> {
+            if (!wIds.isEmpty()) {
+                q.in("work_id", wIds);
+            }
+            if (!sIds.isEmpty()) {
+                q.or().in("signup_id", sIds);
+            }
+            if (wIds.isEmpty() && sIds.isEmpty()) {
+                q.eq("work_id", -1L);
+            }
+        });
+        Set<String> scoredIds = scoreMapper.selectList(scoreQuery).stream()
+                .map(s -> s.getWorkId() != null ? "W:" + s.getWorkId() : "S:" + s.getSignupId())
+                .collect(Collectors.toSet());
 
         Map<String, com.btr.platform.dto.Views.AdminAssignProject> grouped = new java.util.LinkedHashMap<>();
         for (JudgeAssign assign : assigns) {
@@ -214,12 +261,14 @@ public class JudgeService {
                         Contest contest = contests.get(assign.getContestId());
                         p.setContestTitle(contest == null ? "" : contest.getTitle());
                         p.setContestStatus(contest == null ? "" : contest.getStatus());
+                        p.setContestMode(contest == null ? "ONLINE" : contest.getMode());
                         p.setCreatedAt(assign.getCreatedAt());
                         p.setAssignIds(new ArrayList<>());
                         return p;
                     });
             project.setWorkCount(project.getWorkCount() + 1);
-            if (scoredWorkIds.contains(assign.getJudgeId() + ":" + assign.getWorkId())) {
+            String mark = assign.getWorkId() != null ? "W:" + assign.getWorkId() : "S:" + assign.getSignupId();
+            if (scoredIds.contains(mark)) {
                 project.setScoredCount(project.getScoredCount() + 1);
             }
             project.getAssignIds().add(assign.getId());
@@ -229,26 +278,42 @@ public class JudgeService {
 
     @Transactional
     public Score score(ScoreReq req, Long judgeId) {
-        JudgeAssign assign = assignMapper.selectOne(new QueryWrapper<JudgeAssign>()
-                .eq("judge_id", judgeId).eq("work_id", req.workId()).last("limit 1"));
+        JudgeAssign assign;
+        if (req.signupId() != null) {
+            assign = assignMapper.selectOne(new QueryWrapper<JudgeAssign>()
+                    .eq("judge_id", judgeId).eq("signup_id", req.signupId()).last("limit 1"));
+        } else {
+            if (req.workId() == null) {
+                throw new BizException("缺少评审对象");
+            }
+            assign = assignMapper.selectOne(new QueryWrapper<JudgeAssign>()
+                    .eq("judge_id", judgeId).eq("work_id", req.workId()).last("limit 1"));
+        }
         if (assign == null) {
-            throw new BizException(403, "该作品未分配给你评审");
+            throw new BizException(403, "该评审对象未分配给你评审");
         }
         Contest contest = contestMapper.selectById(assign.getContestId());
         if (contest == null || !"REVIEW".equals(contest.getStatus())) {
             throw new BizException("当前不在评审阶段，无法打分");
         }
-        Work work = workMapper.selectById(req.workId());
-        if (work == null || !"SUBMITTED".equals(work.getStatus())) {
-            throw new BizException("作品不可评审");
+        Score score;
+        if (req.signupId() != null) {
+            score = scoreMapper.selectOne(new QueryWrapper<Score>()
+                    .eq("judge_id", judgeId).eq("signup_id", req.signupId()).last("limit 1"));
+        } else {
+            Work work = workMapper.selectById(req.workId());
+            if (work == null || !"SUBMITTED".equals(work.getStatus())) {
+                throw new BizException("作品不可评审");
+            }
+            score = scoreMapper.selectOne(new QueryWrapper<Score>()
+                    .eq("judge_id", judgeId).eq("work_id", req.workId()).last("limit 1"));
         }
-        Score score = scoreMapper.selectOne(new QueryWrapper<Score>()
-                .eq("judge_id", judgeId).eq("work_id", req.workId()).last("limit 1"));
         boolean create = score == null;
         if (create) {
             score = new Score();
             score.setContestId(assign.getContestId());
-            score.setWorkId(req.workId());
+            score.setWorkId(req.signupId() == null ? req.workId() : null);
+            score.setSignupId(req.signupId());
             score.setJudgeId(judgeId);
             score.setCreatedAt(LocalDateTime.now());
         }
@@ -274,24 +339,48 @@ public class JudgeService {
         if (contest == null) {
             throw new BizException(404, "赛事不存在");
         }
-        List<Work> works;
-        if (req.workIds() == null || req.workIds().isEmpty()) {
-            works = workMapper.selectList(new QueryWrapper<Work>()
-                    .eq("contest_id", req.contestId()).eq("status", "SUBMITTED"));
+        boolean offline = "OFFLINE".equals(contest.getMode());
+        if (offline) {
+            List<Signup> signups;
+            if (req.workIds() == null || req.workIds().isEmpty()) {
+                signups = signupMapper.selectList(new QueryWrapper<Signup>()
+                        .eq("contest_id", req.contestId()).ne("status", "CANCELED"));
+            } else {
+                signups = signupMapper.selectList(new QueryWrapper<Signup>()
+                        .eq("contest_id", req.contestId()).in("id", req.workIds()));
+            }
+            for (Signup signup : signups) {
+                long exists = assignMapper.selectCount(new QueryWrapper<JudgeAssign>()
+                        .eq("judge_id", req.judgeId()).eq("signup_id", signup.getId()));
+                if (exists == 0) {
+                    JudgeAssign assign = new JudgeAssign();
+                    assign.setContestId(req.contestId());
+                    assign.setJudgeId(req.judgeId());
+                    assign.setSignupId(signup.getId());
+                    assign.setCreatedAt(LocalDateTime.now());
+                    assignMapper.insert(assign);
+                }
+            }
         } else {
-            works = workMapper.selectList(new QueryWrapper<Work>()
-                    .eq("contest_id", req.contestId()).in("id", req.workIds()));
-        }
-        for (Work work : works) {
-            long exists = assignMapper.selectCount(new QueryWrapper<JudgeAssign>()
-                    .eq("judge_id", req.judgeId()).eq("work_id", work.getId()));
-            if (exists == 0) {
-                JudgeAssign assign = new JudgeAssign();
-                assign.setContestId(req.contestId());
-                assign.setJudgeId(req.judgeId());
-                assign.setWorkId(work.getId());
-                assign.setCreatedAt(LocalDateTime.now());
-                assignMapper.insert(assign);
+            List<Work> works;
+            if (req.workIds() == null || req.workIds().isEmpty()) {
+                works = workMapper.selectList(new QueryWrapper<Work>()
+                        .eq("contest_id", req.contestId()).eq("status", "SUBMITTED"));
+            } else {
+                works = workMapper.selectList(new QueryWrapper<Work>()
+                        .eq("contest_id", req.contestId()).in("id", req.workIds()));
+            }
+            for (Work work : works) {
+                long exists = assignMapper.selectCount(new QueryWrapper<JudgeAssign>()
+                        .eq("judge_id", req.judgeId()).eq("work_id", work.getId()));
+                if (exists == 0) {
+                    JudgeAssign assign = new JudgeAssign();
+                    assign.setContestId(req.contestId());
+                    assign.setJudgeId(req.judgeId());
+                    assign.setWorkId(work.getId());
+                    assign.setCreatedAt(LocalDateTime.now());
+                    assignMapper.insert(assign);
+                }
             }
         }
         rankService.evict(req.contestId());
@@ -319,9 +408,14 @@ public class JudgeService {
         Map<Long, User> judges = userMapper.selectBatchIds(assigns.stream()
                         .map(JudgeAssign::getJudgeId).distinct().toList()).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
-        Map<Long, Work> works = workMapper.selectBatchIds(assigns.stream()
-                        .map(JudgeAssign::getWorkId).distinct().toList()).stream()
+        List<Long> wIds = assigns.stream().map(JudgeAssign::getWorkId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        List<Long> sIds = assigns.stream().map(JudgeAssign::getSignupId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, Work> works = wIds.isEmpty() ? Map.of() : workMapper.selectBatchIds(wIds).stream()
                 .collect(Collectors.toMap(Work::getId, Function.identity()));
+        Map<Long, Signup> signups = sIds.isEmpty() ? Map.of() : signupMapper.selectBatchIds(sIds).stream()
+                .collect(Collectors.toMap(Signup::getId, Function.identity()));
         Map<Long, Contest> contests = contestMapper.selectBatchIds(assigns.stream()
                         .map(JudgeAssign::getContestId).distinct().toList()).stream()
                 .collect(Collectors.toMap(Contest::getId, Function.identity()));
@@ -335,8 +429,13 @@ public class JudgeService {
             User judge = judges.get(a.getJudgeId());
             view.setJudgeName(judge == null ? "" : judge.getNickname());
             view.setWorkId(a.getWorkId());
-            Work work = works.get(a.getWorkId());
-            view.setWorkTitle(work == null ? "" : work.getTitle());
+            if (a.getWorkId() != null) {
+                Work work = works.get(a.getWorkId());
+                view.setWorkTitle(work == null ? "" : work.getTitle());
+            } else if (a.getSignupId() != null) {
+                Signup signup = signups.get(a.getSignupId());
+                view.setWorkTitle("选手：" + (signup == null ? "" : signup.getRealName()));
+            }
             view.setCreatedAt(a.getCreatedAt());
             return view;
         }).toList();

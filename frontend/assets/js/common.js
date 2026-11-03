@@ -166,6 +166,7 @@
           <div class="contest-cover">
             <img src="${B.escapeHtml(cover)}" alt="${B.escapeHtml(contest.title)}" loading="lazy" />
             <span class="badge ${info.cls}">${info.label}</span>
+            ${contest.mode === "OFFLINE" ? '<span class="badge badge-plain mode-badge">线下</span>' : '<span class="badge badge-soft mode-badge">线上</span>'}
           </div>
           <div class="contest-body">
             <h3>${B.escapeHtml(contest.title)}</h3>
@@ -183,7 +184,7 @@
             <p>${B.escapeHtml(contest.summary || "暂无赛事简介")}</p>
             <div class="contest-back-stats">
               <div><b>${contest.signupCount || 0}</b><span>报名人数</span></div>
-              <div><b>${contest.workCount || 0}</b><span>提交作品</span></div>
+              <div><b>${contest.mode === "OFFLINE" ? "—" : contest.workCount || 0}</b><span>${contest.mode === "OFFLINE" ? "线下比赛" : "提交作品"}</span></div>
             </div>
           </div>
           <div class="contest-back-actions">
@@ -273,6 +274,7 @@
     initTabs,
     noticeItem,
     scrollToTop,
+    formatPrize: (a) => B.formatPrize(a),
   };
 
   document.addEventListener("DOMContentLoaded", () => {

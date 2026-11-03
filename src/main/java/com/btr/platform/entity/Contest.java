@@ -20,6 +20,8 @@ public class Contest {
     private String rules;
     /** 赛事奖金总额（元） */
     private BigDecimal prizeAmount;
+    /** 比赛类型：ONLINE 线上 / OFFLINE 线下 */
+    private String mode;
     private LocalDateTime signupStart;
     private LocalDateTime signupEnd;
     private LocalDateTime reviewStart;

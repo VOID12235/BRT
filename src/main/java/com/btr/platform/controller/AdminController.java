@@ -22,6 +22,7 @@ import com.btr.platform.dto.Requests.SwitchesConfigReq;
 import com.btr.platform.dto.Requests.TemplateConfigReq;
 import com.btr.platform.dto.Requests.UploadConfigReq;
 import com.btr.platform.dto.Requests.UserStatusReq;
+import com.btr.platform.dto.Requests.WinnerEditReq;
 import com.btr.platform.dto.Views.AssignView;
 import com.btr.platform.dto.Views.Dashboard;
 import com.btr.platform.dto.Views.DbConfig;
@@ -41,6 +42,7 @@ import com.btr.platform.entity.EmailRecord;
 import com.btr.platform.entity.Notice;
 import com.btr.platform.entity.SysLog;
 import com.btr.platform.entity.User;
+import com.btr.platform.mapper.AwardMapper;
 import com.btr.platform.mapper.EmailRecordMapper;
 import com.btr.platform.mapper.SysLogMapper;
 import com.btr.platform.mapper.UserMapper;
@@ -54,6 +56,7 @@ import com.btr.platform.service.ExportService;
 import com.btr.platform.service.JudgeService;
 import com.btr.platform.service.LogService;
 import com.btr.platform.service.NoticeService;
+import com.btr.platform.service.RankService;
 import com.btr.platform.service.SignupService;
 import com.btr.platform.service.WorkService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -96,6 +99,8 @@ public class AdminController {
     private final EmailRecordMapper emailRecordMapper;
     private final UserMapper userMapper;
     private final LogService logService;
+    private final RankService rankService;
+    private final AwardMapper awardMapper;
 
     public AdminController(DashboardService dashboardService, SignupService signupService,
                            WorkService workService, JudgeService judgeService, AuthService authService,
@@ -103,7 +108,8 @@ public class AdminController {
                            ConfigService configService, EmailService emailService,
                            InfraTestService infraTestService,
                            SysLogMapper sysLogMapper, EmailRecordMapper emailRecordMapper,
-                           UserMapper userMapper, LogService logService) {
+                           UserMapper userMapper, LogService logService, RankService rankService,
+                           AwardMapper awardMapper) {
         this.dashboardService = dashboardService;
         this.signupService = signupService;
         this.workService = workService;
@@ -118,6 +124,8 @@ public class AdminController {
         this.emailRecordMapper = emailRecordMapper;
         this.userMapper = userMapper;
         this.logService = logService;
+        this.rankService = rankService;
+        this.awardMapper = awardMapper;
     }
 
     /* ------------------------- 仪表盘 / 业务管理（原有） ------------------------- */
@@ -182,6 +190,36 @@ public class AdminController {
     @DeleteMapping("/judge-assign/{id}")
     public ApiResponse<Void> unassign(@PathVariable Long id) {
         judgeService.unassign(id);
+        return ApiResponse.ok();
+    }
+
+    /* ------------------------- 排名管理（管理员可手动调整榜单） ------------------------- */
+
+    /** 管理端榜单预览（含未公示结果 + 奖项配置，供手动调整） */
+    @GetMapping("/contests/{id}/ranking")
+    public ApiResponse<Views.RankingAdmin> contestRanking(@PathVariable Long id) {
+        Views.RankingAdmin out = new Views.RankingAdmin();
+        out.setRanking(rankService.result(id, true));
+        out.setAwards(awardMapper.selectList(new QueryWrapper<com.btr.platform.entity.Award>()
+                .eq("contest_id", id).orderByAsc("sort_order")));
+        return ApiResponse.ok(out);
+    }
+
+    /** 管理员保存手动调整后的获奖名单：subjectId = 作品 id（线上）或报名 id（线下） */
+    @PutMapping("/contests/{id}/winners")
+    public ApiResponse<Void> updateWinners(@PathVariable Long id,
+                                           @Valid @RequestBody List<WinnerEditReq> items,
+                                           HttpServletRequest request) {
+        rankService.adminUpdateWinners(id, items);
+        logAdmin("RANKING_EDIT", "手动调整赛事 " + id + " 排名", request);
+        return ApiResponse.ok();
+    }
+
+    /** 按评委分数重新自动计算获奖名单（覆盖手动调整） */
+    @PostMapping("/contests/{id}/winners/recompute")
+    public ApiResponse<Void> recomputeWinners(@PathVariable Long id, HttpServletRequest request) {
+        rankService.snapshotWinners(id);
+        logAdmin("RANKING_RECOMPUTE", "按分数重新计算赛事 " + id + " 获奖名单", request);
         return ApiResponse.ok();
     }
 

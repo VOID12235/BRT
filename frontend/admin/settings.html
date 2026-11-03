@@ -104,6 +104,18 @@
                 <label>页脚信息</label>
                 <input class="input" id="siteFooter" maxlength="120" />
               </div>
+              <div class="field span-2">
+                <label>关于页 · 平台介绍（页脚「平台介绍」内容，支持换行与基本 HTML）</label>
+                <textarea class="input" id="siteAboutIntro" rows="4" style="resize:vertical"></textarea>
+              </div>
+              <div class="field span-2">
+                <label>关于页 · 规则说明（页脚「规则说明」内容）</label>
+                <textarea class="input" id="siteAboutRules" rows="4" style="resize:vertical"></textarea>
+              </div>
+              <div class="field span-2">
+                <label>关于页 · 联系我们（页脚「联系我们」内容）</label>
+                <textarea class="input" id="siteAboutContact" rows="3" style="resize:vertical"></textarea>
+              </div>
             </div>
             <div style="margin-top:8px">
               <button class="btn btn-primary" id="saveSiteBtn">保存站点信息</button>
@@ -143,7 +155,7 @@
         <section class="tab-panel" id="panel-templates">
           <div class="form-card">
             <h2>通知模板</h2>
-            <p class="muted" style="margin: 6px 0 18px">邮件模板支持占位符：<code>{nickname}</code> <code>{contestTitle}</code> <code>{awardName}</code> <code>{code}</code>，HTML 内容；获奖证书模板每行一段，# 开头为标题、## 开头为强调，占位符：<code>{nickname}</code> <code>{contestTitle}</code> <code>{workTitle}</code> <code>{awardName}</code> <code>{rankNo}</code> <code>{prizeAmount}</code> <code>{date}</code>。</p>
+            <p class="muted" style="margin: 6px 0 18px">邮件模板支持占位符：<code>{nickname}</code> <code>{contestTitle}</code> <code>{awardName}</code> <code>{code}</code>，HTML 内容；获奖证书模板每行一段，# 开头为标题、## 开头为强调，占位符：<code>{nickname}</code> <code>{contestTitle}</code> <code>{workTitle}</code> <code>{awardName}</code> <code>{rankNo}</code> <code>{prizeAmount}</code> <code>{gift}</code> <code>{prizeText}</code> <code>{date}</code>（{prizeText} 自动组合为「奖金 ¥X」/「奖品 Y」/「奖金 ¥X + 奖品 Y」）。</p>
             <div class="tabs" id="templateTabs" style="margin-bottom: 16px">
               <button class="is-active" data-tpl="template.signup_receipt">报名成功</button>
               <button data-tpl="template.review_reminder">评审提醒</button>

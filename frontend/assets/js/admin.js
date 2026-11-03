@@ -51,6 +51,7 @@
       group: "评审与内容",
       items: [
         { key: "judges", label: "评委分配", href: "/admin/judge-manage.html", icon: "judge" },
+        { key: "rankManage", label: "榜单管理", href: "/admin/rank-manage.html", icon: "award" },
         { key: "notices", label: "公告管理", href: "/admin/notice-manage.html", icon: "notice" },
         { key: "export", label: "数据导出", href: "/admin/export.html", icon: "export" },
       ],
@@ -190,6 +191,148 @@
         if (p >= 1 && p <= pages && p !== current) onChange(p);
       });
     });
+  }
+
+  /* ------------------------------- 榜单管理 ------------------------------- */
+  const rankState = { contestId: "", ranking: null, awards: [] };
+
+  async function initRankManage() {
+    await loadContests();
+    const select = document.getElementById("rankContestFilter");
+    fillContestSelect(select, { placeholder: "选择赛事…" });
+    const fromQuery = B.qs("contestId");
+    if (fromQuery) select.value = fromQuery;
+    select.addEventListener("change", () => {
+      rankState.contestId = select.value;
+      if (rankState.contestId) loadRanking();
+      else renderRankEmpty();
+    });
+    document.getElementById("rankSaveBtn").addEventListener("click", saveRanking);
+    document.getElementById("rankRecomputeBtn").addEventListener("click", recomputeRanking);
+    if (fromQuery) {
+      rankState.contestId = fromQuery;
+      loadRanking();
+    }
+  }
+
+  async function loadRanking() {
+    const host = document.getElementById("rankEditHost");
+    host.innerHTML = `<tr><td colspan="6"><div class="skeleton" style="height:60px"></div></td></tr>`;
+    document.getElementById("rankFoot").textContent = "加载中…";
+    try {
+      const data = await B.api.get("/admin/contests/" + rankState.contestId + "/ranking");
+      rankState.ranking = data.ranking || null;
+      rankState.awards = data.awards || [];
+      renderRankEditor();
+    } catch (e) {
+      host.innerHTML = `<tr><td colspan="6">${B.emptyState("加载失败", e.message || "请稍后重试")}</td></tr>`;
+    }
+  }
+
+  function renderRankEmpty() {
+    document.getElementById("rankEditHost").innerHTML = `<tr><td colspan="6">${B.emptyState(
+      "未选择赛事",
+      "选择赛事后即可调整榜单。"
+    )}</td></tr>`;
+    document.getElementById("rankFoot").textContent = "—";
+  }
+
+  function renderRankEditor() {
+    const host = document.getElementById("rankEditHost");
+    const rows = rankState.ranking.rows || [];
+    const awards = rankState.awards || [];
+    const offline = rankState.ranking.mode === "OFFLINE";
+    if (!rows.length) {
+      host.innerHTML = `<tr><td colspan="6">${B.emptyState(
+        "暂无榜单数据",
+        "该赛事还没有可排名的选手，或尚未有评分结果。"
+      )}</td></tr>`;
+      document.getElementById("rankFoot").textContent = "暂无排名";
+      return;
+    }
+    host.innerHTML = rows
+      .map((row) => {
+        const key = row.workId != null ? row.workId : row.signupId;
+        const awardOptions =
+          `<option value="">（不获奖）</option>` +
+          awards
+            .map(
+              (a) =>
+                `<option value="${a.id}" ${row.awardName === a.name ? "selected" : ""}>${B.escapeHtml(
+                  a.name
+                )}</option>`
+            )
+            .join("");
+        return `<tr data-key="${key}" data-subject="${key}">
+          <td><input class="input input-sm" type="number" min="1" max="999" data-field="rankNo" value="${row.rank || ""}" style="width:64px" /></td>
+          <td><select class="select select-sm" data-field="awardId">${awardOptions}</select></td>
+          <td><b>${B.escapeHtml(row.workTitle)}</b><div class="tiny muted">${B.escapeHtml(
+            row.realName || row.author || "—"
+          )}${row.contestTitle ? "  · " + B.escapeHtml(row.contestTitle) : ""}</div></td>
+          <td>${B.escapeHtml(row.school || "—")}</td>
+          <td><b>${Number(row.avgScore).toFixed(1)}</b></td>
+          <td>${row.scoreCount || 0}</td>
+        </tr>`;
+      })
+      .join("");
+    document.getElementById("rankFoot").textContent = `共 ${rows.length} 名选手 · ${
+      offline ? "线下比赛按选手排名" : "作品按平均分排名"
+    }`;
+  }
+
+  async function saveRanking() {
+    if (!rankState.contestId) {
+      B.toast("请先选择赛事", "warn");
+      return;
+    }
+    const items = [];
+    document.querySelectorAll("#rankEditHost tr[data-subject]").forEach((tr) => {
+      const subjectId = Number(tr.dataset.subject);
+      const rankNo = Number(tr.querySelector('[data-field="rankNo"]').value);
+      const awardId = tr.querySelector('[data-field="awardId"]').value
+        ? Number(tr.querySelector('[data-field="awardId"]').value)
+        : null;
+      if (!rankNo || !Number.isFinite(rankNo)) return;
+      items.push({ subjectId, rankNo, awardId });
+    });
+    if (!items.length) {
+      B.toast("没有可保存的名次", "warn");
+      return;
+    }
+    const btn = document.getElementById("rankSaveBtn");
+    btn.disabled = true;
+    btn.textContent = "保存中…";
+    try {
+      await B.api.put("/admin/contests/" + rankState.contestId + "/winners", items);
+      B.toast("榜单已保存", "success");
+      await loadRanking();
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "保存调整";
+    }
+  }
+
+  async function recomputeRanking() {
+    if (!rankState.contestId) {
+      B.toast("请先选择赛事", "warn");
+      return;
+    }
+    if (!confirm("将按评审平均分重新生成该赛事全部名次与奖项，原手动调整将被覆盖。确定继续？")) return;
+    const btn = document.getElementById("rankRecomputeBtn");
+    btn.disabled = true;
+    btn.textContent = "重算中…";
+    try {
+      await B.api.post("/admin/contests/" + rankState.contestId + "/winners/recompute", {});
+      B.toast("已按分数重新生成榜单", "success");
+      await loadRanking();
+    } catch (e) {
+      B.toast(e.message || "重算失败", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "按分数重算";
+    }
   }
 
   function openModal(opts) {
@@ -415,12 +558,13 @@
         return `<tr>
           <td class="title-cell">
             ${B.escapeHtml(c.title)}
+            ${c.mode === "OFFLINE" ? '<span class="badge badge-plain" style="margin-left:6px">线下</span>' : '<span class="badge badge-soft" style="margin-left:6px">线上</span>'}
             ${c.isPublic ? "" : '<span class="badge badge-soft badge-plain" style="margin-left:6px">未公开</span>'}
           </td>
           <td><span class="badge ${info.cls}">${info.label}</span></td>
           <td class="num">${prizeHtml}</td>
           <td class="num">${c.signupCount || 0}</td>
-          <td class="num">${c.workCount || 0}</td>
+          <td class="num">${c.mode === "OFFLINE" ? "—" : c.workCount || 0}</td>
           <td>${B.formatDate(c.signupStart)} — ${B.formatDate(c.signupEnd)}</td>
           <td>${B.formatDate(c.reviewStart)} — ${B.formatDate(c.reviewEnd)}</td>
           <td>
@@ -501,6 +645,13 @@
             </select>
           </div>
           <div class="field">
+            <label>比赛类型</label>
+            <select class="select" name="mode">
+              <option value="ONLINE" ${(c.mode || "ONLINE") === "ONLINE" ? "selected" : ""}>线上比赛（提交作品）</option>
+              <option value="OFFLINE" ${(c.mode || "ONLINE") === "OFFLINE" ? "selected" : ""}>线下比赛（无作品，评委按选手打分）</option>
+            </select>
+          </div>
+          <div class="field">
             <label>奖金总额（元）</label>
             <input class="input" type="number" name="prizeAmount" min="0" max="999999999.99" step="0.01" placeholder="例如 10000，留空为无" value="${
               c.prizeAmount != null && Number(c.prizeAmount) > 0 ? Number(c.prizeAmount) : ""
@@ -548,6 +699,7 @@
           description: formValue(form, "description"),
           rules: formValue(form, "rules"),
           prizeAmount: formValue(form, "prizeAmount") === "" ? null : Number(formValue(form, "prizeAmount")),
+          mode: formValue(form, "mode") || "ONLINE",
           signupStart: formValue(form, "signupStart") || null,
           signupEnd: formValue(form, "signupEnd") || null,
           reviewStart: formValue(form, "reviewStart") || null,
@@ -593,7 +745,9 @@
           </select>
         </div>
         <div class="alert alert-warn" style="margin-top: 16px">
-          进入「评审中」会锁定全部作品；进入「已公示」会按当前榜单固化获奖名单。
+          ${contest.mode === "OFFLINE"
+            ? "线下比赛：评审对象为报名选手（无需提交作品）。进入「已公示」会按当前榜单固化获奖名单。"
+            : "进入「评审中」会锁定全部作品；进入「已公示」会按当前榜单固化获奖名单。"}
         </div>`,
       onSubmit: async (form) => {
         const status = formValue(form, "status");
@@ -1009,8 +1163,8 @@
             <td class="title-cell">${B.escapeHtml(a.name)}</td>
             <td class="num">${a.quota}</td>
             <td class="num">${
-              Number(a.prizeAmount || 0) > 0
-                ? "¥" + Number(a.prizeAmount).toLocaleString("zh-CN", { maximumFractionDigits: 0 })
+              B.formatPrize(a)
+                ? B.escapeHtml(B.formatPrize(a))
                 : '<span class="muted">—</span>'
             }</td>
             <td>
@@ -1064,9 +1218,15 @@
           </div>
           <div class="field">
             <label>奖金（元）</label>
-            <input class="input" type="number" name="prizeAmount" min="0" max="999999999.99" step="0.01" placeholder="例如 5000" value="${
+            <input class="input" type="number" name="prizeAmount" min="0" max="999999999.99" step="0.01" placeholder="留空为纯奖品" value="${
               Number(a.prizeAmount || 0) > 0 ? Number(a.prizeAmount) : ""
             }" />
+          </div>
+          <div class="field span-2">
+            <label>奖品</label>
+            <input class="input" name="gift" maxlength="255" placeholder="例如：小米手环 9 / 荣誉证书 + 定制徽章，留空为纯奖金" value="${B.escapeHtml(
+              a.gift || ""
+            )}" />
           </div>
           <div class="field">
             <label>排序</label>
@@ -1078,6 +1238,7 @@
           name: formValue(form, "name").trim(),
           quota: Number(formValue(form, "quota")),
           prizeAmount: formValue(form, "prizeAmount") === "" ? null : Number(formValue(form, "prizeAmount")),
+          gift: formValue(form, "gift").trim(),
           sortOrder: Number(formValue(form, "sortOrder") || 0),
         };
         if (!payload.name) throw new Error("请输入奖项名称");
@@ -1371,6 +1532,9 @@
       document.getElementById("siteName").value = data.name || "";
       document.getElementById("siteLogo").value = data.logoUrl || "";
       document.getElementById("siteFooter").value = data.footer || "";
+      document.getElementById("siteAboutIntro").value = data.aboutIntro || "";
+      document.getElementById("siteAboutRules").value = data.aboutRules || "";
+      document.getElementById("siteAboutContact").value = data.aboutContact || "";
     } catch (e) {
       B.toast(e.message || "站点信息加载失败", "error");
     }
@@ -1385,6 +1549,9 @@
         name: document.getElementById("siteName").value.trim(),
         logoUrl: document.getElementById("siteLogo").value.trim(),
         footer: document.getElementById("siteFooter").value.trim(),
+        aboutIntro: document.getElementById("siteAboutIntro").value,
+        aboutRules: document.getElementById("siteAboutRules").value,
+        aboutContact: document.getElementById("siteAboutContact").value,
       });
       B.toast("站点信息已保存", "success");
     } catch (e) {
@@ -1998,6 +2165,7 @@
       signups: initSignups,
       works: initWorks,
       judges: initJudges,
+      rankManage: initRankManage,
       awards: initAwards,
       notices: initNotices,
       export: initExport,
