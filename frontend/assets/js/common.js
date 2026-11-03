@@ -148,6 +148,11 @@
     const cover = contest.cover || "/assets/img/cover-1.svg";
     const info = B.statusInfo(contest.status);
     const signupEnd = contest.signupEnd ? B.formatDate(contest.signupEnd) : "待定";
+    const prize = Number(contest.prizeAmount || 0);
+    const prizeHtml =
+      prize > 0
+        ? `<span class="stat contest-prize">奖金 <b>¥${prize.toLocaleString("zh-CN", { maximumFractionDigits: 0 })}</b></span>`
+        : `<span class="stat">${contest.signupCount || 0} 人报名</span>`;
     const signupAction =
       contest.status === "SIGNUP"
         ? `<a class="btn btn-primary btn-sm" href="/signup.html?contestId=${contest.id}">立即报名</a>`
@@ -167,7 +172,7 @@
             <p>${B.escapeHtml(contest.summary || "暂无赛事简介")}</p>
             <div class="contest-meta">
               <span class="stat">报名截止 <b>${signupEnd}</b></span>
-              <span class="stat">${contest.signupCount || 0} 人报名</span>
+              ${prizeHtml}
             </div>
           </div>
         </div>

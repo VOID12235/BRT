@@ -139,8 +139,10 @@
     }
     document.getElementById("sideActions").innerHTML = actions.join("");
 
+    const prize = Number(c.prizeAmount || 0);
     document.getElementById("sideMeta").innerHTML = `
       <div><span>赛事状态</span><b>${B.statusInfo(c.status).label}</b></div>
+      ${prize > 0 ? `<div><span>赛事奖金</span><b class="prize-amount">¥${prize.toLocaleString("zh-CN", { maximumFractionDigits: 0 })}</b></div>` : ""}
       <div><span>报名截止</span><b>${B.formatDate(c.signupEnd)}</b></div>
       <div><span>评审时间</span><b>${B.formatDate(c.reviewStart)} 起</b></div>
       <div><span>报名人数</span><b>${c.signupCount || 0} 人</b></div>`;

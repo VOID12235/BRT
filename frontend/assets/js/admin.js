@@ -366,7 +366,7 @@
 
   async function loadContestTable() {
     const tbody = document.getElementById("contestTable");
-    tbody.innerHTML = '<tr><td colspan="7"><div class="skeleton" style="height: 60px"></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="8"><div class="skeleton" style="height: 60px"></div></td></tr>';
     try {
       const params = new URLSearchParams({
         all: "true",
@@ -392,7 +392,7 @@
         }
       );
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="7" class="muted center" style="padding:28px">${B.escapeHtml(
+      tbody.innerHTML = `<tr><td colspan="8" class="muted center" style="padding:28px">${B.escapeHtml(
         e.message || "加载失败"
       )}</td></tr>`;
     }
@@ -401,18 +401,24 @@
   function renderContestRows(list) {
     const tbody = document.getElementById("contestTable");
     if (!list.length) {
-      tbody.innerHTML = '<tr><td colspan="7" class="muted center" style="padding:28px">暂无赛事</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" class="muted center" style="padding:28px">暂无赛事</td></tr>';
       return;
     }
     tbody.innerHTML = list
       .map((c) => {
         const info = B.statusInfo(c.status);
+        const prize = Number(c.prizeAmount || 0);
+        const prizeHtml =
+          prize > 0
+            ? `¥${prize.toLocaleString("zh-CN", { maximumFractionDigits: 0 })}`
+            : '<span class="muted">—</span>';
         return `<tr>
           <td class="title-cell">
             ${B.escapeHtml(c.title)}
             ${c.isPublic ? "" : '<span class="badge badge-soft badge-plain" style="margin-left:6px">未公开</span>'}
           </td>
           <td><span class="badge ${info.cls}">${info.label}</span></td>
+          <td class="num">${prizeHtml}</td>
           <td class="num">${c.signupCount || 0}</td>
           <td class="num">${c.workCount || 0}</td>
           <td>${B.formatDate(c.signupStart)} — ${B.formatDate(c.signupEnd)}</td>
@@ -494,6 +500,12 @@
                 .join("")}
             </select>
           </div>
+          <div class="field">
+            <label>奖金总额（元）</label>
+            <input class="input" type="number" name="prizeAmount" min="0" max="999999999.99" step="0.01" placeholder="例如 10000，留空为无" value="${
+              c.prizeAmount != null && Number(c.prizeAmount) > 0 ? Number(c.prizeAmount) : ""
+            }" />
+          </div>
           <div class="field span-2">
             <label>赛事简介</label>
             <textarea class="textarea" name="summary" maxlength="500" style="min-height:70px" placeholder="一句话说明赛事主题">${B.escapeHtml(
@@ -535,6 +547,7 @@
           summary: formValue(form, "summary"),
           description: formValue(form, "description"),
           rules: formValue(form, "rules"),
+          prizeAmount: formValue(form, "prizeAmount") === "" ? null : Number(formValue(form, "prizeAmount")),
           signupStart: formValue(form, "signupStart") || null,
           signupEnd: formValue(form, "signupEnd") || null,
           reviewStart: formValue(form, "reviewStart") || null,
@@ -1884,3 +1897,4 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+

@@ -202,6 +202,7 @@ public class ContestService {
         contest.setSummary(req.summary());
         contest.setDescription(req.description());
         contest.setRules(req.rules());
+        contest.setPrizeAmount(req.prizeAmount());
         contest.setSignupStart(req.signupStart());
         contest.setSignupEnd(req.signupEnd());
         contest.setReviewStart(req.reviewStart());
@@ -225,6 +226,7 @@ public class ContestService {
         card.setSummary(contest.getSummary());
         card.setDescription(contest.getDescription());
         card.setRules(contest.getRules());
+        card.setPrizeAmount(contest.getPrizeAmount());
         card.setSignupStart(contest.getSignupStart());
         card.setSignupEnd(contest.getSignupEnd());
         card.setReviewStart(contest.getReviewStart());

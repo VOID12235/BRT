@@ -29,6 +29,8 @@ public final class Views {
         private String summary;
         private String description;
         private String rules;
+        /** 赛事奖金总额（元） */
+        private BigDecimal prizeAmount;
         private LocalDateTime signupStart;
         private LocalDateTime signupEnd;
         private LocalDateTime reviewStart;

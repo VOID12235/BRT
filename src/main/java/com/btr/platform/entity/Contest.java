@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -17,6 +18,8 @@ public class Contest {
     private String summary;
     private String description;
     private String rules;
+    /** 赛事奖金总额（元） */
+    private BigDecimal prizeAmount;
     private LocalDateTime signupStart;
     private LocalDateTime signupEnd;
     private LocalDateTime reviewStart;

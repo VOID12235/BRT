@@ -36,6 +36,7 @@ CREATE TABLE contest (
     summary VARCHAR(500),
     description TEXT,
     rules TEXT,
+    prize_amount DECIMAL(14,2) DEFAULT 0.00,
     signup_start DATETIME,
     signup_end DATETIME,
     review_start DATETIME,

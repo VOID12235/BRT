@@ -49,6 +49,8 @@ public final class Requests {
             @Size(max = 500, message = "简介最长 500 字") String summary,
             String description,
             String rules,
+            @DecimalMin(value = "0.00", message = "奖金不能为负") @DecimalMax(value = "999999999.99", message = "奖金数额过大")
+            BigDecimal prizeAmount,
             LocalDateTime signupStart,
             LocalDateTime signupEnd,
             LocalDateTime reviewStart,

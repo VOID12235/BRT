@@ -182,6 +182,16 @@
   font-weight: 650;
 }
 
+.contest-meta .contest-prize b {
+  color: var(--brand, #e8a33d);
+  font-size: 14px;
+}
+
+.summary-list .prize-amount {
+  color: var(--brand, #e8a33d);
+  font-weight: 700;
+}
+
 .contest-meta .stat {
   display: flex;
   align-items: center;
