@@ -24,3 +24,7 @@ Thumbs.db
 
 .preview/
 
+
+# Redis 本地持久化文件
+dump.rdb
+
