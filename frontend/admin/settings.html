@@ -143,12 +143,13 @@
         <section class="tab-panel" id="panel-templates">
           <div class="form-card">
             <h2>通知模板</h2>
-            <p class="muted" style="margin: 6px 0 18px">支持占位符：<code>{nickname}</code> <code>{contestTitle}</code> <code>{awardName}</code> <code>{code}</code>，HTML 内容。</p>
+            <p class="muted" style="margin: 6px 0 18px">邮件模板支持占位符：<code>{nickname}</code> <code>{contestTitle}</code> <code>{awardName}</code> <code>{code}</code>，HTML 内容；获奖证书模板每行一段，# 开头为标题、## 开头为强调，占位符：<code>{nickname}</code> <code>{contestTitle}</code> <code>{workTitle}</code> <code>{awardName}</code> <code>{rankNo}</code> <code>{prizeAmount}</code> <code>{date}</code>。</p>
             <div class="tabs" id="templateTabs" style="margin-bottom: 16px">
               <button class="is-active" data-tpl="template.signup_receipt">报名成功</button>
               <button data-tpl="template.review_reminder">评审提醒</button>
               <button data-tpl="template.winner_notice">获奖通知</button>
               <button data-tpl="template.verify_code">验证码邮件</button>
+              <button data-tpl="template.award_certificate">获奖证书</button>
             </div>
             <div class="field">
               <label id="templateName">模板内容</label>

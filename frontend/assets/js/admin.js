@@ -1454,6 +1454,7 @@
     "template.review_reminder": "评审提醒邮件",
     "template.winner_notice": "获奖通知邮件",
     "template.verify_code": "验证码邮件",
+    "template.award_certificate": "获奖证书（每行一段，# 标题 / ## 强调）",
   };
   let currentTemplateKey = "template.signup_receipt";
 

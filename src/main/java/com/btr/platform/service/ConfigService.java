@@ -58,6 +58,7 @@ public class ConfigService {
     public static final String KEY_TPL_REVIEW = "template.review_reminder";
     public static final String KEY_TPL_WINNER = "template.winner_notice";
     public static final String KEY_TPL_VERIFY = "template.verify_code";
+    public static final String KEY_TPL_CERT = "template.award_certificate";
     public static final String KEY_UPLOAD_MAX_MB = "upload.max_size_mb";
     public static final String KEY_UPLOAD_TYPES = "upload.allowed_types";
     public static final String KEY_SEC_LOGIN_FAIL_LIMIT = "security.login_fail_limit";
@@ -81,6 +82,15 @@ public class ConfigService {
     private static final String DEFAULT_TPL_VERIFY =
             "<p>Hi {nickname}，</p><p>你的验证码是：<b style=\"font-size:18px\">{code}</b></p>"
                     + "<p>验证码 10 分钟内有效，请勿泄露给他人。</p>";
+    public static final String DEFAULT_TPL_CERT =
+            "BTR 赛事平台\n"
+                    + "#获奖证书\n"
+                    + "兹证明 {nickname} 同学\n"
+                    + "在「{contestTitle}」赛事中，作品《{workTitle}》表现优异，荣获\n"
+                    + "##{awardName}\n"
+                    + "第 {rankNo} 名　·　奖金 ¥{prizeAmount}\n"
+                    + "颁发日期：{date}\n"
+                    + "BTR 赛事平台 · 本证书以公示获奖名单为准";
 
     private final SysConfigMapper sysConfigMapper;
 
@@ -111,6 +121,8 @@ public class ConfigService {
         setDefault(KEY_TPL_REVIEW, DEFAULT_TPL_REVIEW, "评审提醒邮件模板，占位符 {nickname} {contestTitle}");
         setDefault(KEY_TPL_WINNER, DEFAULT_TPL_WINNER, "获奖通知邮件模板，占位符 {nickname} {contestTitle} {awardName}");
         setDefault(KEY_TPL_VERIFY, DEFAULT_TPL_VERIFY, "验证码邮件模板，占位符 {nickname} {code}");
+        setDefault(KEY_TPL_CERT, DEFAULT_TPL_CERT,
+                "获奖证书模板（每行一段，# 标题 ## 强调，占位符 {nickname} {contestTitle} {workTitle} {awardName} {rankNo} {prizeAmount} {date}）");
         setDefault(KEY_UPLOAD_MAX_MB, "50", "单文件上传上限（MB）");
         setDefault(KEY_UPLOAD_TYPES,
                 "jpg,jpeg,png,gif,webp,svg,pdf,zip,rar,7z,doc,docx,ppt,pptx,xls,xlsx,txt,md,mp4,mov",
@@ -297,7 +309,9 @@ public class ConfigService {
                 tpl(KEY_TPL_SIGNUP, "报名成功邮件", "占位符 {nickname} {contestTitle}"),
                 tpl(KEY_TPL_REVIEW, "评审提醒邮件", "占位符 {nickname} {contestTitle}"),
                 tpl(KEY_TPL_WINNER, "获奖通知邮件", "占位符 {nickname} {contestTitle} {awardName}"),
-                tpl(KEY_TPL_VERIFY, "验证码邮件", "占位符 {nickname} {code}"));
+                tpl(KEY_TPL_VERIFY, "验证码邮件", "占位符 {nickname} {code}"),
+                tpl(KEY_TPL_CERT, "获奖证书",
+                        "每行一段；# 标题、## 强调；占位符 {nickname} {contestTitle} {workTitle} {awardName} {rankNo} {prizeAmount} {date}"));
     }
 
     private TemplateConfig tpl(String key, String name, String desc) {

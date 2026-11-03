@@ -46,13 +46,16 @@ public class AwardService {
     private final WorkMapper workMapper;
     private final ContestMapper contestMapper;
     private final AwardMapper awardMapper;
+    private final ConfigService configService;
 
     public AwardService(WinnerMapper winnerMapper, WorkMapper workMapper,
-                        ContestMapper contestMapper, AwardMapper awardMapper) {
+                        ContestMapper contestMapper, AwardMapper awardMapper,
+                        ConfigService configService) {
         this.winnerMapper = winnerMapper;
         this.workMapper = workMapper;
         this.contestMapper = contestMapper;
         this.awardMapper = awardMapper;
+        this.configService = configService;
     }
 
     /** 当前用户的获奖明细（来自公示固化的 winner 快照） */
@@ -118,15 +121,27 @@ public class AwardService {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy年MM月dd日");
 
-    /** 生成获奖证书 PDF（A4 横向） */
+    /** 生成获奖证书 PDF（A4 横向）。证书文案来自后台「通知模板-获奖证书」，每行一段，支持 # 标题 / ## 强调。 */
     public byte[] buildCertificatePdf(AwardItem item, User user) {
         try {
             BaseFont baseFont = chineseFont();
-            Font titleFont = new Font(baseFont, 32, Font.BOLD);
-            Font nameFont = new Font(baseFont, 20, Font.BOLD);
-            Font awardFont = new Font(baseFont, 26, Font.BOLD);
-            Font bodyFont = new Font(baseFont, 14, Font.NORMAL);
-            Font smallFont = new Font(baseFont, 11, Font.NORMAL);
+            Font titleFont = new Font(baseFont, 26, Font.BOLD);
+            Font emphasisFont = new Font(baseFont, 20, Font.BOLD);
+            Font bodyFont = new Font(baseFont, 15, Font.NORMAL);
+
+            String template = configService.getTemplate(ConfigService.KEY_TPL_CERT,
+                    ConfigService.DEFAULT_TPL_CERT);
+            java.util.Map<String, String> vars = new java.util.HashMap<>();
+            vars.put("nickname", user == null ? "选手" : safe(user.getNickname()));
+            vars.put("contestTitle", safe(item.getContestTitle()));
+            vars.put("workTitle", safe(item.getWorkTitle()));
+            vars.put("awardName", safe(item.getAwardName()));
+            vars.put("rankNo", item.getRankNo() == null ? "" : String.valueOf(item.getRankNo()));
+            vars.put("prizeAmount", item.getPrizeAmount() == null ? ""
+                    : item.getPrizeAmount().stripTrailingZeros().toPlainString());
+            vars.put("date", item.getPublishedAt() == null ? "—"
+                    : item.getPublishedAt().format(DATE_FMT));
+            String rendered = ConfigService.render(template, vars);
 
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Document doc = new Document(PageSize.A4.rotate(), 44, 44, 44, 44);
@@ -141,58 +156,30 @@ public class AwardService {
             border.setBorderColor(new Color(0xE8, 0xA3, 0x3D));
             doc.add(border);
 
-            Paragraph brand = new Paragraph("BTR 赛事平台", smallFont);
-            brand.setAlignment(Element.ALIGN_RIGHT);
-            doc.add(brand);
-
-            Paragraph title = new Paragraph("获 奖 证 书", titleFont);
-            title.setAlignment(Element.ALIGN_CENTER);
-            title.setSpacingBefore(18);
-            title.setSpacingAfter(28);
-            doc.add(title);
-
-            String nickname = user == null ? "选手" : user.getNickname();
-            Paragraph line1 = new Paragraph("兹证明  " + nickname + "  同学", nameFont);
-            line1.setAlignment(Element.ALIGN_CENTER);
-            line1.setSpacingAfter(14);
-            doc.add(line1);
-
-            Paragraph line2 = new Paragraph("在「" + safe(item.getContestTitle()) + "」赛事中，作品《"
-                    + safe(item.getWorkTitle()) + "》表现优异，荣获", bodyFont);
-            line2.setAlignment(Element.ALIGN_CENTER);
-            line2.setSpacingAfter(18);
-            doc.add(line2);
-
-            Paragraph awardName = new Paragraph(safe(item.getAwardName()), awardFont);
-            awardName.setAlignment(Element.ALIGN_CENTER);
-            awardName.setSpacingAfter(14);
-            doc.add(awardName);
-
-            StringBuilder detail = new StringBuilder();
-            if (item.getRankNo() != null) {
-                detail.append("第 ").append(item.getRankNo()).append(" 名");
+            boolean first = true;
+            for (String rawLine : rendered.split("\\R")) {
+                String line = rawLine.trim();
+                if (line.isEmpty()) {
+                    continue;
+                }
+                Font font = bodyFont;
+                if (line.startsWith("##")) {
+                    line = line.substring(2).trim();
+                    font = emphasisFont;
+                } else if (line.startsWith("#")) {
+                    line = line.substring(1).trim();
+                    font = titleFont;
+                }
+                if (line.isEmpty()) {
+                    continue;
+                }
+                Paragraph paragraph = new Paragraph(line, font);
+                paragraph.setAlignment(Element.ALIGN_CENTER);
+                paragraph.setSpacingBefore(first ? 22 : 12);
+                paragraph.setSpacingAfter(6);
+                doc.add(paragraph);
+                first = false;
             }
-            if (item.getPrizeAmount() != null && item.getPrizeAmount().signum() > 0) {
-                detail.append("　·　奖金 ¥")
-                        .append(item.getPrizeAmount().stripTrailingZeros().toPlainString());
-            }
-            if (!detail.isEmpty()) {
-                Paragraph awardDetail = new Paragraph(detail.toString(), nameFont);
-                awardDetail.setAlignment(Element.ALIGN_CENTER);
-                awardDetail.setSpacingAfter(32);
-                doc.add(awardDetail);
-            }
-
-            Paragraph date = new Paragraph("颁发日期：" + (item.getPublishedAt() == null ? "—"
-                    : item.getPublishedAt().format(DATE_FMT)), bodyFont);
-            date.setAlignment(Element.ALIGN_CENTER);
-            date.setSpacingBefore(60);
-            doc.add(date);
-
-            Paragraph footer = new Paragraph("BTR 赛事平台 · 本证书以公示获奖名单为准", smallFont);
-            footer.setAlignment(Element.ALIGN_CENTER);
-            footer.setSpacingBefore(10);
-            doc.add(footer);
 
             doc.close();
             return out.toByteArray();
