@@ -63,7 +63,7 @@
             <div class="card">
               <div class="card-head">
                 <div><h3>个人信息</h3><p>账号信息与联系方式</p></div>
-                <span class="badge badge-soft badge-plain" id="profileStatus">正常</span>
+                <button type="button" class="btn btn-outline btn-sm" id="editProfileBtn">编辑</button>
               </div>
               <div class="card-body">
                 <div class="meta-list" id="profileMeta">
@@ -111,6 +111,41 @@
   </main>
 
   <div data-footer></div>
+
+  <!-- 编辑个人信息弹窗 -->
+  <div class="uc-modal-overlay" id="editProfileModal" hidden>
+    <div class="uc-modal">
+      <div class="uc-modal-head">
+        <h3>编辑个人信息</h3>
+        <button type="button" class="uc-modal-close" data-close-modal="editProfileModal">×</button>
+      </div>
+      <div class="uc-modal-body">
+        <div class="field">
+          <label for="editNickname">昵称</label>
+          <input class="input" type="text" id="editNickname" maxlength="32" placeholder="展示名称" />
+        </div>
+        <div class="field">
+          <label for="editPhone">手机号</label>
+          <input class="input" type="text" id="editPhone" maxlength="20" placeholder="选填，用于赛事联系" />
+        </div>
+      </div>
+      <div class="uc-modal-foot">
+        <button type="button" class="btn btn-ghost" data-close-modal="editProfileModal">取消</button>
+        <button type="button" class="btn btn-primary" id="saveProfileBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 获奖明细弹窗 -->
+  <div class="uc-modal-overlay" id="awardModal" hidden>
+    <div class="uc-modal uc-modal-lg">
+      <div class="uc-modal-head">
+        <h3>我的获奖</h3>
+        <button type="button" class="uc-modal-close" data-close-modal="awardModal">×</button>
+      </div>
+      <div class="uc-modal-body" id="awardModalBody"></div>
+    </div>
+  </div>
 
   <script src="/assets/js/api.js"></script>
   <script src="/assets/js/common.js"></script>

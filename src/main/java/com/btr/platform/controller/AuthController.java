@@ -1,6 +1,7 @@
 package com.btr.platform.controller;
 
 import com.btr.platform.common.ApiResponse;
+import com.btr.platform.dto.Requests;
 import com.btr.platform.dto.Requests.ForgotPasswordReq;
 import com.btr.platform.dto.Requests.LoginReq;
 import com.btr.platform.dto.Requests.RefreshReq;
@@ -15,6 +16,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -66,6 +68,11 @@ public class AuthController {
     @GetMapping("/me")
     public ApiResponse<UserView> me() {
         return ApiResponse.ok(authService.me(SecurityUtils.current().id()));
+    }
+
+    @PutMapping("/me")
+    public ApiResponse<UserView> updateMe(@Valid @RequestBody Requests.UpdateProfileReq req) {
+        return ApiResponse.ok(authService.updateProfile(SecurityUtils.current().id(), req));
     }
 
     @GetMapping("/captcha")

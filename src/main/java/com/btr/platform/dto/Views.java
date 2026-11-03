@@ -246,6 +246,25 @@ public final class Views {
     }
 
     @Data
+    public static class AwardItem {
+        private Long contestId;
+        private String contestTitle;
+        private Long awardId;
+        private String awardName;
+        private BigDecimal prizeAmount;
+        private Integer rankNo;
+        private Long workId;
+        private String workTitle;
+        private LocalDateTime publishedAt;
+    }
+
+    @Data
+    public static class MyAwards {
+        private long total;
+        private List<AwardItem> items;
+    }
+
+    @Data
     public static class SiteConfig {
         private String name;
         private String logoUrl;

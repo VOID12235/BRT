@@ -5,6 +5,7 @@
     signups: [],
     works: [],
     contests: {},
+    awards: { total: 0, items: [] },
   };
 
   async function init() {
@@ -13,13 +14,16 @@
     state.user = user;
 
     bindTabs();
+    bindModals();
+    bindEditProfile();
     renderProfile(user);
 
-    const [me, signups, works, contests] = await Promise.allSettled([
+    const [me, signups, works, contests, awards] = await Promise.allSettled([
       B.api.get("/auth/me"),
       B.api.get("/signups/mine"),
       B.api.get("/works/mine"),
       B.api.get("/contests?page=1&size=50"),
+      B.api.get("/awards/mine"),
     ]);
 
     if (me.status === "fulfilled") {
@@ -32,12 +36,14 @@
     if (contests.status === "fulfilled") {
       (contests.value.records || []).forEach((c) => (state.contests[c.id] = c));
     }
+    if (awards.status === "fulfilled") {
+      state.awards = awards.value || { total: 0, items: [] };
+    }
 
     renderSignupCount();
     renderSignups();
     renderWorks();
     renderOverview();
-    loadAwards();
   }
 
   function bindTabs() {
@@ -58,25 +64,74 @@
     }
   }
 
+  /* ------------------------- 弹窗通用 ------------------------- */
+
+  function bindModals() {
+    document.querySelectorAll("[data-close-modal]").forEach((btn) => {
+      btn.addEventListener("click", () => closeModal(btn.dataset.closeModal));
+    });
+    document.querySelectorAll(".uc-modal-overlay").forEach((overlay) => {
+      overlay.addEventListener("click", (e) => {
+        if (e.target === overlay) overlay.hidden = true;
+      });
+    });
+  }
+
+  function openModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.hidden = false;
+  }
+
+  function closeModal(id) {
+    const el = document.getElementById(id);
+    if (el) el.hidden = true;
+  }
+
+  /* ------------------------- 个人信息 ------------------------- */
+
   function renderProfile(user) {
     const name = user.nickname || user.account || "选手";
     document.getElementById("profileAvatar").textContent = name.slice(0, 1);
     document.getElementById("profileName").textContent = name;
     document.getElementById("profileAccount").textContent = "@" + (user.account || "—");
     document.getElementById("profileRole").textContent = B.roleLabel(user.role);
-    document.getElementById("profileStatus").textContent =
-      user.status === "ACTIVE" ? "账号正常" : "账号已禁用";
-    document.getElementById("profileStatus").className =
-      "badge badge-plain " + (user.status === "ACTIVE" ? "badge-signup" : "badge-review");
 
     document.getElementById("profileMeta").innerHTML = `
       <div><span>账号</span><b>${B.escapeHtml(user.account || "—")}</b></div>
       <div><span>昵称</span><b>${B.escapeHtml(user.nickname || "—")}</b></div>
       <div><span>邮箱</span><b>${B.escapeHtml(user.email || "未填写")}</b></div>
-      <div><span>手机号</span><b>${B.escapeHtml(user.phone || "未填写")}</b></div>
-      <div><span>角色</span><b>${B.roleLabel(user.role)}</b></div>
-      <div><span>注册时间</span><b>${B.formatDate(user.createdAt)}</b></div>`;
+      <div><span>手机号</span><b>${B.escapeHtml(user.phone || "未填写")}</b></div>`;
   }
+
+  function bindEditProfile() {
+    const modalId = "editProfileModal";
+    document.getElementById("editProfileBtn").addEventListener("click", () => {
+      document.getElementById("editNickname").value = state.user.nickname || "";
+      document.getElementById("editPhone").value = state.user.phone || "";
+      openModal(modalId);
+      document.getElementById("editNickname").focus();
+    });
+    document.getElementById("saveProfileBtn").addEventListener("click", async () => {
+      const nickname = document.getElementById("editNickname").value.trim();
+      const phone = document.getElementById("editPhone").value.trim();
+      if (!nickname) {
+        B.toast("昵称不能为空", "error");
+        return;
+      }
+      try {
+        const me = await B.api.put("/auth/me", { nickname, phone });
+        state.user = me;
+        B.storage.saveUser(me);
+        renderProfile(me);
+        closeModal(modalId);
+        B.toast("个人信息已更新", "success");
+      } catch (e) {
+        B.toast(e.message || "保存失败", "error");
+      }
+    });
+  }
+
+  /* ------------------------- 统计与概览 ------------------------- */
 
   function renderSignupCount() {
     const active = state.signups.filter((s) => s.status !== "CANCELED").length;
@@ -87,16 +142,12 @@
     document.getElementById("statWorks").textContent = state.works.filter(
       (w) => w.status === "SUBMITTED"
     ).length;
+    document.getElementById("statAwards").textContent = state.awards.total;
   }
 
   function renderOverview() {
     const host = document.getElementById("overviewGrid");
     const submitted = state.works.filter((w) => w.status === "SUBMITTED");
-    const scored = submitted.filter((w) => Number(w.scoreCount) > 0);
-    const avg =
-      scored.length > 0
-        ? scored.reduce((sum, w) => sum + Number(w.avgScore || 0), 0) / scored.length
-        : 0;
 
     host.innerHTML = `
       <div class="stat-card">
@@ -107,35 +158,63 @@
       <div class="stat-card">
         <div class="label"><span class="dot"></span>提交作品</div>
         <div class="value">${submitted.length}</div>
-        <div class="foot">${scored.length} 件已被评分</div>
+        <div class="foot">${state.works.length} 件作品</div>
       </div>
-      <div class="stat-card accent">
-        <div class="label"><span class="dot"></span>平均得分</div>
-        <div class="value">${scored.length ? avg.toFixed(2) : "—"}</div>
-        <div class="foot">${scored.length ? "按已评分作品计算" : "等待评委打分"}</div>
+      <div class="stat-card accent" style="cursor:pointer" data-open-awards>
+        <div class="label"><span class="dot"></span>得奖次数</div>
+        <div class="value">${state.awards.total}</div>
+        <div class="foot">点击查看获奖明细</div>
       </div>`;
+
+    host.querySelector("[data-open-awards]").addEventListener("click", openAwardModal);
   }
 
-  async function loadAwards() {
-    const contests = Object.values(state.contests).filter(
-      (c) => c.status === "PUBLISHED" || c.status === "FINISHED"
-    );
-    const myWorkIds = new Set(state.works.map((w) => w.id));
-    let awards = 0;
-    await Promise.all(
-      contests.map(async (c) => {
-        try {
-          const rank = await B.api.get("/ranks?contestId=" + c.id);
-          (rank.rows || []).forEach((row) => {
-            if (myWorkIds.has(row.workId) && row.awardName) awards++;
-          });
-        } catch (e) {
-          /* ignore */
-        }
-      })
-    );
-    document.getElementById("statAwards").textContent = awards;
+  /* ------------------------- 获奖明细与 PDF ------------------------- */
+
+  function openAwardModal() {
+    const host = document.getElementById("awardModalBody");
+    const items = state.awards.items || [];
+    if (!items.length) {
+      host.innerHTML = B.emptyState("暂无获奖记录", "作品获奖并公示后，这里会展示你的获奖证书");
+    } else {
+      host.innerHTML = items
+        .map((a) => {
+          const medalCls =
+            a.rankNo === 1 ? "gold" : a.rankNo === 2 ? "silver" : a.rankNo === 3 ? "bronze" : "other";
+          const medalText =
+            a.rankNo && a.rankNo <= 3 ? a.rankNo : (a.awardName || "奖").slice(0, 1);
+          const prize =
+            a.prizeAmount && Number(a.prizeAmount) > 0
+              ? " · 奖金 ¥" + Number(a.prizeAmount).toLocaleString()
+              : "";
+          return `<div class="award-item">
+            <div class="award-medal ${medalCls}">${B.escapeHtml(medalText)}</div>
+            <div class="award-info">
+              <h4>${B.escapeHtml(a.awardName || "获奖")}${
+                a.rankNo ? ` <span class="award-tag">第 ${a.rankNo} 名</span>` : ""
+              }</h4>
+              <p>${B.escapeHtml(a.contestTitle || "未知赛事")} · 作品《${B.escapeHtml(a.workTitle || "—")}》${prize}</p>
+              <p style="margin-top:2px">颁发于 ${B.formatDate(a.publishedAt)}</p>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" data-download-pdf="${a.contestId}" data-title="${B.escapeHtml(a.contestTitle || "证书")}">下载 PDF</button>
+          </div>`;
+        })
+        .join("");
+    }
+    host.querySelectorAll("[data-download-pdf]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const contestId = btn.dataset.downloadPdf;
+        const title = btn.dataset.title || "获奖证书";
+        B.toast("正在生成获奖证书…");
+        B.download("/awards/mine/pdf?contestId=" + contestId, "获奖证书-" + title + ".pdf").catch(
+          (e) => B.toast(e.message || "下载失败", "error")
+        );
+      });
+    });
+    openModal("awardModal");
   }
+
+  /* ------------------------- 报名 / 作品（沿用原逻辑） ------------------------- */
 
   function renderSignups() {
     const host = document.getElementById("signupList");

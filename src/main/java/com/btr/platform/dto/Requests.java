@@ -201,4 +201,13 @@ public final class Requests {
             @Size(min = 6, max = 32, message = "密码长度为 6-32 位")
             String newPassword) {
     }
+
+    /* ------------------------- 个人资料请求 ------------------------- */
+
+    public record UpdateProfileReq(
+            @NotBlank(message = "昵称不能为空")
+            @Size(max = 32, message = "昵称最长 32 个字符")
+            String nickname,
+            @Size(max = 20, message = "手机号最长 20 位") String phone) {
+    }
 }

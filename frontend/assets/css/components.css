@@ -1275,3 +1275,83 @@ input[type="range"] {
   font-size: 10px;
   font-weight: 700;
 }
+
+/* ============ 个人中心弹窗 ============ */
+.uc-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 14, 18, 0.45);
+  backdrop-filter: blur(2px);
+}
+.uc-modal-overlay[hidden] { display: none; }
+.uc-modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 82vh;
+  overflow: auto;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgba(10, 14, 18, 0.18);
+  box-sizing: border-box;
+}
+.uc-modal-lg { max-width: 680px; }
+.uc-modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.uc-modal-head h3 { margin: 0; font-size: 17px; }
+.uc-modal-close {
+  border: 0;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--muted);
+  cursor: pointer;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+}
+.uc-modal-close:hover { background: var(--bg-soft); color: var(--text); }
+.uc-modal-body { padding: 20px 22px; }
+.uc-modal-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 22px 18px;
+}
+.award-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.award-item:last-child { border-bottom: 0; }
+.award-medal {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 15px;
+  color: #fff;
+}
+.award-medal.gold { background: linear-gradient(135deg, #e8a33d, #c97f1c); }
+.award-medal.silver { background: linear-gradient(135deg, #b8c0cc, #8a93a3); }
+.award-medal.bronze { background: linear-gradient(135deg, #d3926a, #a86a41); }
+.award-medal.other { background: linear-gradient(135deg, var(--brand), #7a6cff); }
+.award-info { flex: 1; min-width: 0; }
+.award-info h4 { margin: 0 0 4px; font-size: 15px; }
+.award-info p { margin: 0; font-size: 13px; color: var(--muted); }
+.award-info .award-tag { font-weight: 700; color: var(--brand); }
