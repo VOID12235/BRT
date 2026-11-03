@@ -157,6 +157,8 @@ public final class Views {
         private BigDecimal avgScore;
         private long scoreCount;
         private String awardName;
+        /** 该获奖者所得奖金（元），未获奖为 null */
+        private BigDecimal prizeAmount;
     }
 
     @Data

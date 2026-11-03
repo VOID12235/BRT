@@ -165,6 +165,7 @@ public class RankService {
             while (cursor < rows.size() && taken < award.getQuota()) {
                 RankRow row = rows.get(cursor);
                 row.setAwardName(award.getName());
+                row.setPrizeAmount(award.getPrizeAmount());
                 grouped.computeIfAbsent(award.getId(), k -> new ArrayList<>()).add(row);
                 cursor++;
                 taken++;
