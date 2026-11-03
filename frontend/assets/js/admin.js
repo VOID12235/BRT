@@ -1294,6 +1294,12 @@
       if (tab === "templates") loadTemplates();
       if (tab === "uploads") loadUploadConfig();
       if (tab === "security") loadSecurityConfig();
+      if (tab === "infra") {
+        loadDbConfig();
+        loadRedisConfig();
+        testDb();
+        testRedis();
+      }
     });
 
     document.getElementById("saveMailBtn").addEventListener("click", saveMailConfig);
@@ -1303,6 +1309,10 @@
     document.getElementById("saveTemplateBtn").addEventListener("click", saveTemplate);
     document.getElementById("saveUploadsBtn").addEventListener("click", saveUploadConfig);
     document.getElementById("saveSecurityBtn").addEventListener("click", saveSecurityConfig);
+    document.getElementById("saveDbBtn").addEventListener("click", saveDbConfig);
+    document.getElementById("testDbBtn").addEventListener("click", testDb);
+    document.getElementById("saveRedisBtn").addEventListener("click", saveRedisConfig);
+    document.getElementById("testRedisBtn").addEventListener("click", testRedis);
 
     const tplTabs = document.getElementById("templateTabs");
     tplTabs.querySelectorAll("button[data-tpl]").forEach((btn) => {
@@ -1545,6 +1555,132 @@
       B.toast(e.message || "保存失败", "error");
     } finally {
       setSaving(btn, false);
+    }
+  }
+
+  /* ------------------------- 基础配置：数据连接（MySQL / Redis） ------------------------- */
+
+  function dbForm() {
+    return {
+      host: document.getElementById("dbHost").value.trim(),
+      port: Number(document.getElementById("dbPort").value) || 3306,
+      database: document.getElementById("dbDatabase").value.trim(),
+      username: document.getElementById("dbUsername").value.trim(),
+      password: document.getElementById("dbPassword").value,
+    };
+  }
+
+  function redisForm() {
+    return {
+      host: document.getElementById("redisHost").value.trim(),
+      port: Number(document.getElementById("redisPort").value) || 6379,
+      password: document.getElementById("redisPassword").value,
+      database: Number(document.getElementById("redisDatabase").value) || 0,
+    };
+  }
+
+  function setConnStatus(el, data) {
+    if (!el) return;
+    if (data && data.success) {
+      el.innerHTML = '<span style="color:#16a34a;font-weight:600">&#10003; 已连接</span>'
+        + (data.detail ? ' <span style="color:#16a34a">· ' + B.escapeHtml(String(data.detail)) + '</span>' : '')
+        + (data.costMs != null ? ' <span style="color:#6b7280">· ' + Number(data.costMs) + 'ms</span>' : '');
+    } else {
+      const msg = data && data.message ? B.escapeHtml(String(data.message)) : "连接失败";
+      el.innerHTML = '<span style="color:#dc2626;font-weight:600">&#10007; ' + msg + '</span>';
+    }
+  }
+
+  async function loadDbConfig() {
+    try {
+      const data = await B.api.get("/admin/config/db");
+      document.getElementById("dbHost").value = data.host || "";
+      document.getElementById("dbPort").value = data.port || 3306;
+      document.getElementById("dbDatabase").value = data.database || "";
+      document.getElementById("dbUsername").value = data.username || "";
+      document.getElementById("dbPassword").value = "";
+      document.getElementById("dbPassword").placeholder = data.password ? "已设置（留空不修改）" : "未设置";
+      setConnStatus(document.getElementById("dbStatus"), null);
+    } catch (e) {
+      B.toast(e.message || "数据库配置加载失败", "error");
+    }
+  }
+
+  async function saveDbConfig() {
+    const btn = document.getElementById("saveDbBtn");
+    btn.dataset.origin = btn.textContent;
+    setSaving(btn, true);
+    try {
+      await B.api.put("/admin/config/db", dbForm());
+      B.toast("MySQL 配置已保存", "success");
+      loadDbConfig();
+      testDb();
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      setSaving(btn, false);
+    }
+  }
+
+  async function testDb() {
+    const btn = document.getElementById("testDbBtn");
+    btn.disabled = true;
+    btn.textContent = "测试中…";
+    try {
+      const data = await B.api.post("/admin/config/db/test", dbForm());
+      setConnStatus(document.getElementById("dbStatus"), data);
+      B.toast(data.message, data.success ? "success" : "error");
+    } catch (e) {
+      B.toast(e.message || "测试失败", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "测试连接";
+    }
+  }
+
+  async function loadRedisConfig() {
+    try {
+      const data = await B.api.get("/admin/config/redis");
+      document.getElementById("redisHost").value = data.host || "127.0.0.1";
+      document.getElementById("redisPort").value = data.port || 6379;
+      document.getElementById("redisDatabase").value = data.database || 0;
+      document.getElementById("redisPassword").value = "";
+      document.getElementById("redisPassword").placeholder = data.password ? "已设置（留空不修改）" : "未设置";
+      setConnStatus(document.getElementById("redisStatus"), null);
+    } catch (e) {
+      B.toast(e.message || "缓存配置加载失败", "error");
+    }
+  }
+
+  async function saveRedisConfig() {
+    const btn = document.getElementById("saveRedisBtn");
+    btn.dataset.origin = btn.textContent;
+    setSaving(btn, true);
+    try {
+      await B.api.put("/admin/config/redis", redisForm());
+      B.toast("Redis 配置已保存", "success");
+      loadRedisConfig();
+      testRedis();
+    } catch (e) {
+      B.toast(e.message || "保存失败", "error");
+    } finally {
+      setSaving(btn, false);
+    }
+  }
+
+  async function testRedis() {
+    const btn = document.getElementById("testRedisBtn");
+    btn.disabled = true;
+    btn.textContent = "测试中…";
+    try {
+      const data = await B.api.post("/admin/config/redis/test", redisForm());
+      setConnStatus(document.getElementById("redisStatus"), data);
+      B.toast(data.message, data.success ? "success" : "error");
+    } catch (e) {
+      B.toast(e.message || "测试失败", "error");
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "测试连接";
     }
   }
 

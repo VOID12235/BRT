@@ -1,7 +1,9 @@
 package com.btr.platform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.btr.platform.dto.Views.DbConfig;
 import com.btr.platform.dto.Views.MailConfig;
+import com.btr.platform.dto.Views.RedisConfig;
 import com.btr.platform.dto.Views.SecurityConfig;
 import com.btr.platform.dto.Views.SiteConfig;
 import com.btr.platform.dto.Views.SwitchesConfig;
@@ -60,6 +62,15 @@ public class ConfigService {
     public static final String KEY_UPLOAD_TYPES = "upload.allowed_types";
     public static final String KEY_SEC_LOGIN_FAIL_LIMIT = "security.login_fail_limit";
     public static final String KEY_SEC_LOGIN_LOCK_MINUTES = "security.login_lock_minutes";
+    public static final String KEY_DB_MYSQL_HOST = "db.mysql.host";
+    public static final String KEY_DB_MYSQL_PORT = "db.mysql.port";
+    public static final String KEY_DB_MYSQL_DATABASE = "db.mysql.database";
+    public static final String KEY_DB_MYSQL_USERNAME = "db.mysql.username";
+    public static final String KEY_DB_MYSQL_PASSWORD = "db.mysql.password";
+    public static final String KEY_REDIS_HOST = "redis.host";
+    public static final String KEY_REDIS_PORT = "redis.port";
+    public static final String KEY_REDIS_PASSWORD = "redis.password";
+    public static final String KEY_REDIS_DATABASE = "redis.database";
 
     private static final String DEFAULT_TPL_SIGNUP =
             "<p>Hi {nickname}，</p><p>你已成功报名 <b>{contestTitle}</b>，请留意作品提交截止时间。</p>";
@@ -106,6 +117,15 @@ public class ConfigService {
                 "可上传文件类型白名单（逗号分隔）");
         setDefault(KEY_SEC_LOGIN_FAIL_LIMIT, "5", "登录失败锁定阈值（次）");
         setDefault(KEY_SEC_LOGIN_LOCK_MINUTES, "10", "登录锁定时长（分钟）");
+        setDefault(KEY_DB_MYSQL_HOST, "", "MySQL 主机地址");
+        setDefault(KEY_DB_MYSQL_PORT, "3306", "MySQL 端口");
+        setDefault(KEY_DB_MYSQL_DATABASE, "", "MySQL 数据库名");
+        setDefault(KEY_DB_MYSQL_USERNAME, "", "MySQL 用户名");
+        setDefault(KEY_DB_MYSQL_PASSWORD, "", "MySQL 密码（加密存储）");
+        setDefault(KEY_REDIS_HOST, "127.0.0.1", "Redis 主机地址");
+        setDefault(KEY_REDIS_PORT, "6379", "Redis 端口");
+        setDefault(KEY_REDIS_PASSWORD, "", "Redis 密码（加密存储）");
+        setDefault(KEY_REDIS_DATABASE, "0", "Redis 数据库索引");
         log.info("系统配置默认值初始化完成");
     }
 
@@ -343,6 +363,100 @@ public class ConfigService {
         if (req.loginLockMinutes() != null && req.loginLockMinutes() > 0) {
             set(KEY_SEC_LOGIN_LOCK_MINUTES, String.valueOf(req.loginLockMinutes()), "登录锁定时长（分钟）");
         }
+    }
+
+    /* ------------------------- 数据库与缓存配置 ------------------------- */
+
+    public DbConfig getDb() {
+        DbConfig config = new DbConfig();
+        config.setHost(get(KEY_DB_MYSQL_HOST, ""));
+        config.setPort(getInt(KEY_DB_MYSQL_PORT, 3306));
+        config.setDatabase(get(KEY_DB_MYSQL_DATABASE, ""));
+        config.setUsername(get(KEY_DB_MYSQL_USERNAME, ""));
+        String password = get(KEY_DB_MYSQL_PASSWORD, "");
+        config.setPassword(password.isBlank() ? "" : MASKED);
+        return config;
+    }
+
+    public void updateDb(com.btr.platform.dto.Requests.DbConfigReq req) {
+        if (req.host() != null) {
+            set(KEY_DB_MYSQL_HOST, req.host().trim(), "MySQL 主机地址");
+        }
+        if (req.port() != null) {
+            set(KEY_DB_MYSQL_PORT, String.valueOf(req.port()), "MySQL 端口");
+        }
+        if (req.database() != null) {
+            set(KEY_DB_MYSQL_DATABASE, req.database().trim(), "MySQL 数据库名");
+        }
+        if (req.username() != null) {
+            set(KEY_DB_MYSQL_USERNAME, req.username().trim(), "MySQL 用户名");
+        }
+        if (req.password() != null && !req.password().isBlank() && !MASKED.equals(req.password())) {
+            set(KEY_DB_MYSQL_PASSWORD, encrypt(req.password().trim()), "MySQL 密码（加密存储）");
+        }
+    }
+
+    /** MySQL 明文配置（内部使用，不回显） */
+    public DbRuntime dbRuntime() {
+        DbRuntime runtime = new DbRuntime();
+        runtime.host = get(KEY_DB_MYSQL_HOST, "");
+        runtime.port = getInt(KEY_DB_MYSQL_PORT, 3306);
+        runtime.database = get(KEY_DB_MYSQL_DATABASE, "");
+        runtime.username = get(KEY_DB_MYSQL_USERNAME, "");
+        String password = get(KEY_DB_MYSQL_PASSWORD, "");
+        runtime.password = password.isBlank() ? "" : decrypt(password);
+        return runtime;
+    }
+
+    public RedisConfig getRedis() {
+        RedisConfig config = new RedisConfig();
+        config.setHost(get(KEY_REDIS_HOST, "127.0.0.1"));
+        config.setPort(getInt(KEY_REDIS_PORT, 6379));
+        String password = get(KEY_REDIS_PASSWORD, "");
+        config.setPassword(password.isBlank() ? "" : MASKED);
+        config.setDatabase(getInt(KEY_REDIS_DATABASE, 0));
+        return config;
+    }
+
+    public void updateRedis(com.btr.platform.dto.Requests.RedisConfigReq req) {
+        if (req.host() != null) {
+            set(KEY_REDIS_HOST, req.host().trim(), "Redis 主机地址");
+        }
+        if (req.port() != null) {
+            set(KEY_REDIS_PORT, String.valueOf(req.port()), "Redis 端口");
+        }
+        if (req.password() != null && !req.password().isBlank() && !MASKED.equals(req.password())) {
+            set(KEY_REDIS_PASSWORD, encrypt(req.password().trim()), "Redis 密码（加密存储）");
+        }
+        if (req.database() != null) {
+            set(KEY_REDIS_DATABASE, String.valueOf(req.database()), "Redis 数据库索引");
+        }
+    }
+
+    /** Redis 明文配置（内部使用，不回显） */
+    public RedisRuntime redisRuntime() {
+        RedisRuntime runtime = new RedisRuntime();
+        runtime.host = get(KEY_REDIS_HOST, "127.0.0.1");
+        runtime.port = getInt(KEY_REDIS_PORT, 6379);
+        runtime.database = getInt(KEY_REDIS_DATABASE, 0);
+        String password = get(KEY_REDIS_PASSWORD, "");
+        runtime.password = password.isBlank() ? "" : decrypt(password);
+        return runtime;
+    }
+
+    public static class DbRuntime {
+        public String host;
+        public int port;
+        public String database;
+        public String username;
+        public String password;
+    }
+
+    public static class RedisRuntime {
+        public String host;
+        public int port;
+        public int database;
+        public String password;
     }
 
     /* ------------------------- 敏感项加密 ------------------------- */

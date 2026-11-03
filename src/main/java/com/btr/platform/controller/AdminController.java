@@ -8,9 +8,11 @@ import com.btr.platform.dto.Requests.AdminCreateUserReq;
 import com.btr.platform.dto.Requests.AssignReq;
 import com.btr.platform.dto.Requests.ChangeRoleReq;
 import com.btr.platform.dto.Requests.LockReq;
+import com.btr.platform.dto.Requests.DbConfigReq;
 import com.btr.platform.dto.Requests.MailConfigReq;
 import com.btr.platform.dto.Requests.MailTestReq;
 import com.btr.platform.dto.Requests.NoticeReq;
+import com.btr.platform.dto.Requests.RedisConfigReq;
 import com.btr.platform.dto.Requests.ResetPasswordReq;
 import com.btr.platform.dto.Requests.SecurityConfigReq;
 import com.btr.platform.dto.Requests.SignupStatusReq;
@@ -21,9 +23,11 @@ import com.btr.platform.dto.Requests.UploadConfigReq;
 import com.btr.platform.dto.Requests.UserStatusReq;
 import com.btr.platform.dto.Views.AssignView;
 import com.btr.platform.dto.Views.Dashboard;
+import com.btr.platform.dto.Views.DbConfig;
 import com.btr.platform.dto.Views.LogView;
 import com.btr.platform.dto.Views.MailConfig;
 import com.btr.platform.dto.Views.MailRecordView;
+import com.btr.platform.dto.Views.RedisConfig;
 import com.btr.platform.dto.Views.SecurityConfig;
 import com.btr.platform.dto.Views.SignupView;
 import com.btr.platform.dto.Views.SiteConfig;
@@ -44,6 +48,7 @@ import com.btr.platform.service.AuthService;
 import com.btr.platform.service.ConfigService;
 import com.btr.platform.service.DashboardService;
 import com.btr.platform.service.EmailService;
+import com.btr.platform.service.InfraTestService;
 import com.btr.platform.service.ExportService;
 import com.btr.platform.service.JudgeService;
 import com.btr.platform.service.LogService;
@@ -85,6 +90,7 @@ public class AdminController {
     private final ExportService exportService;
     private final ConfigService configService;
     private final EmailService emailService;
+    private final InfraTestService infraTestService;
     private final SysLogMapper sysLogMapper;
     private final EmailRecordMapper emailRecordMapper;
     private final UserMapper userMapper;
@@ -94,6 +100,7 @@ public class AdminController {
                            WorkService workService, JudgeService judgeService, AuthService authService,
                            NoticeService noticeService, ExportService exportService,
                            ConfigService configService, EmailService emailService,
+                           InfraTestService infraTestService,
                            SysLogMapper sysLogMapper, EmailRecordMapper emailRecordMapper,
                            UserMapper userMapper, LogService logService) {
         this.dashboardService = dashboardService;
@@ -105,6 +112,7 @@ public class AdminController {
         this.exportService = exportService;
         this.configService = configService;
         this.emailService = emailService;
+        this.infraTestService = infraTestService;
         this.sysLogMapper = sysLogMapper;
         this.emailRecordMapper = emailRecordMapper;
         this.userMapper = userMapper;
@@ -314,6 +322,46 @@ public class AdminController {
         configService.updateSecurity(req);
         logAdmin("CONFIG_SECURITY", "更新安全策略", request);
         return ApiResponse.ok();
+    }
+
+    /* ------------------------- 基础配置：数据库与缓存 ------------------------- */
+
+    @GetMapping("/config/db")
+    public ApiResponse<DbConfig> dbConfig() {
+        return ApiResponse.ok(configService.getDb());
+    }
+
+    @PutMapping("/config/db")
+    public ApiResponse<Void> updateDbConfig(@Valid @RequestBody DbConfigReq req, HttpServletRequest request) {
+        configService.updateDb(req);
+        logAdmin("CONFIG_DB", "更新 MySQL 配置", request);
+        return ApiResponse.ok();
+    }
+
+    @PostMapping("/config/db/test")
+    public ApiResponse<Map<String, Object>> testDb(@Valid @RequestBody DbConfigReq req, HttpServletRequest request) {
+        Map<String, Object> result = infraTestService.testMySql(req);
+        logAdmin("CONFIG_DB_TEST", "MySQL 连接测试：" + result.get("message"), request);
+        return ApiResponse.ok(result);
+    }
+
+    @GetMapping("/config/redis")
+    public ApiResponse<RedisConfig> redisConfig() {
+        return ApiResponse.ok(configService.getRedis());
+    }
+
+    @PutMapping("/config/redis")
+    public ApiResponse<Void> updateRedisConfig(@Valid @RequestBody RedisConfigReq req, HttpServletRequest request) {
+        configService.updateRedis(req);
+        logAdmin("CONFIG_REDIS", "更新 Redis 配置", request);
+        return ApiResponse.ok();
+    }
+
+    @PostMapping("/config/redis/test")
+    public ApiResponse<Map<String, Object>> testRedis(@Valid @RequestBody RedisConfigReq req, HttpServletRequest request) {
+        Map<String, Object> result = infraTestService.testRedis(req);
+        logAdmin("CONFIG_REDIS_TEST", "Redis 连接测试：" + result.get("message"), request);
+        return ApiResponse.ok(result);
     }
 
     /* ------------------------- 账号权限管理 ------------------------- */

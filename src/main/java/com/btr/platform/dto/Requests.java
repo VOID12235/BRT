@@ -133,6 +133,23 @@ public final class Requests {
             @NotBlank(message = "请输入收件邮箱") @Email(message = "邮箱格式不正确") String to) {
     }
 
+    public record DbConfigReq(
+            String host,
+            @Min(value = 1, message = "端口不合法") @Max(value = 65535, message = "端口不合法") Integer port,
+            String database,
+            String username,
+            /** 为空或 "******" 时表示保留原密码 */
+            String password) {
+    }
+
+    public record RedisConfigReq(
+            String host,
+            @Min(value = 1, message = "端口不合法") @Max(value = 65535, message = "端口不合法") Integer port,
+            /** 为空或 "******" 时表示保留原密码 */
+            String password,
+            @Min(value = 0, message = "数据库索引不能为负") @Max(value = 15, message = "数据库索引最大 15") Integer database) {
+    }
+
     public record SiteConfigReq(String name, String logoUrl, String footer) {
     }
 

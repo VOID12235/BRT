@@ -20,7 +20,7 @@
         <div class="admin-page-head">
           <div>
             <h2>基础配置</h2>
-            <p>邮件服务、站点信息、系统开关、通知模板、上传参数与安全策略，保存后即时生效。</p>
+            <p>邮件服务、站点信息、系统开关、通知模板、上传参数、安全策略与数据连接，保存后即时生效。</p>
           </div>
         </div>
 
@@ -31,6 +31,7 @@
           <button data-tab="templates">通知模板</button>
           <button data-tab="uploads">上传参数</button>
           <button data-tab="security">安全策略</button>
+          <button data-tab="infra">数据连接</button>
         </div>
 
         <!-- 邮件服务 -->
@@ -197,6 +198,69 @@
             </div>
             <div style="margin-top:8px">
               <button class="btn btn-primary" id="saveSecurityBtn">保存安全策略</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 数据连接：MySQL / Redis -->
+        <section class="tab-panel" id="panel-infra">
+          <div class="form-card">
+            <h2>MySQL 数据库</h2>
+            <p class="muted" style="margin: 6px 0 18px">用于生产部署的数据库连接参数。密码以加密形式存储，回显均为占位符；「测试连接」可即时验证可达性与账号权限，不修改任何数据。</p>
+            <div class="form-grid">
+              <div class="field">
+                <label>主机地址 *</label>
+                <input class="input" id="dbHost" placeholder="例如 127.0.0.1" />
+              </div>
+              <div class="field">
+                <label>端口</label>
+                <input class="input" id="dbPort" type="number" min="1" max="65535" />
+              </div>
+              <div class="field">
+                <label>数据库名 *</label>
+                <input class="input" id="dbDatabase" placeholder="例如 btr_platform" />
+              </div>
+              <div class="field">
+                <label>用户名</label>
+                <input class="input" id="dbUsername" autocomplete="off" />
+              </div>
+              <div class="field">
+                <label>密码</label>
+                <input class="input" id="dbPassword" type="password" placeholder="留空表示不修改" autocomplete="new-password" />
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px">
+              <button class="btn btn-primary" id="saveDbBtn">保存数据库配置</button>
+              <button class="btn btn-outline" id="testDbBtn">测试连接</button>
+              <span class="tiny" id="dbStatus"></span>
+            </div>
+          </div>
+
+          <div class="form-card">
+            <h2>Redis 缓存</h2>
+            <p class="muted" style="margin: 6px 0 18px">用于缓存与限流等能力的连接参数。密码以加密形式存储；「测试连接」验证可达性与密码是否正确。</p>
+            <div class="form-grid">
+              <div class="field">
+                <label>主机地址 *</label>
+                <input class="input" id="redisHost" placeholder="例如 127.0.0.1" />
+              </div>
+              <div class="field">
+                <label>端口</label>
+                <input class="input" id="redisPort" type="number" min="1" max="65535" />
+              </div>
+              <div class="field">
+                <label>数据库索引</label>
+                <input class="input" id="redisDatabase" type="number" min="0" max="15" />
+              </div>
+              <div class="field">
+                <label>密码</label>
+                <input class="input" id="redisPassword" type="password" placeholder="留空表示不修改" autocomplete="new-password" />
+              </div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px">
+              <button class="btn btn-primary" id="saveRedisBtn">保存缓存配置</button>
+              <button class="btn btn-outline" id="testRedisBtn">测试连接</button>
+              <span class="tiny" id="redisStatus"></span>
             </div>
           </div>
         </section>

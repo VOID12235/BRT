@@ -227,6 +227,25 @@ public final class Views {
     }
 
     @Data
+    public static class DbConfig {
+        private String host;
+        private Integer port;
+        private String database;
+        private String username;
+        /** 回显时一律为脱敏值，不暴露真实密码 */
+        private String password;
+    }
+
+    @Data
+    public static class RedisConfig {
+        private String host;
+        private Integer port;
+        /** 回显时一律为脱敏值，不暴露真实密码 */
+        private String password;
+        private Integer database;
+    }
+
+    @Data
     public static class SiteConfig {
         private String name;
         private String logoUrl;
