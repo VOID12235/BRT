@@ -1,0 +1,12 @@
+target/
+.tools/
+.git/
+.idea/
+.vscode/
+uploads/
+logs/
+backups/
+deploy/data/
+*.log
+*.iml
+README.md

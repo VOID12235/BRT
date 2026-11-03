@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>在线打分 · BTR 评委工作台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="judge-body">
+  <header class="judge-topbar">
+    <a class="brand" href="/index.html">
+      <span class="brand-mark">B</span>
+      <span class="brand-name">BTR<em>评委工作台</em></span>
+    </a>
+    <nav>
+      <a href="/judge/judge-index.html">评审任务</a>
+      <a href="/judge/judge-score.html" class="is-active">在线打分</a>
+      <a href="/rank.html">榜单公示</a>
+    </nav>
+    <div class="right">
+      <span id="judgeName">评委</span>
+      <a class="btn btn-outline btn-xs" href="/index.html" style="border-color: rgba(255,255,255,.25); color: #fff">返回前台</a>
+    </div>
+  </header>
+
+  <main class="container" style="padding: 28px 0 72px">
+    <div class="score-layout">
+      <aside class="card side-card" style="padding: 16px">
+        <div class="row-between" style="margin-bottom: 12px">
+          <h3 style="margin: 0">我的任务</h3>
+          <span class="tiny muted" id="taskCounter"></span>
+        </div>
+        <select class="select" id="contestFilter" style="margin-bottom: 10px"></select>
+        <div class="task-list" id="taskList">
+          <div class="skeleton" style="height: 60px"></div>
+        </div>
+      </aside>
+
+      <section id="workPanel">
+        <div class="card task-work">
+          <div class="skeleton" style="height: 220px"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/judge.js"></script>
+</body>
+</html>

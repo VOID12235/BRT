@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>赛事报名 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="page-head">
+        <div class="breadcrumb"><a href="/index.html">首页</a><span>/</span><a href="/contest-list.html">赛事</a><span>/</span><span>报名</span></div>
+        <h1>赛事报名</h1>
+        <p>填写真实信息完成报名。报名成功后即可提交作品，截止后不可修改。</p>
+      </div>
+
+      <div class="form-page">
+        <div class="card form-card" id="formCard">
+          <h2>报名信息</h2>
+          <p class="sub">带 * 的字段为必填项，请确保联系方式可用。</p>
+          <form id="signupForm" class="stack" novalidate>
+            <div class="form-grid">
+              <div class="field">
+                <label for="realName">真实姓名 *</label>
+                <input class="input" id="realName" placeholder="用于证书与获奖信息" required />
+              </div>
+              <div class="field">
+                <label for="school">学校 / 单位</label>
+                <input class="input" id="school" placeholder="例如：南京大学" />
+              </div>
+              <div class="field span-2">
+                <label for="contact">联系方式 *</label>
+                <input class="input" id="contact" placeholder="手机号或邮箱，便于赛事通知" required />
+              </div>
+              <div class="field span-2">
+                <label for="intro">自我介绍</label>
+                <textarea class="textarea" id="intro" placeholder="简单介绍你的背景、兴趣或参赛经历（选填）"></textarea>
+              </div>
+            </div>
+            <label class="check">
+              <input type="checkbox" id="agree" checked />
+              我已阅读并同意赛事规则，承诺作品为本人原创。
+            </label>
+            <div class="row" style="justify-content: flex-end; gap: 10px">
+              <a class="btn btn-ghost" href="/contest-detail.html" id="cancelLink">取消</a>
+              <button class="btn btn-primary" type="submit" id="submitBtn">提交报名</button>
+            </div>
+          </form>
+        </div>
+
+        <aside class="card summary-card" id="summaryCard">
+          <div class="summary-cover"><div class="skeleton" style="height:100%"></div></div>
+          <h3>赛事信息加载中…</h3>
+        </aside>
+      </div>
+
+      <div class="card success-panel hidden" id="successPanel">
+        <div class="success-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h2>报名成功</h2>
+        <p>你已成功报名该赛事，接下来可以提交作品。作品在评审开始后会自动锁定。</p>
+        <div class="row" style="justify-content:center">
+          <a class="btn btn-primary" id="goWork" href="/work-submit.html">提交作品</a>
+          <a class="btn btn-outline" href="/user-center.html">个人中心</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/signup.js"></script>
+</body>
+</html>

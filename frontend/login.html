@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>登录 / 注册 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <main class="auth-page">
+    <div class="auth-card">
+      <aside class="auth-visual">
+        <a class="brand" href="/index.html">
+          <span class="brand-mark">B</span>
+          <span class="brand-name">BTR<em>赛事平台</em></span>
+        </a>
+        <div class="auth-quote">
+          <h2>认真对待<br />每一份作品。</h2>
+          <p>报名、提交、评审、公示，一条清晰的链路，让组织者省心，让创作者专注。</p>
+        </div>
+        <div class="auth-meta">
+          <div><b>6</b><span>公开赛事</span></div>
+          <div><b>3</b><span>角色工作台</span></div>
+          <div><b>100%</b><span>流程闭环</span></div>
+        </div>
+      </aside>
+
+      <div class="auth-form-wrap">
+        <div class="auth-tabs" id="authTabs">
+          <button type="button" class="is-active" data-auth-tab="login">登录</button>
+          <button type="button" data-auth-tab="register">注册选手账号</button>
+        </div>
+
+        <div id="loginPanel">
+          <h1>欢迎回来</h1>
+          <p class="sub">登录后即可报名赛事、提交作品或进入评委 / 管理后台。</p>
+          <form class="auth-form" id="loginForm" novalidate>
+            <div class="field">
+              <label for="loginAccount">账号</label>
+              <input class="input" id="loginAccount" name="account" autocomplete="username" placeholder="请输入账号" required />
+            </div>
+            <div class="field">
+              <label for="loginPassword">密码</label>
+              <input class="input" id="loginPassword" name="password" type="password" autocomplete="current-password" placeholder="请输入密码" required />
+            </div>
+            <div class="field hidden" id="captchaField">
+              <label for="captchaCode">验证码</label>
+              <div class="captcha-row">
+                <input class="input" id="captchaCode" placeholder="请输入验证码" autocomplete="off" />
+                <img class="captcha-img" id="captchaImg" alt="验证码" />
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg" type="submit" id="loginSubmit">登录</button>
+          </form>
+
+          <div class="demo-accounts">
+            <div class="label">演示账号（点击填入）</div>
+            <div class="chips">
+              <button type="button" data-account="player" data-password="player123">选手 · player</button>
+              <button type="button" data-account="judge" data-password="judge123">评委 · judge</button>
+              <button type="button" data-account="admin" data-password="admin123">管理员 · admin</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="registerPanel" class="hidden">
+          <h1>创建账号</h1>
+          <p class="sub">注册后默认为选手角色，可报名赛事并提交作品。</p>
+          <form class="auth-form" id="registerForm" novalidate>
+            <div class="form-grid">
+              <div class="field">
+                <label for="regAccount">账号</label>
+                <input class="input" id="regAccount" name="account" placeholder="4-32 位字母或数字" required />
+              </div>
+              <div class="field">
+                <label for="regNickname">昵称</label>
+                <input class="input" id="regNickname" name="nickname" placeholder="展示名称" required />
+              </div>
+              <div class="field span-2">
+                <label for="regEmail">邮箱</label>
+                <input class="input" id="regEmail" name="email" type="email" placeholder="用于接收报名与获奖通知" />
+              </div>
+              <div class="field">
+                <label for="regPassword">密码</label>
+                <input class="input" id="regPassword" name="password" type="password" placeholder="至少 6 位" required />
+              </div>
+              <div class="field">
+                <label for="regConfirm">确认密码</label>
+                <input class="input" id="regConfirm" type="password" placeholder="再次输入密码" required />
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block btn-lg" type="submit" id="registerSubmit">注册并登录</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/auth.js"></script>
+</body>
+</html>

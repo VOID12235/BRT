@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>数据导出 · BTR 管理后台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="admin-body" data-page="export" data-title="数据导出" data-crumb="数据 / 导出">
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="adminTopbar"></header>
+      <div class="admin-content">
+        <div class="admin-page-head">
+          <div>
+            <h2>数据导出</h2>
+            <p>导出报名名单与获奖名单（Excel），用于归档、通知与证书制作。</p>
+          </div>
+        </div>
+
+        <div class="export-grid">
+          <div class="card export-card">
+            <div class="export-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h5"/></svg>
+            </div>
+            <h3>报名名单</h3>
+            <p>包含赛事、姓名、学校、联系方式、账号、报名状态、报名时间与作品名称。</p>
+            <div class="field">
+              <label for="exportSignupContest">赛事范围</label>
+              <select class="select" id="exportSignupContest">
+                <option value="">全部赛事</option>
+              </select>
+            </div>
+            <button class="btn btn-primary btn-block" id="exportSignupBtn">导出报名名单 .xlsx</button>
+          </div>
+
+          <div class="card export-card">
+            <div class="export-icon" style="background: var(--amber-soft); color: var(--amber)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg>
+            </div>
+            <h3>获奖名单</h3>
+            <p>包含奖项、名次、作品、作者、学校、平均分与评审人数。建议在赛事公示后导出。</p>
+            <div class="field">
+              <label for="exportWinnerContest">赛事范围</label>
+              <select class="select" id="exportWinnerContest">
+                <option value="">请选择赛事</option>
+              </select>
+            </div>
+            <button class="btn btn-dark btn-block" id="exportWinnerBtn">导出获奖名单 .xlsx</button>
+          </div>
+        </div>
+
+        <div class="card side-card" style="margin-top: 20px">
+          <h3>导出说明</h3>
+          <div class="prose" style="font-size: 12.5px">
+            <p>1. 导出的 Excel 使用 UTF-8 文件名，浏览器会直接下载到本地。</p>
+            <p>2. 获奖名单按当前榜单实时计算，未公示赛事也可导出预览结果。</p>
+            <p>3. 若数据量较大，导出可能需要几秒钟，请耐心等待。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="admin-backdrop" id="adminBackdrop"></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

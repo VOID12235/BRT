@@ -1,0 +1,471 @@
+/* ==========================================================================
+   BTR 赛事平台 · 响应式
+   ========================================================================== */
+@media (max-width: 1080px) {
+  .hero-grid {
+    gap: 40px;
+  }
+
+  .hero h1 {
+    font-size: 44px;
+  }
+
+  .contest-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .split {
+    grid-template-columns: minmax(0, 1fr) 300px;
+  }
+
+  .admin-shell {
+    grid-template-columns: 210px minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  :root {
+    --header-h: 62px;
+  }
+
+  .container {
+    width: min(100% - 32px, 1180px);
+  }
+
+  .nav {
+    display: none;
+  }
+
+  .nav.is-open {
+    display: flex;
+    position: absolute;
+    top: var(--header-h);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 2px;
+    padding: 10px 16px 16px;
+    background: #fff;
+    border-bottom: 1px solid var(--line);
+    box-shadow: var(--shadow);
+  }
+
+  .nav.is-open a {
+    border-radius: 10px;
+    padding: 11px 14px;
+  }
+
+  .menu-toggle {
+    display: inline-flex;
+  }
+
+  .header-actions {
+    margin-left: auto;
+  }
+
+  .hero {
+    padding: 40px 0 32px;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+
+  .hero h1 {
+    font-size: 40px;
+  }
+
+  .poster-frame {
+    aspect-ratio: 16 / 11;
+  }
+
+  .hero-stats {
+    margin-top: 34px;
+  }
+
+  .feature-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .contest-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-bottom,
+  .split,
+  .split-wide,
+  .form-page,
+  .score-layout,
+  .user-layout,
+  .dash-grid,
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card,
+  .user-side {
+    position: static;
+  }
+
+  .task-list {
+    max-height: 260px;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+
+  .auth-card {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-visual {
+    display: none;
+  }
+
+  .auth-form-wrap {
+    padding: 34px 28px;
+  }
+
+  .admin-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 250px;
+    z-index: 120;
+    transform: translateX(-100%);
+    transition: transform 0.24s ease;
+  }
+
+  .admin-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+  .admin-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 110;
+    background: rgba(16, 18, 22, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease;
+  }
+
+  .admin-backdrop.is-open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .admin-menu-btn {
+    display: inline-flex !important;
+  }
+
+  .admin-content {
+    padding: 20px;
+  }
+
+  .admin-topbar {
+    padding: 0 20px;
+  }
+
+  .cta-band {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 34px 28px;
+  }
+
+  .detail-banner-copy {
+    padding: 28px;
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 14px;
+  }
+
+  .container {
+    width: calc(100% - 28px);
+  }
+
+  .header-inner {
+    gap: 12px;
+  }
+
+  .brand-name em {
+    display: none;
+  }
+
+  .hero h1 {
+    font-size: 34px;
+  }
+
+  .hero-lead {
+    font-size: 14px;
+  }
+
+  .hero-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  .hero-stat {
+    padding-right: 8px;
+  }
+
+  .hero-stat + .hero-stat {
+    padding-left: 12px;
+  }
+
+  .hero-stat b {
+    font-size: 22px;
+  }
+
+  .hero-stat span {
+    font-size: 10px;
+  }
+
+  .poster-frame {
+    aspect-ratio: 4 / 4.6;
+  }
+
+  .poster-copy {
+    left: 18px;
+    right: 18px;
+    bottom: 18px;
+  }
+
+  .poster-copy h3 {
+    font-size: 21px;
+  }
+
+  .contest-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contest-card {
+    min-height: 340px;
+  }
+
+  .flip-inner {
+    min-height: 340px;
+  }
+
+  .contest-card:hover .flip-inner,
+  .contest-card:focus-within .flip-inner {
+    transform: none;
+  }
+
+  .flip-back {
+    display: none;
+  }
+
+  .flip-front {
+    position: relative;
+  }
+
+  .feature-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .section {
+    padding: 48px 0;
+  }
+
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .section-head h2 {
+    font-size: 23px;
+  }
+
+  .page-head h1 {
+    font-size: 27px;
+  }
+
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .toolbar .search {
+    max-width: none;
+  }
+
+  .toolbar .select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid .span-2 {
+    grid-column: auto;
+  }
+
+  .form-card {
+    padding: 22px;
+  }
+
+  .work-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .podium {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .podium-card.first {
+    order: -1;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .detail-banner {
+    min-height: 260px;
+  }
+
+  .detail-banner-copy {
+    padding: 22px;
+  }
+
+  .detail-banner-meta {
+    gap: 18px;
+  }
+
+  .cta-band h2 {
+    font-size: 22px;
+  }
+
+  .auth-page {
+    padding: 20px 14px;
+  }
+
+  .auth-card {
+    border-radius: 18px;
+  }
+
+  .auth-form-wrap {
+    padding: 28px 20px;
+  }
+
+  .captcha-row {
+    grid-template-columns: 1fr 100px;
+  }
+
+  .list-item {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .list-item .actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .profile-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .profile-stats b {
+    font-size: 19px;
+  }
+
+  .admin-content {
+    padding: 14px;
+  }
+
+  .admin-topbar {
+    padding: 0 14px;
+    height: 60px;
+  }
+
+  .admin-topbar h1 {
+    font-size: 15px;
+  }
+
+  .admin-topbar .crumb {
+    display: none;
+  }
+
+  .admin-page-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-page-head h2 {
+    font-size: 20px;
+  }
+
+  .stat-card .value {
+    font-size: 26px;
+  }
+
+  .grid-2,
+  .grid-3,
+  .grid-4,
+  .export-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modal {
+    border-radius: 16px;
+  }
+
+  .modal-head,
+  .modal-body,
+  .modal-foot {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .toast-stack {
+    left: 14px;
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .toast {
+    max-width: none;
+  }
+
+  .judge-topbar {
+    padding: 0 16px;
+    gap: 10px;
+  }
+
+  .judge-topbar nav {
+    margin-left: auto;
+  }
+
+  .judge-topbar .right {
+    display: none;
+  }
+}

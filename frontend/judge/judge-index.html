@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>评委工作台 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="judge-body">
+  <header class="judge-topbar">
+    <a class="brand" href="/index.html">
+      <span class="brand-mark">B</span>
+      <span class="brand-name">BTR<em>评委工作台</em></span>
+    </a>
+    <nav>
+      <a href="/judge/judge-index.html" class="is-active">评审任务</a>
+      <a href="/judge/judge-score.html">在线打分</a>
+      <a href="/rank.html">榜单公示</a>
+    </nav>
+    <div class="right">
+      <span id="judgeName">评委</span>
+      <a class="btn btn-outline btn-xs" href="/index.html" style="border-color: rgba(255,255,255,.25); color: #fff">返回前台</a>
+      <button class="btn btn-ghost btn-xs" id="logoutBtn" style="color: rgba(255,255,255,.75)">退出</button>
+    </div>
+  </header>
+
+  <main class="container" style="padding-bottom: 72px">
+    <div class="judge-hero row-between wrap">
+      <div>
+        <h1>评审任务</h1>
+        <p>仅显示分配给你的作品。请在评审期内完成打分，评语将作为结果依据留存。</p>
+      </div>
+      <a class="btn btn-primary" href="/judge/judge-score.html">开始打分 →</a>
+    </div>
+
+    <div class="grid-3" id="judgeStats">
+      <div class="stat-card"><div class="label"><span class="dot"></span>分配作品</div><div class="value">—</div></div>
+      <div class="stat-card"><div class="label"><span class="dot"></span>已完成</div><div class="value">—</div></div>
+      <div class="stat-card accent"><div class="label"><span class="dot"></span>待评分</div><div class="value">—</div></div>
+    </div>
+
+    <div class="split" style="margin-top: 22px">
+      <div class="card">
+        <div class="card-head">
+          <div><h3>任务列表</h3><p>按赛事筛选，点击行进入打分</p></div>
+          <select class="select" id="contestFilter" style="width: auto; min-width: 200px; height: 36px; padding-top: 0; padding-bottom: 0"></select>
+        </div>
+        <div class="table-wrap">
+          <table class="table">
+            <thead>
+              <tr><th>作品</th><th>赛事</th><th>选手</th><th>状态</th><th>分数</th><th></th></tr>
+            </thead>
+            <tbody id="taskTable">
+              <tr><td colspan="6"><div class="skeleton" style="height: 60px"></div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <aside>
+        <div class="card side-card">
+          <h3>评审进度</h3>
+          <div class="progress-list" id="progressList">
+            <div class="skeleton" style="height: 70px"></div>
+          </div>
+        </div>
+        <div class="card side-card">
+          <h3>评审须知</h3>
+          <div class="prose" style="font-size: 12.5px">
+            <p>1. 打分区间 0–100，可保留两位小数。</p>
+            <p>2. 每件作品仅可提交一次，提交后可在评审期内修改。</p>
+            <p>3. 评语需具体、可执行，避免空泛表述。</p>
+            <p>4. 评审期内请勿对外泄露作品内容。</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/judge.js"></script>
+</body>
+</html>

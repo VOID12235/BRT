@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>公告通知 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="page-head row-between wrap" style="align-items: flex-end">
+        <div>
+          <div class="breadcrumb"><a href="/index.html">首页</a><span>/</span><span>公告通知</span></div>
+          <h1>公告通知</h1>
+          <p>平台规则、赛事动态、评审安排与结果公示。</p>
+        </div>
+        <div class="toolbar" style="padding: 8px; box-shadow: none; border: 0; background: transparent">
+          <div class="search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="input" id="noticeKeyword" type="search" placeholder="搜索公告标题或内容" />
+          </div>
+        </div>
+      </div>
+
+      <div class="notice-page-list" id="noticeList">
+        <div class="card skeleton" style="height: 112px"></div>
+        <div class="card skeleton" style="height: 112px"></div>
+        <div class="card skeleton" style="height: 112px"></div>
+      </div>
+
+      <div class="pagination" id="noticePagination"></div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <div class="modal-backdrop" id="noticeModal">
+    <div class="modal modal-lg">
+      <div class="modal-head">
+        <div>
+          <h3 id="noticeModalTitle">公告详情</h3>
+          <p class="tiny muted" id="noticeModalMeta"></p>
+        </div>
+        <button class="modal-close" type="button" id="noticeModalClose" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="prose" id="noticeModalBody"></div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-dark" type="button" id="noticeModalDone">知道了</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/notices.js"></script>
+</body>
+</html>

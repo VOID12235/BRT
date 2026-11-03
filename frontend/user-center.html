@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>个人中心 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="page-head">
+        <div class="breadcrumb"><a href="/index.html">首页</a><span>/</span><span>个人中心</span></div>
+        <h1>个人中心</h1>
+        <p>管理你的报名与作品，查看评审进度和获奖结果。</p>
+      </div>
+
+      <div class="user-layout">
+        <aside class="user-side">
+          <div class="profile-card">
+            <span class="avatar avatar-lg" id="profileAvatar">U</span>
+            <div class="grow">
+              <h2 id="profileName">加载中…</h2>
+              <p id="profileAccount">—</p>
+            </div>
+            <span class="badge badge-plain" id="profileRole">选手</span>
+          </div>
+
+          <div class="profile-stats">
+            <div><b id="statSignups">—</b><span>报名赛事</span></div>
+            <div><b id="statWorks">—</b><span>提交作品</span></div>
+            <div><b id="statAwards">—</b><span>获奖数量</span></div>
+          </div>
+
+          <nav class="user-nav" id="userNav" style="margin-top: 16px">
+            <button type="button" data-tab="profile" class="is-active">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>
+              个人信息
+            </button>
+            <button type="button" data-tab="signups">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              我的报名 <span id="navSignupCount"></span>
+            </button>
+            <button type="button" data-tab="works">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg>
+              我的作品 <span id="navWorkCount"></span>
+            </button>
+            <a href="/contest-list.html">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              发现赛事
+            </a>
+          </nav>
+        </aside>
+
+        <section>
+          <div class="tab-panel is-active" data-panel="profile">
+            <div class="card">
+              <div class="card-head">
+                <div><h3>个人信息</h3><p>账号信息与联系方式</p></div>
+                <span class="badge badge-soft badge-plain" id="profileStatus">正常</span>
+              </div>
+              <div class="card-body">
+                <div class="meta-list" id="profileMeta">
+                  <div><span>加载中</span><b>—</b></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top: 18px">
+              <div class="card-head">
+                <div><h3>参赛概览</h3><p>你在 BTR 的参与情况</p></div>
+              </div>
+              <div class="card-body">
+                <div class="grid-3" id="overviewGrid"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="signups">
+            <div class="card">
+              <div class="card-head">
+                <div><h3>我的报名</h3><p>报名成功后可提交作品，评审开始后不可取消</p></div>
+                <a class="btn btn-outline btn-sm" href="/contest-list.html">报名新赛事</a>
+              </div>
+              <div id="signupList">
+                <div class="skeleton" style="height: 84px; margin: 16px 20px"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-panel" data-panel="works">
+            <div class="card">
+              <div class="card-head">
+                <div><h3>我的作品</h3><p>作品在评审开始后自动锁定</p></div>
+                <a class="btn btn-outline btn-sm" href="/work-submit.html">提交作品</a>
+              </div>
+              <div id="workList">
+                <div class="skeleton" style="height: 84px; margin: 16px 20px"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/user-center.js"></script>
+</body>
+</html>

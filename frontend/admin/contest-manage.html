@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>赛事管理 · BTR 管理后台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="admin-body" data-page="contests" data-title="赛事管理" data-crumb="赛事">
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="adminTopbar"></header>
+      <div class="admin-content">
+        <div class="admin-page-head">
+          <div>
+            <h2>赛事管理</h2>
+            <p>创建赛事、配置时间与奖项，并推动报名 → 评审 → 公示的状态流转。</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" id="newContestBtn">+ 新建赛事</button>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <div class="admin-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="input" id="contestKeyword" type="search" placeholder="搜索赛事名称或简介" />
+          </div>
+          <select class="select" id="contestStatusFilter">
+            <option value="">全部状态</option>
+            <option value="DRAFT">筹备中</option>
+            <option value="SIGNUP">报名中</option>
+            <option value="REVIEW">评审中</option>
+            <option value="PUBLISHED">已公示</option>
+            <option value="FINISHED">已结束</option>
+          </select>
+          <span class="tiny muted" id="contestCount" style="margin-left:auto"></span>
+        </div>
+
+        <div class="admin-table-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>赛事</th><th>状态</th><th>报名</th><th>作品</th><th>报名时间</th><th>评审时间</th><th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="contestTable">
+                <tr><td colspan="7"><div class="skeleton" style="height: 60px"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="admin-table-foot">
+            <span id="contestFoot">—</span>
+            <div class="pagination" id="contestPagination"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="admin-backdrop" id="adminBackdrop"></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

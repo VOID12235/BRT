@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BTR 赛事平台 · 让每一场比赛，被认真对待</title>
+  <meta name="description" content="BTR 赛事比赛平台，提供赛事发布、在线报名、作品提交、评委打分、榜单公示与后台管理全流程能力。" />
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="fade-up">
+          <span class="eyebrow">BTR Competition Platform</span>
+          <h1>让每一场比赛，<br />被<span class="mark">认真对待</span>。</h1>
+          <p class="hero-lead">
+            从赛事发布、在线报名，到作品提交、评委打分与榜单公示。BTR 把复杂的赛事流程，收进一个干净、可靠的工作台。
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary btn-lg" href="/contest-list.html">浏览赛事</a>
+            <a class="btn btn-outline btn-lg" href="/rank.html">查看榜单</a>
+          </div>
+          <div class="hero-stats">
+            <div class="hero-stat"><b id="statContests">—</b><span>公开赛事</span></div>
+            <div class="hero-stat"><b id="statSignups">—</b><span>累计报名</span></div>
+            <div class="hero-stat"><b id="statWorks">—</b><span>提交作品</span></div>
+          </div>
+        </div>
+
+        <div class="poster fade-up" style="animation-delay: 0.08s">
+          <div class="poster-frame" id="posterFrame">
+            <div class="poster-slide is-active">
+              <img src="/assets/img/cover-1.svg" alt="赛事海报" />
+              <div class="poster-copy">
+                <span class="badge badge-plain">正在加载</span>
+                <h3>准备中</h3>
+                <p>正在获取最新赛事…</p>
+              </div>
+            </div>
+            <span class="poster-tag"><i></i> 2026 赛季</span>
+          </div>
+          <div class="poster-dots" id="posterDots"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-sm">
+      <div class="container">
+        <div class="feature-strip">
+          <div class="feature-item"><b>01 · 发布</b><h4>赛事与奖项</h4><p>状态机管理报名、评审、公示全周期，规则与奖项一处配置。</p></div>
+          <div class="feature-item"><b>02 · 报名</b><h4>选手与作品</h4><p>在线报名、作品上传与截止锁定，重复提交自动拦截。</p></div>
+          <div class="feature-item"><b>03 · 评审</b><h4>分配与打分</h4><p>评委仅见分配作品，打分防重、评语留痕、进度可查。</p></div>
+          <div class="feature-item"><b>04 · 公示</b><h4>榜单与通知</h4><p>实时聚合榜单，公示后自动固化结果并发送邮件通知。</p></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">Featured Contests</span>
+            <h2 style="margin-top: 12px">正在进行</h2>
+            <p>报名、评审、公示中的赛事，选择一场开始参与。</p>
+          </div>
+          <a class="btn btn-outline btn-sm" href="/contest-list.html">全部赛事 →</a>
+        </div>
+        <div class="contest-grid" id="homeContests">
+          <div class="card skeleton" style="height: 356px"></div>
+          <div class="card skeleton" style="height: 356px"></div>
+          <div class="card skeleton" style="height: 356px"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-sm">
+      <div class="container home-bottom">
+        <div class="card">
+          <div class="card-head">
+            <div><h3>公告与通知</h3><p>平台规则、赛事动态与结果公示</p></div>
+            <a class="btn btn-ghost btn-xs" href="/notices.html">全部公告 →</a>
+          </div>
+          <div class="card-body" style="padding-top: 8px; padding-bottom: 8px">
+            <div class="notice-list" id="homeNotices">
+              <div class="skeleton" style="height: 64px; margin: 12px 0"></div>
+              <div class="skeleton" style="height: 64px; margin: 12px 0"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div><h3>最新榜单</h3><p id="rankSubtitle">公示后的赛事排名</p></div>
+            <a class="btn btn-ghost btn-xs" href="/rank.html">完整榜单 →</a>
+          </div>
+          <div class="card-body" style="padding-top: 6px; padding-bottom: 10px">
+            <div class="rank-mini" id="homeRank">
+              <div class="skeleton" style="height: 52px; margin: 10px 0"></div>
+              <div class="skeleton" style="height: 52px; margin: 10px 0"></div>
+              <div class="skeleton" style="height: 52px; margin: 10px 0"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-sm" style="padding-bottom: 72px">
+      <div class="container">
+        <div class="cta-band">
+          <div>
+            <h2>准备好把你的作品，放到聚光灯下？</h2>
+            <p>注册成为选手，报名正在进行的赛事；或者以评委身份加入，参与下一份好作品的评选。</p>
+          </div>
+          <a class="btn btn-primary btn-lg" href="/login.html">立即加入 BTR</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/home.js"></script>
+</body>
+</html>

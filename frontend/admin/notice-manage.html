@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>公告管理 · BTR 管理后台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/admin.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body class="admin-body" data-page="notices" data-title="公告管理" data-crumb="内容 / 公告">
+  <div class="admin-shell">
+    <aside class="admin-sidebar" id="adminSidebar"></aside>
+    <div class="admin-main">
+      <header class="admin-topbar" id="adminTopbar"></header>
+      <div class="admin-content">
+        <div class="admin-page-head">
+          <div>
+            <h2>公告管理</h2>
+            <p>发布平台规则、赛事动态与结果公示。置顶公告会优先展示。</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-primary" id="newNoticeBtn">+ 发布公告</button>
+          </div>
+        </div>
+
+        <div class="admin-filters">
+          <div class="admin-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input class="input" id="noticeKeyword" type="search" placeholder="搜索公告标题或内容" />
+          </div>
+          <span class="tiny muted" id="noticeCount" style="margin-left:auto"></span>
+        </div>
+
+        <div class="admin-table-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>标题</th><th>内容摘要</th><th>置顶</th><th>发布时间</th><th>操作</th></tr>
+              </thead>
+              <tbody id="noticeTable">
+                <tr><td colspan="5"><div class="skeleton" style="height: 60px"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="admin-table-foot">
+            <span id="noticeFoot">—</span>
+            <div class="pagination" id="noticePagination"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="admin-backdrop" id="adminBackdrop"></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/admin.js"></script>
+</body>
+</html>

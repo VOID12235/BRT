@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>提交作品 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="page-head">
+        <div class="breadcrumb"><a href="/index.html">首页</a><span>/</span><a href="/user-center.html">个人中心</a><span>/</span><span>提交作品</span></div>
+        <h1>提交作品</h1>
+        <p>在报名截止前可反复修改作品；赛事进入评审阶段后，作品将自动锁定。</p>
+      </div>
+
+      <div class="form-page">
+        <div class="card form-card" id="workCard">
+          <h2>作品信息</h2>
+          <p class="sub">请填写作品名称、简介，并上传作品文件（可选）。</p>
+          <form id="workForm" class="stack" novalidate>
+            <div class="field">
+              <label for="signupSelect">参赛报名 *</label>
+              <select class="select" id="signupSelect"></select>
+            </div>
+            <div class="field">
+              <label for="workTitle">作品名称 *</label>
+              <input class="input" id="workTitle" placeholder="给作品起一个清晰的名字" maxlength="160" required />
+            </div>
+            <div class="field">
+              <label for="workDesc">作品简介</label>
+              <textarea class="textarea" id="workDesc" placeholder="介绍创作思路、使用工具或作品亮点（选填）" maxlength="2000"></textarea>
+            </div>
+            <div class="field">
+              <label>作品文件</label>
+              <div class="upload-box" id="uploadBox">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4L8 8"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                <b>点击或拖拽上传</b>
+                <span>支持 PDF / ZIP / 图片 / 音视频，单文件不超过 50MB</span>
+              </div>
+              <input type="file" id="fileInput" class="hidden" />
+              <div class="upload-file hidden" id="fileInfo">
+                <span id="fileName" class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                <button type="button" class="btn btn-ghost btn-xs" id="removeFile">移除</button>
+              </div>
+            </div>
+            <div class="row" style="justify-content:flex-end;gap:10px">
+              <a class="btn btn-ghost" href="/user-center.html">取消</a>
+              <button class="btn btn-primary" type="submit" id="saveBtn">保存作品</button>
+            </div>
+          </form>
+        </div>
+
+        <aside class="card summary-card" id="workSummary">
+          <div class="skeleton" style="height: 160px"></div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/work-submit.js"></script>
+</body>
+</html>

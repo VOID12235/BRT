@@ -1,0 +1,210 @@
+package com.btr.platform.dto;
+
+import com.btr.platform.entity.Award;
+import com.btr.platform.entity.Signup;
+import com.btr.platform.entity.Work;
+import lombok.Data;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+public final class Views {
+
+    private Views() {
+    }
+
+    @Data
+    public static class WorkScore {
+        private Long workId;
+        private BigDecimal avgScore;
+        private Long scoreCount;
+    }
+
+    @Data
+    public static class ContestCard {
+        private Long id;
+        private String title;
+        private String cover;
+        private String summary;
+        private String description;
+        private String rules;
+        private LocalDateTime signupStart;
+        private LocalDateTime signupEnd;
+        private LocalDateTime reviewStart;
+        private LocalDateTime reviewEnd;
+        private String status;
+        private Boolean isPublic;
+        private LocalDateTime createdAt;
+        private long signupCount;
+        private long workCount;
+    }
+
+    @Data
+    public static class ContestDetail {
+        private ContestCard contest;
+        private List<Award> awards;
+        private Signup mySignup;
+        private Work myWork;
+        private long judgeCount;
+    }
+
+    @Data
+    public static class UserView {
+        private Long id;
+        private String account;
+        private String nickname;
+        private String email;
+        private String phone;
+        private String role;
+        private String status;
+        private String avatar;
+        private LocalDateTime createdAt;
+    }
+
+    @Data
+    public static class AuthResult {
+        private String accessToken;
+        private String refreshToken;
+        private UserView user;
+    }
+
+    @Data
+    public static class SignupView {
+        private Long id;
+        private Long contestId;
+        private String contestTitle;
+        private Long userId;
+        private String account;
+        private String nickname;
+        private String realName;
+        private String school;
+        private String contact;
+        private String intro;
+        private String status;
+        private LocalDateTime createdAt;
+        private Long workId;
+        private String workTitle;
+    }
+
+    @Data
+    public static class WorkView {
+        private Long id;
+        private Long contestId;
+        private String contestTitle;
+        private Long signupId;
+        private Long userId;
+        private String author;
+        private String school;
+        private String title;
+        private String description;
+        private String fileUrl;
+        private String fileName;
+        private String status;
+        private Boolean locked;
+        private LocalDateTime submittedAt;
+        private long scoreCount;
+        private BigDecimal avgScore;
+    }
+
+    @Data
+    public static class JudgeTask {
+        private Long assignId;
+        private Long workId;
+        private String workTitle;
+        private String workDescription;
+        private String fileUrl;
+        private String fileName;
+        private LocalDateTime submittedAt;
+        private Long contestId;
+        private String contestTitle;
+        private String realName;
+        private String school;
+        private Long scoreId;
+        private BigDecimal score;
+        private String comment;
+    }
+
+    @Data
+    public static class AssignView {
+        private Long id;
+        private Long contestId;
+        private String contestTitle;
+        private Long judgeId;
+        private String judgeName;
+        private Long workId;
+        private String workTitle;
+        private LocalDateTime createdAt;
+    }
+
+    @Data
+    public static class JudgeProgress {
+        private Long contestId;
+        private String contestTitle;
+        private long assigned;
+        private long scored;
+    }
+
+    @Data
+    public static class RankRow {
+        private int rank;
+        private Long workId;
+        private String workTitle;
+        private String author;
+        private String school;
+        private BigDecimal avgScore;
+        private long scoreCount;
+        private String awardName;
+    }
+
+    @Data
+    public static class RankGroup {
+        private Long awardId;
+        private String awardName;
+        private Integer quota;
+        private BigDecimal minScore;
+        private List<RankRow> items;
+    }
+
+    @Data
+    public static class RankResult {
+        private Long contestId;
+        private String contestTitle;
+        private String status;
+        private boolean published;
+        private LocalDateTime updatedAt;
+        private List<RankRow> rows;
+        private List<RankGroup> groups;
+        private long workCount;
+        private long judgeCount;
+        private long scoredCount;
+    }
+
+    @Data
+    public static class TrendPoint {
+        private String date;
+        private long count;
+    }
+
+    @Data
+    public static class Dashboard {
+        private long users;
+        private long players;
+        private long judges;
+        private long contests;
+        private long signups;
+        private long works;
+        private long pendingReviews;
+        private long notices;
+        private List<TrendPoint> trend;
+        private List<SignupView> recentSignups;
+    }
+
+    @Data
+    public static class UploadResult {
+        private Long id;
+        private String url;
+        private String name;
+        private long size;
+    }
+}

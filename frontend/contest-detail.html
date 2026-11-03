@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>赛事详情 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="breadcrumb" style="margin-bottom: 16px">
+        <a href="/index.html">首页</a><span>/</span><a href="/contest-list.html">赛事</a><span>/</span><span id="crumbTitle">详情</span>
+      </div>
+
+      <div id="detailBanner" class="detail-banner skeleton" style="min-height: 320px"></div>
+
+      <div class="split" style="margin-top: 28px">
+        <div class="card">
+          <div class="card-head" style="padding-bottom: 0; border-bottom: 0">
+            <div class="tabs" data-tabs>
+              <button type="button" data-tab="intro" class="is-active">赛事介绍</button>
+              <button type="button" data-tab="rules">参赛规则</button>
+              <button type="button" data-tab="awards">奖项设置</button>
+              <button type="button" data-tab="works">作品展示</button>
+            </div>
+          </div>
+          <div class="card-body" style="padding-top: 18px">
+            <div class="tab-panel is-active prose" data-panel="intro" id="panelIntro"></div>
+            <div class="tab-panel prose" data-panel="rules" id="panelRules"></div>
+            <div class="tab-panel" data-panel="awards" id="panelAwards"></div>
+            <div class="tab-panel" data-panel="works" id="panelWorks"></div>
+          </div>
+        </div>
+
+        <aside>
+          <div class="card side-card">
+            <div class="side-cta" id="sideActions">
+              <div class="skeleton" style="height: 42px"></div>
+            </div>
+            <div class="summary-list" id="sideMeta"></div>
+          </div>
+          <div class="card side-card">
+            <h3>赛事时间线</h3>
+            <div class="timeline" id="timeline"></div>
+          </div>
+          <div class="card side-card">
+            <h3>赛事数据</h3>
+            <div class="meta-list" id="sideStats"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/contest-detail.js"></script>
+</body>
+</html>

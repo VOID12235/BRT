@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>赛事列表 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="page-head">
+        <div class="breadcrumb"><a href="/index.html">首页</a><span>/</span><span>赛事</span></div>
+        <h1>赛事列表</h1>
+        <p>发现正在报名、评审与公示中的比赛。每一场赛事，都值得认真准备。</p>
+      </div>
+
+      <div class="toolbar" style="margin-bottom: 24px">
+        <div class="tabs" id="statusTabs">
+          <button type="button" data-status="" class="is-active">全部</button>
+          <button type="button" data-status="SIGNUP">报名中</button>
+          <button type="button" data-status="REVIEW">评审中</button>
+          <button type="button" data-status="PUBLISHED">已公示</button>
+          <button type="button" data-status="FINISHED">已结束</button>
+        </div>
+        <div class="search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input class="input" id="keyword" type="search" placeholder="搜索赛事名称或关键词" />
+        </div>
+        <div class="muted small" id="resultCount" style="margin-left: auto"></div>
+      </div>
+
+      <div class="contest-grid" id="contestGrid">
+        <div class="card skeleton" style="height: 356px"></div>
+        <div class="card skeleton" style="height: 356px"></div>
+        <div class="card skeleton" style="height: 356px"></div>
+        <div class="card skeleton" style="height: 356px"></div>
+        <div class="card skeleton" style="height: 356px"></div>
+        <div class="card skeleton" style="height: 356px"></div>
+      </div>
+
+      <div class="pagination" id="pagination"></div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/contest-list.js"></script>
+</body>
+</html>

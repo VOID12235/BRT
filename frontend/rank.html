@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>榜单公示 · BTR 赛事平台</title>
+  <link rel="stylesheet" href="/assets/css/base.css" />
+  <link rel="stylesheet" href="/assets/css/layout.css" />
+  <link rel="stylesheet" href="/assets/css/components.css" />
+  <link rel="stylesheet" href="/assets/css/pages.css" />
+  <link rel="stylesheet" href="/assets/css/responsive.css" />
+</head>
+<body>
+  <div data-header></div>
+
+  <main class="page-main">
+    <div class="container">
+      <div class="page-head row-between wrap" style="align-items: flex-end">
+        <div>
+          <div class="breadcrumb"><a href="/index.html">首页</a><span>/</span><span>榜单公示</span></div>
+          <h1>榜单公示</h1>
+          <p>公示后的赛事排名与获奖结果。榜单按评委平均分实时聚合，公示后固化。</p>
+        </div>
+        <div class="row" style="min-width: 280px">
+          <select class="select" id="contestSelect" aria-label="选择赛事"></select>
+        </div>
+      </div>
+
+      <div id="rankContent">
+        <div class="card skeleton" style="height: 420px"></div>
+      </div>
+    </div>
+  </main>
+
+  <div data-footer></div>
+
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/common.js"></script>
+  <script src="/assets/js/rank.js"></script>
+</body>
+</html>
