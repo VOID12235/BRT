@@ -164,7 +164,7 @@ public class ContestService {
         award.setContestId(contestId);
         award.setName(req.name());
         award.setQuota(req.quota());
-        award.setMinScore(req.minScore());
+        award.setPrizeAmount(req.prizeAmount());
         award.setSortOrder(req.sortOrder() == null ? 0 : req.sortOrder());
         awardMapper.insert(award);
         rankService.evict(contestId);
@@ -179,7 +179,7 @@ public class ContestService {
         }
         award.setName(req.name());
         award.setQuota(req.quota());
-        award.setMinScore(req.minScore());
+        award.setPrizeAmount(req.prizeAmount());
         award.setSortOrder(req.sortOrder() == null ? 0 : req.sortOrder());
         awardMapper.updateById(award);
         rankService.evict(contestId);

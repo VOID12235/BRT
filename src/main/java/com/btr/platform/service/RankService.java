@@ -164,10 +164,6 @@ public class RankService {
             int taken = 0;
             while (cursor < rows.size() && taken < award.getQuota()) {
                 RankRow row = rows.get(cursor);
-                BigDecimal min = award.getMinScore() == null ? BigDecimal.ZERO : award.getMinScore();
-                if (row.getAvgScore().compareTo(min) < 0) {
-                    break;
-                }
                 row.setAwardName(award.getName());
                 grouped.computeIfAbsent(award.getId(), k -> new ArrayList<>()).add(row);
                 cursor++;
@@ -181,7 +177,7 @@ public class RankService {
             group.setAwardId(award.getId());
             group.setAwardName(award.getName());
             group.setQuota(award.getQuota());
-            group.setMinScore(award.getMinScore());
+            group.setPrizeAmount(award.getPrizeAmount());
             group.setItems(grouped.getOrDefault(award.getId(), List.of()));
             if (!group.getItems().isEmpty()) {
                 groups.add(group);

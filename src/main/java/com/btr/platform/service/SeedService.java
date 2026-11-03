@@ -221,17 +221,17 @@ public class SeedService implements CommandLineRunner {
     }
 
     private void awards(Contest contest) {
-        award(contest, "一等奖", 1, "85", 1);
-        award(contest, "二等奖", 2, "75", 2);
-        award(contest, "三等奖", 3, "60", 3);
+        award(contest, "一等奖", 1, "5000", 1);
+        award(contest, "二等奖", 2, "3000", 2);
+        award(contest, "三等奖", 3, "1000", 3);
     }
 
-    private void award(Contest contest, String name, int quota, String minScore, int order) {
+    private void award(Contest contest, String name, int quota, String prizeAmount, int order) {
         Award award = new Award();
         award.setContestId(contest.getId());
         award.setName(name);
         award.setQuota(quota);
-        award.setMinScore(new BigDecimal(minScore));
+        award.setPrizeAmount(new BigDecimal(prizeAmount));
         award.setSortOrder(order);
         awardMapper.insert(award);
     }

@@ -93,8 +93,8 @@ public final class Requests {
     public record AwardReq(
             @NotBlank(message = "请输入奖项名称") @Size(max = 64, message = "奖项名称过长") String name,
             @NotNull(message = "请填写名额") @Min(value = 1, message = "名额至少 1 个") @Max(value = 100, message = "名额过多") Integer quota,
-            @DecimalMin(value = "0", message = "最低分不能低于 0")
-            @DecimalMax(value = "100", message = "最低分不能高于 100") BigDecimal minScore,
+            @DecimalMin(value = "0.00", message = "奖金不能为负")
+            @DecimalMax(value = "999999999.99", message = "奖金数额过大") BigDecimal prizeAmount,
             Integer sortOrder) {
     }
 

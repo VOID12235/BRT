@@ -113,7 +113,11 @@
               (g) => `<div>
                 <div class="row-between" style="margin-bottom: 8px">
                   <span class="award-pill ${g.awardName.includes("一") ? "gold" : g.awardName.includes("二") ? "silver" : "bronze"}">${B.escapeHtml(g.awardName)}</span>
-                  <span class="tiny muted">${g.items.length} / ${g.quota} 个名额</span>
+                  <span class="tiny muted">${
+                    Number(g.prizeAmount || 0) > 0
+                      ? "奖金 ¥" + Number(g.prizeAmount).toLocaleString("zh-CN", { maximumFractionDigits: 0 }) + " · "
+                      : ""
+                  }${g.items.length} / ${g.quota} 个名额</span>
                 </div>
                 ${g.items
                   .map(

@@ -15,6 +15,7 @@ public class Award {
     private Long contestId;
     private String name;
     private Integer quota;
-    private BigDecimal minScore;
+    /** 该奖项奖金（元） */
+    private BigDecimal prizeAmount;
     private Integer sortOrder;
 }

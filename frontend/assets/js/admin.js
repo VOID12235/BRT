@@ -1034,7 +1034,11 @@
             <td class="num">${a.sortOrder}</td>
             <td class="title-cell">${B.escapeHtml(a.name)}</td>
             <td class="num">${a.quota}</td>
-            <td class="num">${Number(a.minScore || 0).toFixed(0)}</td>
+            <td class="num">${
+              Number(a.prizeAmount || 0) > 0
+                ? "¥" + Number(a.prizeAmount).toLocaleString("zh-CN", { maximumFractionDigits: 0 })
+                : '<span class="muted">—</span>'
+            }</td>
             <td>
               <div class="actions-cell">
                 <button class="btn btn-outline btn-xs" data-edit-award="${a.id}">编辑</button>
@@ -1085,10 +1089,10 @@
             <input class="input" type="number" name="quota" min="1" max="100" required value="${a.quota || 1}" />
           </div>
           <div class="field">
-            <label>最低分</label>
-            <input class="input" type="number" name="minScore" min="0" max="100" step="0.5" value="${Number(
-              a.minScore || 0
-            )}" />
+            <label>奖金（元）</label>
+            <input class="input" type="number" name="prizeAmount" min="0" max="999999999.99" step="0.01" placeholder="例如 5000" value="${
+              Number(a.prizeAmount || 0) > 0 ? Number(a.prizeAmount) : ""
+            }" />
           </div>
           <div class="field">
             <label>排序</label>
@@ -1099,7 +1103,7 @@
         const payload = {
           name: formValue(form, "name").trim(),
           quota: Number(formValue(form, "quota")),
-          minScore: Number(formValue(form, "minScore") || 0),
+          prizeAmount: formValue(form, "prizeAmount") === "" ? null : Number(formValue(form, "prizeAmount")),
           sortOrder: Number(formValue(form, "sortOrder") || 0),
         };
         if (!payload.name) throw new Error("请输入奖项名称");

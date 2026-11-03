@@ -164,7 +164,7 @@ public final class Views {
         private Long awardId;
         private String awardName;
         private Integer quota;
-        private BigDecimal minScore;
+        private BigDecimal prizeAmount;
         private List<RankRow> items;
     }
 

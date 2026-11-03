@@ -90,7 +90,7 @@
           <span class="award-pill ${i === 0 ? "gold" : i === 1 ? "silver" : "bronze"}">${B.escapeHtml(a.name)}</span>
           <div style="flex:1">
             <h4 style="margin:0">${B.escapeHtml(a.name)}</h4>
-            <p>名额 ${a.quota} 个 · 最低分 ${Number(a.minScore || 0).toFixed(0)} 分</p>
+            <p>名额 ${a.quota} 个 · 奖金 ¥${Number(a.prizeAmount || 0).toLocaleString("zh-CN", { maximumFractionDigits: 0 })}</p>
           </div>
           <span class="muted small">按综合评分排序</span>
         </div>`

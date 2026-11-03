@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS contest_award (
     contest_id BIGINT NOT NULL,
     name VARCHAR(64) NOT NULL,
     quota INT NOT NULL DEFAULT 1,
-    min_score DECIMAL(5,2) DEFAULT 0,
+    prize_amount DECIMAL(14,2) NOT NULL DEFAULT 0.00,
     sort_order INT NOT NULL DEFAULT 0,
     KEY idx_award_contest (contest_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
