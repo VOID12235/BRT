@@ -238,7 +238,7 @@
       const label = submit.textContent;
       submit.textContent = "提交中…";
       try {
-        await opts.onSubmit(new FormData(form), form);
+        await opts.onSubmit(form);
         close();
       } catch (err) {
         B.toast(err.message || "操作失败", "error");
