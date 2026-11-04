@@ -59,6 +59,7 @@ public class EmailService {
             var message = sender.createMimeMessage();
             var helper = new MimeMessageHelper(message, false, "UTF-8");
             helper.setTo(recipient);
+            applyFrom(helper);
             helper.setSubject(subject);
             helper.setText(html, true);
             sender.send(message);
@@ -108,6 +109,24 @@ public class EmailService {
         return yml;
     }
 
+    /**
+     * 设置发件人：优先使用授权邮箱（SMTP 要求 Mail From 与认证用户一致），
+     * 显示名取管理后台配置的 mail.from；未配置邮箱时留空由 JavaMail 兜底。
+     */
+    private void applyFrom(MimeMessageHelper helper) throws jakarta.mail.MessagingException {
+        ConfigService.MailRuntime runtime = configService.mailRuntime();
+        if (runtime.username != null && !runtime.username.isBlank()) {
+            try {
+                String name = runtime.from == null || runtime.from.isBlank()
+                        ? null : runtime.from;
+                helper.setFrom(new jakarta.mail.internet.InternetAddress(runtime.username, name, "UTF-8"));
+            } catch (jakarta.mail.internet.AddressException | java.io.UnsupportedEncodingException e) {
+                log.warn("发件地址格式异常 {}: {}", runtime.username, e.getMessage());
+                helper.setFrom(runtime.username);
+            }
+        }
+    }
+
     /** 发送测试邮件（同步，返回是否成功） */
     public String sendTest(String to) {
         EmailRecord record = new EmailRecord();
@@ -129,6 +148,7 @@ public class EmailService {
             var message = sender.createMimeMessage();
             var helper = new MimeMessageHelper(message, false, "UTF-8");
             helper.setTo(to);
+            applyFrom(helper);
             helper.setSubject("BTR 平台 · 邮件配置测试");
             helper.setText("<p>这是一封测试邮件，说明 BTR 平台的邮件服务已配置成功。</p>", true);
             sender.send(message);
