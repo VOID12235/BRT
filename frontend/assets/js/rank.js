@@ -24,17 +24,59 @@
     </div>`;
   }
 
+  /** 动态加载开源播放器 DPlayer（MIT），避免重复注入 */
+  function ensureDPlayer(cb) {
+    if (window.DPlayer) { cb && cb(); return; }
+    const s = document.createElement("script");
+    s.src = "/assets/js/dplayer.min.js";
+    s.onload = function () { cb && cb(); };
+    s.onerror = function () { alert("播放器加载失败，请使用下载作品"); };
+    document.head.appendChild(s);
+  }
+
+  /** 弹出播放器 Modal 预览音视频作品 */
+  function openMediaPreview(url, name, isAudio) {
+    const modal = document.createElement("div");
+    modal.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box;";
+    modal.innerHTML =
+      '<div style="background:#fff;border-radius:12px;width:min(94vw,840px);max-width:840px;padding:14px;box-sizing:border-box;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.35)">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px">' +
+      '<b style="font-size:15px;color:#222;word-break:break-all;line-height:1.4">' + B.escapeHtml(name || "作品预览") + '</b>' +
+      '<button id="pm-close" style="border:none;background:#f1f2f4;border-radius:50%;width:34px;height:34px;font-size:18px;line-height:1;cursor:pointer;flex:none;color:#555">×</button></div>' +
+      '<div id="pm-player" style="width:100%"></div></div>';
+    document.body.appendChild(modal);
+    let dp = null;
+    function close() {
+      try { if (dp) dp.destroy(); } catch (e) { /* ignore */ }
+      modal.remove();
+    }
+    const closeBtn = modal.querySelector("#pm-close");
+    if (closeBtn) closeBtn.onclick = close;
+    modal.addEventListener("click", function (ev) { if (ev.target === modal) close(); });
+    ensureDPlayer(function () {
+      const box = modal.querySelector("#pm-player");
+      if (!box || !modal.isConnected) return;
+      const opt = { container: box, autoplay: false, lang: "zh-cn" };
+      opt.video = { url: url, type: "auto" };
+      try { dp = new DPlayer(opt); } catch (e) { alert("播放器初始化失败，请使用下载作品"); }
+    });
+  }
+
   function previewWork(btn) {
     const url = btn && btn.getAttribute("data-preview");
     const name = (btn && btn.getAttribute("data-name")) || "";
     const ext = name.split(".").pop().toLowerCase();
-    const ok = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "pdf",
-      "mp4", "webm", "ogg", "mov", "mp3", "wav", "m4a", "aac", "txt", "md"].includes(ext);
-    if (url && ok) {
-      window.open(url, "_blank", "noopener");
-    } else {
-      alert("此文件不可预览");
+    if (!url) { alert("此文件不可预览"); return; }
+    const media = ["mp4", "mov", "webm", "ogg", "mp3", "wav", "m4a", "aac"];
+    const inline = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "pdf", "txt", "md"];
+    if (media.includes(ext)) {
+      const isAudio = ["mp3", "wav", "m4a", "aac", "ogg"].includes(ext);
+      return openMediaPreview(url, name, isAudio);
     }
+    if (inline.includes(ext)) {
+      return window.open(url, "_blank", "noopener");
+    }
+    alert("此文件不可预览");
   }
   window.previewWork = previewWork;
 

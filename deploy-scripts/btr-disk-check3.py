@@ -1,0 +1,20 @@
+# -*- coding: utf-8 -*-
+import paramiko
+ssh = paramiko.SSHClient()
+ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+ssh.connect("103.236.92.193", port=45185, username="root", password="Q6Cq54BgvHp8", timeout=30)
+def run(c, timeout=120):
+    i, o, e = ssh.exec_command(c, timeout=timeout)
+    return o.read().decode("utf-8", "replace").strip()
+print("== /var 大头 ==")
+print(run("du -x -d1 -h /var 2>/dev/null | sort -rh | head -10"))
+print("== /var/lib 大头 ==")
+print(run("du -x -d1 -h /var/lib 2>/dev/null | sort -rh | head -8"))
+print("== docker ==")
+print(run("du -sh /var/lib/docker 2>/dev/null; docker ps 2>/dev/null | head -5"))
+print("== apt 缓存 ==")
+print(run("du -sh /var/cache/apt 2>/dev/null"))
+print("== journal ==")
+print(run("du -sh /var/log/journal 2>/dev/null; journalctl --disk-usage 2>/dev/null | tail -1"))
+ssh.close()
+print("DONE")
