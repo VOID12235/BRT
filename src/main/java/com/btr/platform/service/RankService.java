@@ -153,6 +153,16 @@ public class RankService {
         if (!signupIds.isEmpty()) {
             signupMapper.selectBatchIds(signupIds).forEach(s -> signups.put(s.getId(), s));
         }
+        // 兜底：旧数据 winner.signup_id 可能缺失，按作品的 signup_id 补齐，保证榜单显示选手昵称
+        if (!offline && !works.isEmpty()) {
+            List<Long> workSignupIds = works.values().stream().map(Work::getSignupId)
+                    .filter(java.util.Objects::nonNull).distinct().toList();
+            List<Long> missing = workSignupIds.stream()
+                    .filter(id -> !signups.containsKey(id)).toList();
+            if (!missing.isEmpty()) {
+                signupMapper.selectBatchIds(missing).forEach(s -> signups.put(s.getId(), s));
+            }
+        }
         List<Long> awardIds = winners.stream().map(Winner::getAwardId)
                 .filter(java.util.Objects::nonNull).distinct().toList();
         if (!awardIds.isEmpty()) {
@@ -191,11 +201,18 @@ public class RankService {
                 row.setWorkId(work.getId());
                 row.setUserId(work.getUserId());
                 row.setWorkTitle(work.getTitle());
+                row.setFileUrl(work.getFileUrl());
+                row.setFileName(work.getFileName());
+                row.setCover(work.getCover());
                 Signup signup = signups.get(work.getSignupId());
                 if (signup != null) {
                     row.setAuthor(signup.getRealName());
                     row.setRealName(signup.getRealName());
                     row.setSchool(signup.getSchool());
+                } else {
+                    User user = userMapper.selectById(work.getUserId());
+                    row.setAuthor(user == null ? "" : user.getNickname());
+                    row.setRealName(row.getAuthor());
                 }
                 score = scoreMap.get(work.getId());
             }
@@ -292,6 +309,9 @@ public class RankService {
                 row.setWorkId(work.getId());
                 row.setUserId(work.getUserId());
                 row.setWorkTitle(work.getTitle());
+                row.setFileUrl(work.getFileUrl());
+                row.setFileName(work.getFileName());
+                row.setCover(work.getCover());
                 Signup signup = signups.get(work.getSignupId());
                 if (signup != null) {
                     row.setAuthor(signup.getRealName());

@@ -233,7 +233,7 @@
               <h4>${B.escapeHtml(w.title)}</h4>
               <p>${B.escapeHtml(w.description || "暂无作品描述")}</p>
               <div class="meta">
-                <span>${B.escapeHtml(w.author || "匿名选手")}${w.school ? " · " + B.escapeHtml(w.school) : ""}</span>
+                <span>${w.contestTitle ? "【" + B.escapeHtml(w.contestTitle) + "】" : ""}${B.escapeHtml(w.author || "选手")}${w.school ? " · " + B.escapeHtml(w.school) : ""}</span>
                 ${showScore && w.avgScore ? `<b class="mono">${Number(w.avgScore).toFixed(2)} 分</b>` : "<span>进行中</span>"}
               </div>
             </div>

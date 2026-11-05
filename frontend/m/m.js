@@ -366,7 +366,7 @@
             .map(
               (w) => `<div class="work-item">
                 <img class="thumb" src="${esc(w.cover || "/assets/img/cover-1.svg")}" alt="" loading="lazy" />
-                <div class="meta"><b>${esc(w.title || "未命名作品")}</b><span>${esc(w.author || "匿名选手")}${w.school ? " · " + esc(w.school) : ""}</span></div>
+                <div class="meta"><b>${esc(w.title || "未命名作品")}</b><span>${w.contestTitle ? "【" + esc(w.contestTitle) + "】" : ""}${esc(w.author || "选手")}${w.school ? " · " + esc(w.school) : ""}</span></div>
                 <span class="score" style="color:${showScore && w.avgScore ? "var(--brand)" : "var(--muted)"}">${showScore && w.avgScore ? Number(w.avgScore).toFixed(2) + " 分" : "进行中"}</span>
                 ${w.fileUrl ? `<a class="btn-download" href="${esc(downloadFile(w.fileUrl))}" download="${esc(w.fileName || "作品文件")}">下载</a><a class="btn-download" href="${esc(w.fileUrl)}" target="_blank" rel="noopener">观看</a>` : ""}
               </div>`
@@ -743,7 +743,7 @@
               .map(
                 (row) => `<div class="rank-row">
                   <span class="rank-no ${row.rank === 1 ? "top" : ""}">${row.rank}</span>
-                  <div class="info"><b>${esc(row.workTitle)}</b><span>${esc(row.author || "")}${row.school ? " · " + esc(row.school) : ""}</span></div>
+                  <div class="info"><b>${esc(row.workTitle)}</b><span>${esc(row.author || "选手")}${row.school ? " · " + esc(row.school) : ""}</span>${row.fileUrl ? `<div style="display:flex;gap:8px;margin-top:6px"><a class="btn-download" href="${esc(downloadFile(row.fileUrl))}" download="${esc(row.fileName || "作品文件")}">下载作品</a><a class="btn-download" href="${esc(row.fileUrl)}" target="_blank" rel="noopener">观看</a></div>` : ""}</div>
                   <span class="score">${Number(row.avgScore).toFixed(2)}</span>
                 </div>`
               )

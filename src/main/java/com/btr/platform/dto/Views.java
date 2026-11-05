@@ -173,6 +173,10 @@ public final class Views {
         private BigDecimal prizeAmount;
         /** 该获奖者所得奖品描述，未获奖为 null */
         private String gift;
+        /** 获奖作品文件下载地址（公示榜单展示），未上传为 null */
+        private String fileUrl;
+        private String fileName;
+        private String cover;
     }
 
     @Data

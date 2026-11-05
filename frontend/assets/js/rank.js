@@ -4,9 +4,22 @@
   let contestId = Number(B.qs("contestId"));
 
   function playerLink(row) {
-    const name = B.escapeHtml(row.author || row.realName || "匿名选手");
+    const name = B.escapeHtml(row.author || row.realName || "选手");
     if (!row.userId) return name;
     return `<a href="/portfolio.html?id=${row.userId}" class="player-link" style="color:var(--brand,#e8a33d);text-decoration:underline;text-underline-offset:2px">${name}</a>`;
+  }
+
+  function downloadUrl(url) {
+    if (!url) return "";
+    return /\/download$/i.test(url) ? url : url.replace(/\/files\/([^/]+(?:\/[^/]+)?)$/, "/files/$1/download");
+  }
+
+  function workActions(row) {
+    if (!row.fileUrl) return "";
+    return `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <a class="btn btn-outline btn-xs" href="${B.escapeHtml(downloadUrl(row.fileUrl))}" download="${B.escapeHtml(row.fileName || "作品文件")}">下载作品</a>
+      <a class="btn btn-outline btn-xs" href="${B.escapeHtml(row.fileUrl)}" target="_blank" rel="noopener">观看</a>
+    </div>`;
   }
 
   async function init() {
@@ -87,6 +100,7 @@
           <div class="podium-score">${
             prize ? B.escapeHtml(prize) : '<span class="muted">—</span>'
           }</div>
+          ${workActions(row)}
           ${row.awardName ? `<span class="award-pill ${isFirst ? "gold" : "silver"}" style="margin-top:10px">${B.escapeHtml(row.awardName)}</span>` : ""}
         </div>`;
       })
@@ -101,7 +115,7 @@
             .map(
               (row) => `<tr>
                 <td><span class="rank-no ${row.rank <= 3 ? "top" : ""}">${row.rank}</span></td>
-                <td class="title-cell">${B.escapeHtml(row.workTitle)}</td>
+                <td class="title-cell">${B.escapeHtml(row.workTitle)}${workActions(row)}</td>
                 <td>${playerLink(row)}</td>
                 <td>${B.escapeHtml(row.school || "—")}</td>
                 <td>${
