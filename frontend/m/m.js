@@ -39,8 +39,8 @@
     const url = btn && btn.getAttribute("data-preview");
     const name = (btn && btn.getAttribute("data-name")) || "";
     const ext = name.split(".").pop().toLowerCase();
-    const ok = ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "pdf",
-      "mp4", "webm", "ogg", "mov", "mp3", "wav", "m4a", "aac", "txt"].includes(ext);
+    const ok = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "pdf",
+      "mp4", "webm", "ogg", "mov", "mp3", "wav", "m4a", "aac", "txt", "md"].includes(ext);
     if (url && ok) {
       window.open(url, "_blank", "noopener");
     } else {

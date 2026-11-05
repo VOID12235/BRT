@@ -33,9 +33,10 @@ public class FileService {
             "jpg", "jpeg", "png", "gif", "webp", "svg", "pdf", "zip", "rar", "7z",
             "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt", "md", "mp4", "mov");
 
-    /** 可安全内联预览的类型，其余一律以附件形式下载，避免存储型 XSS。 */
+    /** 可安全内联预览的类型，其余一律以附件形式下载，避免存储型 XSS（svg 始终排除）。 */
     private static final Set<String> INLINE_TYPES = Set.of(
-            "jpg", "jpeg", "png", "gif", "webp", "pdf", "mp4", "mov", "txt", "md");
+            "jpg", "jpeg", "png", "gif", "webp", "bmp", "pdf",
+            "mp4", "mov", "webm", "ogg", "mp3", "wav", "m4a", "aac", "txt", "md");
 
     private final UploadFileMapper uploadFileMapper;
     private final ConfigService configService;
@@ -178,9 +179,16 @@ public class FileService {
             case "gif" -> "image/gif";
             case "webp" -> "image/webp";
             case "svg" -> "image/svg+xml";
+            case "bmp" -> "image/bmp";
             case "pdf" -> "application/pdf";
             case "mp4" -> "video/mp4";
             case "mov" -> "video/quicktime";
+            case "webm" -> "video/webm";
+            case "ogg" -> "audio/ogg";
+            case "mp3" -> "audio/mpeg";
+            case "wav" -> "audio/wav";
+            case "m4a" -> "audio/mp4";
+            case "aac" -> "audio/aac";
             case "txt", "md" -> "text/plain; charset=UTF-8";
             default -> "application/octet-stream";
         };
