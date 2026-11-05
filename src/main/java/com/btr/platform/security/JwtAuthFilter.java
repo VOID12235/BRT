@@ -74,22 +74,25 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String cacheKey = AUTH_CACHE_PREFIX + userId;
         String cached = cacheService.get(cacheKey);
         if (cached != null) {
-            int sep = cached.indexOf(':');
-            if (sep > 0) {
+            String[] parts = cached.split(":");
+            // 格式1（新）：status:role:tokenVersion；格式0（旧）：status:tokenVersion
+            if (parts.length >= 3) {
                 User user = new User();
                 user.setId(userId);
-                user.setStatus(cached.substring(0, sep));
+                user.setStatus(parts[0]);
+                user.setRole(parts[1]);
                 try {
-                    user.setTokenVersion(Integer.parseInt(cached.substring(sep + 1)));
+                    user.setTokenVersion(Integer.parseInt(parts[2]));
                 } catch (NumberFormatException ignored) {
                     user.setTokenVersion(0);
                 }
                 return user;
             }
+            // 旧格式缓存缺角色信息，视为无效，回源数据库
         }
         User user = userMapper.selectById(userId);
         if (user != null) {
-            cacheService.set(cacheKey, user.getStatus() + ":" + tokenVersion(user), AUTH_CACHE_TTL);
+            cacheService.set(cacheKey, user.getStatus() + ":" + user.getRole() + ":" + tokenVersion(user), AUTH_CACHE_TTL);
         }
         return user;
     }
