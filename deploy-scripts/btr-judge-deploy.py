@@ -14,7 +14,11 @@ FILES = [
     ("entity/JudgeAssign.java", "entity/JudgeAssign.java"),
     ("entity/Score.java", "entity/Score.java"),
     ("service/JudgeService.java", "service/JudgeService.java"),
+    ("service/ContestService.java", "service/ContestService.java"),
+    ("service/RankService.java", "service/RankService.java"),
+    ("service/ContestStatusScheduler.java", "service/ContestStatusScheduler.java"),
     ("controller/AdminController.java", "controller/AdminController.java"),
+    ("controller/PortfolioController.java", "controller/PortfolioController.java"),
 ]
 
 cli = paramiko.SSHClient()

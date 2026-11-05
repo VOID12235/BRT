@@ -11,6 +11,7 @@
     DRAFT: { label: "筹备中", cls: "badge-draft" },
     SIGNUP: { label: "报名中", cls: "badge-signup" },
     REVIEW: { label: "进行中", cls: "badge-review" },
+    JUDGING: { label: "打分中", cls: "badge-judging" },
     PUBLISHED: { label: "已公示", cls: "badge-published" },
     FINISHED: { label: "已结束", cls: "badge-finished" },
   };

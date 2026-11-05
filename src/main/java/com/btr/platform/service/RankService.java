@@ -82,7 +82,8 @@ public class RankService {
             throw new BizException(404, "赛事不存在");
         }
         boolean published = "PUBLISHED".equals(contest.getStatus()) || "FINISHED".equals(contest.getStatus());
-        if (!published && !includeUnpublished) {
+        boolean judging = "JUDGING".equals(contest.getStatus());
+        if (!published && !judging && !includeUnpublished) {
             RankResult empty = new RankResult();
             empty.setContestId(contest.getId());
             empty.setContestTitle(contest.getTitle());
@@ -91,6 +92,11 @@ public class RankService {
             empty.setRows(List.of());
             empty.setGroups(List.of());
             return empty;
+        }
+        // 打分中（公开访问）：仅展示作品列表（含预览），不公布分数与排名；
+        // 管理员预览（includeUnpublished）仍返回实时分数结果。
+        if (judging && !includeUnpublished) {
+            return buildWorksPreview(contest);
         }
         // 已公示赛事优先展示公示获奖名单（winner 表），保证公开榜单与获奖名单/证书一致；
         // 管理员预览（includeUnpublished）仍返回实时分数结果。
@@ -118,6 +124,65 @@ public class RankService {
     }
 
     /** 从公示获奖名单（winner 表）组装公开榜单，管理员手动调整立即生效。 */
+    /** 打分中（JUDGING）公开榜单：仅展示作品/选手列表（含预览与封面），不公布分数与排名 */
+    private RankResult buildWorksPreview(Contest contest) {
+        Long contestId = contest.getId();
+        boolean offline = "OFFLINE".equals(contest.getMode());
+        RankResult result = new RankResult();
+        result.setContestId(contestId);
+        result.setContestTitle(contest.getTitle());
+        result.setStatus(contest.getStatus());
+        result.setMode(contest.getMode());
+        result.setPublished(false);
+        result.setUpdatedAt(LocalDateTime.now());
+        List<RankRow> rows = new ArrayList<>();
+        Map<Long, Signup> signups = signupMapper.selectList(new QueryWrapper<Signup>()
+                .eq("contest_id", contestId).eq("status", "APPROVED"))
+                .stream().collect(Collectors.toMap(Signup::getId, Function.identity(), (a, b) -> a));
+        if (!offline) {
+            workMapper.selectList(new QueryWrapper<Work>()
+                    .eq("contest_id", contestId).eq("status", "SUBMITTED")
+                    .orderByAsc("submitted_at"))
+                    .forEach(w -> {
+                        RankRow row = new RankRow();
+                        row.setWorkId(w.getId());
+                        row.setSignupId(w.getSignupId());
+                        row.setUserId(w.getUserId());
+                        row.setWorkTitle(w.getTitle());
+                        row.setFileUrl(w.getFileUrl());
+                        row.setFileName(w.getFileName());
+                        row.setCover(w.getCover());
+                        Signup signup = signups.get(w.getSignupId());
+                        if (signup != null) {
+                            row.setAuthor(signup.getRealName());
+                            row.setRealName(signup.getRealName());
+                            row.setSchool(signup.getSchool());
+                        } else {
+                            User user = userMapper.selectById(w.getUserId());
+                            row.setAuthor(user == null ? "" : user.getNickname());
+                            row.setRealName(row.getAuthor());
+                        }
+                        rows.add(row);
+                    });
+        } else {
+            signups.values().stream()
+                    .sorted(Comparator.comparing(Signup::getCreatedAt))
+                    .forEach(s -> {
+                        RankRow row = new RankRow();
+                        row.setSignupId(s.getId());
+                        row.setUserId(s.getUserId());
+                        row.setWorkTitle("选手：" + s.getRealName());
+                        row.setAuthor(s.getRealName());
+                        row.setRealName(s.getRealName());
+                        row.setSchool(s.getSchool());
+                        rows.add(row);
+                    });
+        }
+        result.setRows(rows);
+        result.setGroups(List.of());
+        return result;
+    }
+
     private RankResult buildFromWinners(Contest contest) {
         Long contestId = contest.getId();
         boolean offline = "OFFLINE".equals(contest.getMode());

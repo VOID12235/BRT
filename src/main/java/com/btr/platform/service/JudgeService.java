@@ -135,6 +135,11 @@ public class JudgeService {
 
         List<JudgeTask> tasks = new ArrayList<>();
         for (JudgeAssign assign : expanded) {
+            Contest contest = contests.get(assign.getContestId());
+            // 评委仅在「打分中」及以后阶段可见作品与任务（报名中/进行中等阶段不可见）
+            if (contest == null || !Set.of("JUDGING", "FINISHED", "PUBLISHED").contains(contest.getStatus())) {
+                continue;
+            }
             if (assign.getWorkId() != null) {
                 Work work = works.get(assign.getWorkId());
                 if (work == null || !"SUBMITTED".equals(work.getStatus())) {
@@ -150,7 +155,6 @@ public class JudgeService {
                 task.setFileName(work.getFileName());
                 task.setSubmittedAt(work.getSubmittedAt());
                 task.setContestId(assign.getContestId());
-                Contest contest = contests.get(assign.getContestId());
                 task.setContestTitle(contest == null ? "" : contest.getTitle());
                 Signup signup = signups.get(work.getSignupId());
                 task.setRealName(signup == null ? "" : signup.getRealName());
@@ -173,7 +177,6 @@ public class JudgeService {
                 task.setWorkTitle("选手：" + signup.getRealName());
                 task.setWorkDescription(signup.getIntro());
                 task.setContestId(assign.getContestId());
-                Contest contest = contests.get(assign.getContestId());
                 task.setContestTitle(contest == null ? "" : contest.getTitle());
                 task.setRealName(signup.getRealName());
                 task.setSchool(signup.getSchool());
@@ -397,7 +400,7 @@ public class JudgeService {
             throw new BizException(403, "该评审对象未分配给你评审");
         }
         Contest contest = contestMapper.selectById(assign.getContestId());
-        if (contest == null || !(Set.of("REVIEW", "FINISHED").contains(contest.getStatus()))) {
+        if (contest == null || !(Set.of("JUDGING", "FINISHED").contains(contest.getStatus()))) {
             throw new BizException("当前不在评审阶段，无法打分");
         }
         Score score;
@@ -742,7 +745,7 @@ public class JudgeService {
         if (Boolean.TRUE.equals(contest.getResultsLocked())) {
             throw new BizException("成绩已固化，无需重复操作");
         }
-        if (!Set.of("REVIEW", "FINISHED", "PUBLISHED").contains(contest.getStatus())) {
+        if (!Set.of("JUDGING", "FINISHED", "PUBLISHED").contains(contest.getStatus())) {
             throw new BizException("当前赛事状态不可固化成绩");
         }
         com.btr.platform.dto.Views.ScoreResultView view = scoreResults(contestId);

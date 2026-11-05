@@ -297,6 +297,7 @@ button {
 
 .badge-signup { background: var(--brand-soft); color: var(--brand); }
 .badge-review { background: var(--blue-soft); color: var(--blue); }
+.badge-judging { background: var(--purple-soft, rgba(156,106,222,.14)); color: var(--purple, #9C6ADE); }
 .badge-published { background: var(--green-soft); color: var(--green); }
 .badge-finished { background: var(--bg); color: var(--muted); }
 .badge-draft { background: var(--bg); color: var(--muted); }

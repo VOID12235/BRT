@@ -28,7 +28,7 @@ import java.util.Set;
 @Service
 public class ContestService {
 
-    public static final Set<String> STATUSES = Set.of("DRAFT", "SIGNUP", "REVIEW", "PUBLISHED", "FINISHED");
+    public static final Set<String> STATUSES = Set.of("DRAFT", "SIGNUP", "REVIEW", "JUDGING", "FINISHED", "PUBLISHED");
     public static final Set<String> MODES = Set.of("ONLINE", "OFFLINE");
 
     private final ContestMapper contestMapper;
@@ -130,11 +130,12 @@ public class ContestService {
     }
 
     /** 允许的状态流转；同状态视为幂等。禁止跨阶段跳跃（如 DRAFT 直接 PUBLISHED）。
-     *  业务流：报名 → 进行中（可提交/修改作品）→ 已结束（作品锁定，评审收尾）→ 已公示（榜单+证书固化） */
+     *  业务流：报名 → 进行中（可提交/修改作品）→ 打分中（评委评审，作品锁定）→ 已结束（作品锁定，公布结果）→ 已公示（榜单+证书固化） */
     private static final java.util.Map<String, java.util.Set<String>> TRANSITIONS = java.util.Map.of(
             "DRAFT", java.util.Set.of("SIGNUP"),
             "SIGNUP", java.util.Set.of("DRAFT", "REVIEW"),
-            "REVIEW", java.util.Set.of("SIGNUP", "FINISHED"),
+            "REVIEW", java.util.Set.of("SIGNUP", "JUDGING", "FINISHED"),
+            "JUDGING", java.util.Set.of("REVIEW", "FINISHED"),
             "PUBLISHED", java.util.Set.of("FINISHED"),
             "FINISHED", java.util.Set.of("PUBLISHED"));
 
@@ -158,8 +159,11 @@ public class ContestService {
         contest.setUpdatedAt(LocalDateTime.now());
         contestMapper.updateById(contest);
         // 进入「进行中」不再锁定作品：选手在比赛进行中可反复提交/修改作品（仅锁定已结束的）
+        // 进入「打分中」：锁定全部作品，评委开始评审，选手不可再修改
         // 进入「已结束」：锁定全部作品，作品进入评审收尾阶段不可再改
-        if ("FINISHED".equals(status) && !"FINISHED".equals(from) && "ONLINE".equals(contest.getMode())) {
+        if (("JUDGING".equals(status) || "FINISHED".equals(status))
+                && !"JUDGING".equals(from) && !"FINISHED".equals(from)
+                && "ONLINE".equals(contest.getMode())) {
             Work lock = new Work();
             lock.setLocked(true);
             workMapper.update(lock, new QueryWrapper<Work>().eq("contest_id", id));
@@ -172,6 +176,12 @@ public class ContestService {
         }
         // 已结束回退到进行中：解除作品锁定，允许选手继续修改
         if ("REVIEW".equals(status) && "FINISHED".equals(from)) {
+            Work unlock = new Work();
+            unlock.setLocked(false);
+            workMapper.update(unlock, new QueryWrapper<Work>().eq("contest_id", id));
+        }
+        // 打分中回退到进行中：解除作品锁定，允许选手继续修改
+        if ("REVIEW".equals(status) && "JUDGING".equals(from)) {
             Work unlock = new Work();
             unlock.setLocked(false);
             workMapper.update(unlock, new QueryWrapper<Work>().eq("contest_id", id));

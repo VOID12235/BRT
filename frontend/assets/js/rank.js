@@ -118,22 +118,60 @@
     const url = btn && btn.getAttribute("data-preview");
     const name = (btn && btn.getAttribute("data-name")) || "";
     const ext = name.split(".").pop().toLowerCase();
-    if (!url) { alert("此文件不可预览"); return; }
+    if (!url) { openUnpreviewable(name); return; }
     const media = ["mp4", "mov", "webm", "ogg", "mp3", "wav", "m4a", "aac"];
-    const inline = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "pdf", "txt", "md"];
+    const img = ["jpg", "jpeg", "png", "gif", "webp", "bmp"];
     if (media.includes(ext)) return previewMedia(url, name);
     if (ext === "docx") return previewDocx(url, name);
     if (ext === "xlsx" || ext === "xls") return previewXlsx(url, name);
-    if (inline.includes(ext)) return window.open(url, "_blank", "noopener");
-    alert("此文件不可预览");
+    if (img.includes(ext)) return previewImage(url, name);
+    if (ext === "pdf") return previewPdf(url, name);
+    if (ext === "txt" || ext === "md") return previewText(url, name);
+    openUnpreviewable(name);
   }
   window.previewWork = previewWork;
+
+  /** 图片弹窗预览（不触发下载） */
+  function previewImage(url, name) {
+    openPreviewModal(name, function (box) {
+      box.style.minHeight = "60vh";
+      box.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:52vh;box-sizing:border-box">' +
+        '<img src="' + B.escapeHtml(url) + '" style="max-width:100%;max-height:72vh;border-radius:8px;object-fit:contain" alt="作品图片" /></div>';
+    });
+  }
+
+  /** PDF 弹窗内联预览（iframe 渲染，不触发下载） */
+  function previewPdf(url, name) {
+    openPreviewModal(name, function (box) {
+      box.style.minHeight = "75vh";
+      box.innerHTML = '<iframe src="' + B.escapeHtml(url) + '" style="width:100%;height:75vh;border:none;border-radius:8px;background:#f1f2f4"></iframe>';
+    });
+  }
+
+  /** 文本弹窗预览 */
+  function previewText(url, name) {
+    openPreviewModal(name, function (box) {
+      box.style.minHeight = "50vh";
+      box.style.overflow = "auto";
+      box.innerHTML = '<p style="padding:24px;color:#888">加载中…</p>';
+      fetch(url).then(function (r) { return r.text(); }).then(function (t) {
+        box.innerHTML = '<pre style="margin:0;padding:14px;background:#f7f8fa;border-radius:8px;font-size:13px;white-space:pre-wrap;word-break:break-all;max-height:58vh;overflow:auto;color:#333">' + B.escapeHtml(t.slice(0, 20000)) + '</pre>';
+      }).catch(function () { box.innerHTML = '<p style="padding:20px;color:#888">文本加载失败，请使用下载功能</p>'; });
+    });
+  }
+
+  /** 不可预览弹窗提示（不触发下载） */
+  function openUnpreviewable(name) {
+    openPreviewModal((name || "此文件") + " 无法在线预览", function (box) {
+      box.innerHTML = '<div style="padding:30px 12px;text-align:center;color:#666;font-size:14px;line-height:1.8">此文件类型暂不支持在线预览，<br/>请使用「下载作品」查看。</div>';
+    });
+  }
 
   async function init() {
     try {
       const data = await B.api.get("/contests?page=1&size=50");
       contests = (data.records || []).filter(
-        (c) => c.status === "PUBLISHED" || c.status === "FINISHED"
+        (c) => c.status === "PUBLISHED" || c.status === "FINISHED" || c.status === "JUDGING"
       );
       if (!contests.length) {
         contests = data.records || [];
@@ -179,9 +217,44 @@
     document.getElementById("rankContent").innerHTML = `<div class="card">${B.emptyState(title, desc)}</div>`;
   }
 
+  /** 打分中（JUDGING）：仅展示作品卡片（含预览/下载），不公布分数与排名 */
+  function renderJudgingWorks(rank) {
+    const rows = rank.rows || [];
+    if (!rows.length) {
+      return `<div class="card">${B.emptyState("暂无作品", "等待选手提交作品")}</div>`;
+    }
+    const cards = rows
+      .map(
+        (row) => `<div style="border:1px solid var(--line,rgba(0,0,0,.08));border-radius:14px;overflow:hidden;background:#fff;box-sizing:border-box">
+          ${
+            row.cover
+              ? `<img src="${B.escapeHtml(row.cover)}" style="width:100%;height:150px;object-fit:cover" alt="" />`
+              : '<div style="width:100%;height:150px;background:linear-gradient(135deg,#f0f1f4,#e4e6ea)"></div>'
+          }
+          <div style="padding:12px;box-sizing:border-box">
+            <b style="font-size:14px;color:#222;display:block;margin-bottom:4px;word-break:break-all">${B.escapeHtml(row.workTitle)}</b>
+            <span style="font-size:12px;color:#888">${B.escapeHtml(row.author || "")}${row.school ? " · " + B.escapeHtml(row.school) : ""}</span>
+            <div style="margin-top:10px">${workActions(row)}</div>
+          </div>
+        </div>`
+      )
+      .join("");
+    return `
+      <div class="result-hero" style="padding-top: 8px">
+        <span class="eyebrow">Judging in progress</span>
+        <h1>${B.escapeHtml(rank.contestTitle)}</h1>
+        <p>评委评审中 · 已展示全部作品 · 结果将在评审结束后公布</p>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:20px">${cards}</div>`;
+  }
+
   function render(rank) {
     const host = document.getElementById("rankContent");
     if (!rank.published) {
+      if (rank.status === "JUDGING") {
+        host.innerHTML = renderJudgingWorks(rank);
+        return;
+      }
       host.innerHTML = `<div class="card">${B.emptyState(
         "榜单尚未公示",
         "赛事当前状态为「" + B.statusInfo(rank.status).label + "」，评审结束后将统一公示"

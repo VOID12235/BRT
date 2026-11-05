@@ -149,6 +149,10 @@
   color: var(--amber);
 }
 
+.contest-cover .badge-judging {
+  color: var(--purple, #9C6ADE);
+}
+
 .contest-cover .badge-published {
   color: var(--blue);
 }
