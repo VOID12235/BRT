@@ -125,7 +125,7 @@
             .map(
               (g) => `<div>
                 <div class="row-between" style="margin-bottom: 8px">
-                  <span class="award-pill ${g.awardName.includes("一") ? "gold" : g.awardName.includes("二") ? "silver" : "bronze"}">${B.escapeHtml(g.awardName)}</span>
+                  <span class="award-pill ${g.items.some((i) => i.rank === 1) ? "gold" : g.items.some((i) => i.rank === 2) ? "silver" : "bronze"}">${B.escapeHtml(g.awardName)}</span>
                   <span class="tiny muted">${
                     B.formatPrize(g)
                       ? B.escapeHtml(B.formatPrize(g)) + " · "

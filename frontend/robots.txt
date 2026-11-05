@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /judge/
+Disallow: /api/
+Disallow: /m/center.html
+Disallow: /m/work.html
+Disallow: /m/signup.html
+
+Sitemap: http://103.236.92.193:20757/sitemap.xml

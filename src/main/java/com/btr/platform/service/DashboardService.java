@@ -17,9 +17,9 @@ import com.btr.platform.mapper.WorkMapper;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -71,15 +71,18 @@ public class DashboardService {
         }
 
         List<TrendPoint> trend = new ArrayList<>();
+        LocalDate startDay = LocalDate.now().minusDays(6);
+        // 一次查询取回 7 天内报名时间，再在内存分组，避免每天一次 COUNT
+        Map<LocalDate, Long> dailyCounts = signupMapper.selectList(new QueryWrapper<Signup>()
+                        .select("created_at").ge("created_at", startDay.atStartOfDay()))
+                .stream()
+                .filter(s -> s.getCreatedAt() != null)
+                .collect(Collectors.groupingBy(s -> s.getCreatedAt().toLocalDate(), Collectors.counting()));
         for (int i = 6; i >= 0; i--) {
             LocalDate day = LocalDate.now().minusDays(i);
-            LocalDateTime start = day.atStartOfDay();
-            LocalDateTime end = day.plusDays(1).atStartOfDay();
-            long count = signupMapper.selectCount(new QueryWrapper<Signup>()
-                    .ge("created_at", start).lt("created_at", end));
             TrendPoint point = new TrendPoint();
             point.setDate(day.toString());
-            point.setCount(count);
+            point.setCount(dailyCounts.getOrDefault(day, 0L));
             trend.add(point);
         }
         dashboard.setTrend(trend);

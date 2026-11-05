@@ -31,6 +31,7 @@ public class RankController {
 
     @GetMapping("/winners")
     public ApiResponse<List<Winner>> winners(@RequestParam Long contestId) {
-        return ApiResponse.ok(rankService.winners(contestId));
+        boolean admin = SecurityUtils.currentOrNull() != null && SecurityUtils.isAdmin();
+        return ApiResponse.ok(rankService.winners(contestId, admin));
     }
 }

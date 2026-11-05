@@ -19,6 +19,8 @@ public class Work {
     private String description;
     private String fileUrl;
     private String fileName;
+    /** 作品封面图 URL（上传接口 purpose=cover） */
+    private String cover;
     private String status;
     private Boolean locked;
     private LocalDateTime submittedAt;

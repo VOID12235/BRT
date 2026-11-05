@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>http://103.236.92.193:20757/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>http://103.236.92.193:20757/contest-list.html</loc><changefreq>daily</changefreq><priority>0.9</priority></url>
+  <url><loc>http://103.236.92.193:20757/contest-detail.html?id=1</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>http://103.236.92.193:20757/contest-detail.html?id=2</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>http://103.236.92.193:20757/contest-detail.html?id=3</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>http://103.236.92.193:20757/contest-detail.html?id=4</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>http://103.236.92.193:20757/contest-detail.html?id=6</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>http://103.236.92.193:20757/rank.html</loc><changefreq>daily</changefreq><priority>0.8</priority></url>
+  <url><loc>http://103.236.92.193:20757/notices.html</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>http://103.236.92.193:20757/portfolio.html</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>http://103.236.92.193:20757/signup.html</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>http://103.236.92.193:20757/work-submit.html</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>
+  <url><loc>http://103.236.92.193:20757/about.html</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>http://103.236.92.193:20757/login.html</loc><changefreq>monthly</changefreq><priority>0.4</priority></url>
+  <url><loc>http://103.236.92.193:20757/forgot-password.html</loc><changefreq>monthly</changefreq><priority>0.3</priority></url>
+</urlset>

@@ -10,7 +10,7 @@
   const STATUS = {
     DRAFT: { label: "筹备中", cls: "badge-draft" },
     SIGNUP: { label: "报名中", cls: "badge-signup" },
-    REVIEW: { label: "评审中", cls: "badge-review" },
+    REVIEW: { label: "进行中", cls: "badge-review" },
     PUBLISHED: { label: "已公示", cls: "badge-published" },
     FINISHED: { label: "已结束", cls: "badge-finished" },
   };
@@ -68,15 +68,28 @@
 
   let refreshing = null;
 
+  const DEFAULT_TIMEOUT = 20000;
+  const UPLOAD_TIMEOUT = 120000;
+
+  async function fetchWithTimeout(url, options = {}, timeout = DEFAULT_TIMEOUT) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeout);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function refreshAccessToken() {
     const refresh = storage.refresh;
     if (!refresh) return false;
     if (!refreshing) {
-      refreshing = fetch(API_BASE + "/auth/refresh", {
+      refreshing = fetchWithTimeout(API_BASE + "/auth/refresh", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: refresh }),
-      })
+      }, 15000)
         .then(async (res) => {
           const body = await res.json().catch(() => null);
           if (!res.ok || !body || body.code !== 0) return false;
@@ -100,12 +113,15 @@
 
     let res;
     try {
-      res = await fetch(API_BASE + path, {
+      res = await fetchWithTimeout(API_BASE + path, {
         method,
         headers: finalHeaders,
         body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
-      });
+      }, isForm ? UPLOAD_TIMEOUT : DEFAULT_TIMEOUT);
     } catch (e) {
+      if (e && e.name === "AbortError") {
+        throw new ApiError("请求超时，请稍后重试", 0, -1);
+      }
       throw new ApiError("网络连接失败，请检查服务是否启动", 0, -1);
     }
 
@@ -144,7 +160,8 @@
     const path = location.pathname;
     return (
       path === "/" ||
-      /\/(index|contest-list|contest-detail|rank|notices|login)\.html$/.test(path)
+      /\/(index|contest-list|contest-detail|rank|notices|login)\.html$/.test(path) ||
+      /^\/m\//.test(path)
     );
   }
 

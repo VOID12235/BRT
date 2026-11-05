@@ -1,0 +1,62 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f4f7">
+<title>BTR 赛事平台</title>
+  <meta name="description" content="BTR 赛事平台手机版：赛事中心、在线报名、作品提交、榜单公示一站式赛事服务。" />
+  <meta name="keywords" content="BTR赛事平台,赛事平台,移动端赛事,比赛报名" />
+<link rel="stylesheet" href="/m/m.css?v=20261105m2">
+</head>
+<body data-page="index">
+<div id="app">
+  <header class="m-header">
+    <div class="side"></div>
+    <h1>BTR 赛事平台</h1>
+    <div class="side">
+      <a class="icon-btn" href="/m/notices.html" aria-label="公告">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="m10 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.3 20a2 2 0 0 0 3.4 0" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </a>
+    </div>
+  </header>
+
+  <main class="m-main">
+    <div class="home-hero" id="heroSlides">
+      <img src="/assets/img/cover-1.svg" alt="BTR" style="width:100%;height:190px;object-fit:cover" />
+    </div>
+    <div class="dots" id="heroDots"></div>
+
+    <div class="quick-grid">
+      <div class="stat"><b id="stContests">–</b><span>公开赛事</span></div>
+      <div class="stat"><b id="stSignups">–</b><span>累计报名</span></div>
+      <div class="stat"><b id="stWorks">–</b><span>提交作品</span></div>
+    </div>
+
+    <a class="install-bar" href="/m/download.html">
+      <img src="/assets/img/btr-logo.svg" alt="BTR APP" />
+      <span><b>BTR赛事平台 APP</b><i>独立应用 · 更快更稳 · 支持上传下载</i></span>
+      <em>安装</em>
+    </a>
+
+    <div class="section-title"><h2>热门赛事</h2><a class="more" href="/m/contests.html">全部 <svg viewBox="0 0 24 24" width="12" height="12" style="display:inline;vertical-align:-1px"><path d="m10 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+    <div id="homeContests"></div>
+
+    <div class="section-title"><h2>公告与通知</h2><a class="more" href="/m/notices.html">全部 <svg viewBox="0 0 24 24" width="12" height="12" style="display:inline;vertical-align:-1px"><path d="m10 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+    <div id="homeNotices"></div>
+
+    <div class="section-title"><h2 id="rankTitle">最新榜单</h2><a class="more" href="/m/rank.html">完整榜单 <svg viewBox="0 0 24 24" width="12" height="12" style="display:inline;vertical-align:-1px"><path d="m10 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>
+    <div id="homeRank"></div>
+  </main>
+
+    <nav class="m-tabbar">
+    <a data-tab="home" href="/m/index.html"><svg viewBox="0 0 24 24"><path d="M4 10.5 12 3.5l8 7V20a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>首页</a>
+    <a data-tab="contests" href="/m/contests.html"><svg viewBox="0 0 24 24"><path d="M8 4h8v6a4 4 0 0 1-8 0z"/><path d="M8 6H4.5v1.5a3.5 3.5 0 0 0 3.5 3.5M16 6h3.5v1.5a3.5 3.5 0 0 1-3.5 3.5M12 14v3M8.5 21h7M10 17h4"/></svg>赛事</a>
+    <a data-tab="rank" href="/m/rank.html"><svg viewBox="0 0 24 24"><path d="M5 20h14M7 20v-6h3v6M11 20V8h3v12M15 20V5h3v15"/></svg>榜单</a>
+    <a data-tab="mine" href="/m/center.html"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5 20c0-3.5 3.1-5.5 7-5.5s7 2 7 5.5"/></svg>我的</a>
+  </nav>
+</div>
+<script src="/assets/js/api.js?v=20261105a2"></script>
+<script src="/m/m.js?v=20261105b1"></script>
+</body>
+</html>

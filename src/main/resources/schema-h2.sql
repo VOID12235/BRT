@@ -23,6 +23,7 @@ CREATE TABLE sys_user (
     role VARCHAR(20) NOT NULL DEFAULT 'PLAYER',
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     avatar VARCHAR(255),
+    token_version INT NOT NULL DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT uk_user_account UNIQUE (account),

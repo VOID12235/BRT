@@ -20,6 +20,8 @@ public class User {
     private String role;
     private String status;
     private String avatar;
+    /** 令牌版本：改密、禁用、角色变更时自增，使已签发的 Token 立即失效。 */
+    private Integer tokenVersion;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

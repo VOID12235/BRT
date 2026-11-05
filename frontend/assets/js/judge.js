@@ -96,7 +96,7 @@
   }
 
   function statusLabel(status) {
-    if (status === "REVIEW") return "评审中";
+    if (status === "REVIEW") return "进行中";
     if (status === "FINISHED") return "已结束";
     return "报名中";
   }
@@ -248,7 +248,8 @@
   function renderWork(task) {
     const contest = state.contests[task.contestId];
     const contestStatus = contest ? contest.status : "";
-    const locked = contestStatus && contestStatus !== "REVIEW";
+    // 进行中 / 已结束（评审收尾）阶段均可打分
+    const locked = contestStatus && !(contestStatus === "REVIEW" || contestStatus === "FINISHED");
     const value = isScored(task) ? Number(task.score) : 80;
 
     document.getElementById("workPanel").innerHTML = `

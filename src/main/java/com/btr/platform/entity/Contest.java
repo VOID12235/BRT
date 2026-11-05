@@ -22,6 +22,10 @@ public class Contest {
     private BigDecimal prizeAmount;
     /** 比赛类型：ONLINE 线上 / OFFLINE 线下 */
     private String mode;
+    /** 线下赛事录像视频 URL（管理员上传），可为空 */
+    private String videoUrl;
+    /** 线下赛事录像视频名称 */
+    private String videoName;
     private LocalDateTime signupStart;
     private LocalDateTime signupEnd;
     private LocalDateTime reviewStart;

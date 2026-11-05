@@ -71,10 +71,33 @@
     });
 
     if (timer) clearInterval(timer);
-    if (slides.length > 1) {
+    timer = null;
+    startTimer();
+  }
+
+  function startTimer() {
+    if (timer) clearInterval(timer);
+    timer = null;
+    // 仅在页面可见时轮播，切后台/离开页面时停止，避免定时器空转
+    if (slides.length > 1 && document.visibilityState === "visible") {
       timer = setInterval(() => goTo((slideIndex + 1) % slides.length), 5000);
     }
   }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      startTimer();
+    } else if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  });
+  window.addEventListener("pagehide", () => {
+    if (timer) {
+      clearInterval(timer);
+      timer = null;
+    }
+  });
 
   function goTo(index) {
     const frames = document.querySelectorAll(".poster-slide");

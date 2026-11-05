@@ -5,15 +5,16 @@
   --bg: #f5f6f8;
   --bg-soft: #eef0f4;
   --surface: #ffffff;
-  --surface-2: #fbfbfc;
-  --ink: #17181c;
-  --ink-2: #4b4f58;
-  --muted: #8a8f99;
+  --surface-2: #fafbfc;
+  --ink: #15161b;
+  --ink-2: #4c505a;
+  --muted: #8b909a;
   --line: #e9ebef;
-  --line-strong: #dcdfe5;
+  --line-strong: #dbdfe6;
   --brand: #e5484d;
   --brand-dark: #c93b40;
   --brand-soft: #fdecec;
+  --brand-2: #ff7a6b;
   --blue: #2f6fed;
   --blue-soft: #edf3ff;
   --green: #1f9d68;
@@ -22,13 +23,14 @@
   --amber-soft: #fdf5e7;
   --violet: #6d5bd0;
   --violet-soft: #f1effd;
-  --radius-sm: 10px;
-  --radius: 16px;
-  --radius-lg: 24px;
-  --shadow-sm: 0 1px 2px rgba(20, 22, 26, 0.04);
-  --shadow: 0 1px 2px rgba(20, 22, 26, 0.04), 0 10px 30px rgba(20, 22, 26, 0.05);
-  --shadow-lg: 0 24px 60px rgba(20, 22, 26, 0.12);
-  --header-h: 68px;
+  --radius-sm: 12px;
+  --radius: 18px;
+  --radius-lg: 28px;
+  --shadow-sm: 0 1px 2px rgba(17, 19, 24, 0.04);
+  --shadow: 0 2px 4px rgba(17, 19, 24, 0.04), 0 16px 36px rgba(17, 19, 24, 0.06);
+  --shadow-lg: 0 30px 80px rgba(17, 19, 24, 0.14);
+  --ring: 0 0 0 4px rgba(229, 72, 77, 0.14);
+  --header-h: 72px;
   --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", "PingFang SC",
     "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
 }
@@ -48,10 +50,13 @@ body {
   margin: 0;
   font-family: var(--font);
   color: var(--ink);
-  background: var(--bg);
+  background:
+    radial-gradient(1100px 520px at 50% -10%, #ffffff 0%, rgba(255, 255, 255, 0) 62%),
+    var(--bg);
   font-size: 15px;
-  line-height: 1.65;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 img,
@@ -89,9 +94,9 @@ h1,
 h2,
 h3,
 h4 {
-  line-height: 1.25;
-  letter-spacing: -0.02em;
-  font-weight: 650;
+  line-height: 1.22;
+  letter-spacing: -0.03em;
+  font-weight: 700;
 }
 
 ul,
@@ -116,16 +121,16 @@ ol {
 }
 
 .section {
-  padding: 72px 0;
+  padding: 80px 0;
 }
 
 .section-sm {
-  padding: 40px 0;
+  padding: 44px 0;
 }
 
 .page-main {
   min-height: calc(100vh - var(--header-h));
-  padding: 40px 0 80px;
+  padding: 40px 0 88px;
 }
 
 .muted {
@@ -215,6 +220,7 @@ ol {
   font-size: 14px;
   line-height: 1;
   white-space: nowrap;
+  letter-spacing: 0.005em;
   transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease,
     box-shadow 0.16s ease, color 0.16s ease;
 }
@@ -227,6 +233,11 @@ ol {
   transform: translateY(0);
 }
 
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+
 .btn:disabled,
 .btn.is-disabled {
   opacity: 0.5;
@@ -234,18 +245,20 @@ ol {
 }
 
 .btn-primary {
-  background: var(--brand);
+  background: linear-gradient(135deg, #f05a5f 0%, var(--brand) 52%, #d93d43 100%);
   color: #fff;
-  box-shadow: 0 6px 16px rgba(229, 72, 77, 0.24);
+  box-shadow: 0 8px 20px rgba(229, 72, 77, 0.26);
 }
 
 .btn-primary:hover {
-  background: var(--brand-dark);
+  background: linear-gradient(135deg, #f46a6f 0%, #e5484d 52%, #c93b40 100%);
+  box-shadow: 0 10px 26px rgba(229, 72, 77, 0.32);
 }
 
 .btn-dark {
   background: var(--ink);
   color: #fff;
+  box-shadow: 0 8px 20px rgba(21, 22, 27, 0.18);
 }
 
 .btn-dark:hover {
@@ -253,12 +266,13 @@ ol {
 }
 
 .btn-outline {
-  background: transparent;
+  background: rgba(255, 255, 255, 0.72);
   border-color: var(--line-strong);
 }
 
 .btn-outline:hover {
   border-color: var(--ink);
+  background: #fff;
 }
 
 .btn-ghost {
@@ -332,7 +346,7 @@ ol {
 .textarea {
   width: 100%;
   border: 1px solid var(--line-strong);
-  border-radius: 12px;
+  border-radius: 13px;
   background: var(--surface);
   padding: 11px 14px;
   font-size: 14px;
@@ -348,8 +362,8 @@ ol {
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: var(--ink);
-  box-shadow: 0 0 0 4px rgba(23, 24, 28, 0.06);
+  border-color: var(--brand);
+  box-shadow: var(--ring);
 }
 
 .textarea {
@@ -451,6 +465,35 @@ ol {
 
 .badge-plain::before {
   display: none;
+}
+
+/* 轻量信息胶囊 ---------------------------------------------------------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--ink-2);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.chip b {
+  color: var(--ink);
+  font-weight: 750;
+}
+
+.chip-brand {
+  background: var(--brand-soft);
+  color: var(--brand-dark);
+}
+
+.chip-brand b {
+  color: var(--brand-dark);
 }
 
 /* 提示条 ---------------------------------------------------------------- */

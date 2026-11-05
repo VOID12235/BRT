@@ -1,10 +1,12 @@
 package com.btr.platform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.btr.platform.common.BizException;
 import com.btr.platform.common.CacheService;
 import com.btr.platform.common.PageResult;
+import com.btr.platform.common.RateLimitService;
 import com.btr.platform.dto.Requests.AdminCreateUserReq;
 import com.btr.platform.dto.Requests.ForgotPasswordReq;
 import com.btr.platform.dto.Requests.LoginReq;
@@ -48,13 +50,15 @@ public class AuthService {
     private final EmailService emailService;
     private final LogService logService;
     private final ConfigService configService;
+    private final RateLimitService rateLimitService;
 
     @Value("${app.captcha.enabled:false}")
     private boolean envCaptchaEnabled;
 
     public AuthService(UserMapper userMapper, PasswordEncoder passwordEncoder, JwtService jwtService,
                        CacheService cacheService, CaptchaService captchaService,
-                       EmailService emailService, LogService logService, ConfigService configService) {
+                       EmailService emailService, LogService logService, ConfigService configService,
+                       RateLimitService rateLimitService) {
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
@@ -63,10 +67,12 @@ public class AuthService {
         this.emailService = emailService;
         this.logService = logService;
         this.configService = configService;
+        this.rateLimitService = rateLimitService;
     }
 
     @Transactional
     public AuthResult register(RegisterReq req, String ip) {
+        rateLimitService.check("register-ip", ip, 10, Duration.ofHours(1));
         if (!configService.getBool(ConfigService.KEY_SWITCH_REGISTER, true)) {
             throw new BizException(403, "当前暂未开放注册，请联系管理员");
         }
@@ -88,28 +94,29 @@ public class AuthService {
         user.setPhone(req.phone());
         user.setRole("PLAYER");
         user.setStatus("ACTIVE");
+        user.setTokenVersion(0);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(user);
         cacheService.delete(REG_KEY_PREFIX + email);
         cacheService.delete(REG_FAIL_PREFIX + email);
         logService.record(user.getId(), "REGISTER", account, ip);
-        emailService.send(email, "WELCOME", "欢迎加入 BTR",
-                "<p>Hi " + user.getNickname() + "，欢迎加入 BTR 赛事平台。</p>"
-                        + "<p>你的登录账号即注册邮箱：<b>" + account + "</b>，登录时输入邮箱与密码即可。</p>");
+        emailService.welcome(email, user.getNickname(), account);
         return issue(user);
     }
 
     /** 发送注册验证码邮件。邮箱已注册时返回 null（统一提示已发送，防账号枚举） */
     public String sendRegisterCode(ForgotPasswordReq req, String ip) {
+        rateLimitService.check("mail-ip", ip, 10, Duration.ofHours(1));
         String email = req.email().trim().toLowerCase();
-        if (userMapper.selectCount(new QueryWrapper<User>().eq("email", email)) > 0) {
-            logService.record(null, "REGISTER_CODE", "exists:" + email, ip);
-            return null;
-        }
+        // 先检查邮件服务是否可用，未配置时对已注册/未注册邮箱返回一致的错误，避免枚举
         ConfigService.MailRuntime mail = configService.mailRuntime();
         if (!mail.enabled || mail.host.isBlank()) {
             throw new BizException("管理员暂未配置邮件服务，暂不支持邮箱注册");
+        }
+        if (userMapper.selectCount(new QueryWrapper<User>().eq("email", email)) > 0) {
+            logService.record(null, "REGISTER_CODE", "exists:" + email, ip);
+            return null;
         }
         if (cacheService.get(REG_KEY_PREFIX + email) != null) {
             throw new BizException("发送过于频繁，请 1 分钟后再试");
@@ -152,6 +159,8 @@ public class AuthService {
     }
 
     public AuthResult login(LoginReq req, String ip) {
+        // 按来源 IP 限流，防止撞库与账号锁定导致的拒绝服务
+        rateLimitService.check("login-ip", ip, 40, Duration.ofMinutes(10));
         String account = req.account().trim().toLowerCase();
         String lockKey = "login:lock:" + account;
         if (cacheService.get(lockKey) != null) {
@@ -214,6 +223,11 @@ public class AuthService {
         if (user == null || !"ACTIVE".equals(user.getStatus())) {
             throw new BizException(401, "账号不可用");
         }
+        Integer tokenVersion = claims.get("ver", Integer.class);
+        int currentVersion = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
+        if (tokenVersion == null || tokenVersion.intValue() != currentVersion) {
+            throw new BizException(401, "登录已失效，请重新登录");
+        }
         blacklist(claims);
         return issue(user);
     }
@@ -231,6 +245,17 @@ public class AuthService {
     private void blacklist(Claims claims) {
         long seconds = jwtService.remainingSeconds(claims);
         cacheService.set("jwt:blacklist:" + claims.getId(), "1", Duration.ofSeconds(seconds));
+    }
+
+    /** 使该用户所有已签发的 Token 立即失效（改密、禁用、角色变更）。 */
+    private void revokeTokens(Long userId) {
+        if (userId == null) {
+            return;
+        }
+        userMapper.update(null, new UpdateWrapper<User>().eq("id", userId)
+                .setSql("token_version = COALESCE(token_version, 0) + 1"));
+        // 同步清理 JwtAuthFilter 的短时缓存，确保旧 Token 立即失效
+        cacheService.delete("user:auth:" + userId);
     }
 
     public UserView me(Long userId) {
@@ -281,6 +306,7 @@ public class AuthService {
         user.setStatus(status);
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+        revokeTokens(id);
     }
 
     /* ------------------------- 管理员账号管理 ------------------------- */
@@ -306,6 +332,7 @@ public class AuthService {
         user.setEmail(req.email());
         user.setRole(role);
         user.setStatus("ACTIVE");
+        user.setTokenVersion(0);
         user.setCreatedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.insert(user);
@@ -320,6 +347,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(req.newPassword()));
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+        revokeTokens(id);
         logService.record(operatorId, "ADMIN_RESET_PASSWORD", user.getAccount(), ip);
     }
 
@@ -336,6 +364,7 @@ public class AuthService {
         user.setRole(role);
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+        revokeTokens(id);
         logService.record(operatorId, "ADMIN_CHANGE_ROLE", user.getAccount() + " -> " + role, ip);
     }
 
@@ -352,16 +381,18 @@ public class AuthService {
 
     /** 发送重置验证码邮件 */
     public String forgotPassword(ForgotPasswordReq req, String ip) {
+        rateLimitService.check("mail-ip", ip, 10, Duration.ofHours(1));
         String email = req.email().trim().toLowerCase();
+        // 先检查邮件服务是否可用，未配置时对已注册/未注册邮箱返回一致的错误，避免枚举
+        ConfigService.MailRuntime mail = configService.mailRuntime();
+        if (!mail.enabled || mail.host.isBlank()) {
+            throw new BizException("管理员暂未配置邮件服务，请联系管理员重置密码");
+        }
         User user = userMapper.selectOne(new QueryWrapper<User>().eq("email", email).last("limit 1"));
         // 邮箱不存在也返回成功，防止账号枚举
         if (user == null) {
             logService.record(null, "FORGOT_PASSWORD", "unknown:" + email, ip);
             return null;
-        }
-        ConfigService.MailRuntime mail = configService.mailRuntime();
-        if (!mail.enabled || mail.host.isBlank()) {
-            throw new BizException("管理员暂未配置邮件服务，请联系管理员重置密码");
         }
         if (cacheService.get(VERIFY_KEY_PREFIX + email) != null) {
             throw new BizException("发送过于频繁，请 1 分钟后再试");
@@ -377,6 +408,7 @@ public class AuthService {
     /** 校验验证码并重置密码 */
     @Transactional
     public void resetPassword(ResetPasswordByCodeReq req, String ip) {
+        rateLimitService.check("reset-ip", ip, 20, Duration.ofHours(1));
         String email = req.email().trim().toLowerCase();
         String key = VERIFY_KEY_PREFIX + email;
         String expected = cacheService.get(key);
@@ -410,6 +442,7 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(req.newPassword()));
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
+        revokeTokens(user.getId());
         cacheService.delete(key);
         cacheService.delete(VERIFY_FAIL_PREFIX + email);
         logService.record(user.getId(), "RESET_PASSWORD", email, ip);
@@ -418,7 +451,9 @@ public class AuthService {
     /* ------------------------- 其他 ------------------------- */
 
     private AuthResult issue(User user) {
-        UserPrincipal principal = new UserPrincipal(user.getId(), user.getAccount(), user.getNickname(), user.getRole());
+        int version = user.getTokenVersion() == null ? 0 : user.getTokenVersion();
+        UserPrincipal principal = new UserPrincipal(user.getId(), user.getAccount(), user.getNickname(),
+                user.getRole(), version);
         AuthResult result = new AuthResult();
         result.setAccessToken(jwtService.createAccessToken(principal));
         result.setRefreshToken(jwtService.createRefreshToken(principal));

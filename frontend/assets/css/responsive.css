@@ -273,6 +273,11 @@
     position: relative;
   }
 
+  .card-detail-link {
+    display: inline-flex;
+    margin-top: 14px;
+  }
+
   .feature-strip {
     grid-template-columns: 1fr;
   }

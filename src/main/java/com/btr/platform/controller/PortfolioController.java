@@ -84,6 +84,8 @@ public class PortfolioController {
 
         List<Work> works = workMapper.selectList(new QueryWrapper<Work>()
                 .eq("user_id", id).eq("status", "SUBMITTED")
+                // 仅展示已公示 / 已结束赛事中的作品，避免未公示作品提前泄露
+                .inSql("contest_id", "SELECT id FROM contest WHERE status IN ('PUBLISHED','FINISHED')")
                 .orderByDesc("submitted_at"));
 
         // 关联赛事

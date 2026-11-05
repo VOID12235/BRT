@@ -3,6 +3,7 @@ package com.btr.platform.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.btr.platform.common.ApiResponse;
+import com.btr.platform.common.ClientIpResolver;
 import com.btr.platform.common.PageResult;
 import com.btr.platform.dto.Requests.AdminCreateUserReq;
 import com.btr.platform.dto.Requests.AssignReq;
@@ -118,6 +119,7 @@ public class AdminController {
     private final WorkMapper workMapper;
     private final JudgeAssignMapper judgeAssignMapper;
     private final WinnerMapper winnerMapper;
+    private final ClientIpResolver clientIpResolver;
 
     public AdminController(DashboardService dashboardService, SignupService signupService,
                            WorkService workService, JudgeService judgeService, AuthService authService,
@@ -127,7 +129,8 @@ public class AdminController {
                            SysLogMapper sysLogMapper, EmailRecordMapper emailRecordMapper,
                            UserMapper userMapper, LogService logService, RankService rankService,
                            AwardMapper awardMapper, ContestMapper contestMapper, SignupMapper signupMapper,
-                           WorkMapper workMapper, JudgeAssignMapper judgeAssignMapper, WinnerMapper winnerMapper) {
+                           WorkMapper workMapper, JudgeAssignMapper judgeAssignMapper, WinnerMapper winnerMapper,
+                           ClientIpResolver clientIpResolver) {
         this.dashboardService = dashboardService;
         this.signupService = signupService;
         this.workService = workService;
@@ -149,6 +152,7 @@ public class AdminController {
         this.workMapper = workMapper;
         this.judgeAssignMapper = judgeAssignMapper;
         this.winnerMapper = winnerMapper;
+        this.clientIpResolver = clientIpResolver;
     }
 
     /* ------------------------- 仪表盘 / 业务管理（原有） ------------------------- */
@@ -471,7 +475,7 @@ public class AdminController {
 
     @PostMapping("/users")
     public ApiResponse<UserView> createUser(@Valid @RequestBody AdminCreateUserReq req, HttpServletRequest request) {
-        UserView view = authService.adminCreateUser(req, SecurityUtils.current().id(), ip(request));
+        UserView view = authService.adminCreateUser(req, SecurityUtils.current().id(), clientIpResolver.resolve(request));
         logAdmin("ADMIN_CREATE_USER", "创建账号 " + view.getAccount() + "/" + view.getRole(), request);
         return ApiResponse.ok(view);
     }
@@ -479,14 +483,14 @@ public class AdminController {
     @PutMapping("/users/{id}/password")
     public ApiResponse<Void> resetUserPassword(@PathVariable Long id, @Valid @RequestBody ResetPasswordReq req,
                                                HttpServletRequest request) {
-        authService.adminResetPassword(id, req, SecurityUtils.current().id(), ip(request));
+        authService.adminResetPassword(id, req, SecurityUtils.current().id(), clientIpResolver.resolve(request));
         return ApiResponse.ok();
     }
 
     @PutMapping("/users/{id}/role")
     public ApiResponse<Void> changeUserRole(@PathVariable Long id, @Valid @RequestBody ChangeRoleReq req,
                                             HttpServletRequest request) {
-        authService.adminChangeRole(id, req.role(), SecurityUtils.current().id(), ip(request));
+        authService.adminChangeRole(id, req.role(), SecurityUtils.current().id(), clientIpResolver.resolve(request));
         return ApiResponse.ok();
     }
 
@@ -507,12 +511,11 @@ public class AdminController {
         }
         query.orderByDesc("created_at");
         Page<SysLog> result = sysLogMapper.selectPage(new Page<>(page, size), query);
-        Map<Long, User> users = result.getRecords().stream()
-                .map(SysLog::getUserId).filter(java.util.Objects::nonNull).distinct()
-                .collect(Collectors.toMap(Function.identity(), id -> {
-                    User u = userMapper.selectById(id);
-                    return u == null ? new User() : u;
-                }, (a, b) -> a));
+        List<Long> userIds = result.getRecords().stream()
+                .map(SysLog::getUserId).filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, User> users = userIds.isEmpty() ? Map.of()
+                : userMapper.selectBatchIds(userIds).stream()
+                        .collect(Collectors.toMap(User::getId, Function.identity(), (a, b) -> a));
         List<LogView> views = result.getRecords().stream().map(log -> {
             LogView view = new LogView();
             view.setId(log.getId());
@@ -564,14 +567,6 @@ public class AdminController {
 
     private void logAdmin(String action, String target, HttpServletRequest request) {
         Long operatorId = SecurityUtils.currentOrNull() == null ? null : SecurityUtils.current().id();
-        logService.record(operatorId, action, target, ip(request));
-    }
-
-    private String ip(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
+        logService.record(operatorId, action, target, clientIpResolver.resolve(request));
     }
 }

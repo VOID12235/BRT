@@ -631,7 +631,10 @@
                     }>封面 ${i}</option>`
                 )
                 .join("")}
+              ${c.cover && !/^\/assets\/img\/cover-\d\.svg$/.test(c.cover) ? `<option value="${B.escapeHtml(c.cover)}" selected>自定义封面</option>` : ""}
             </select>
+            <input class="input" type="file" id="coverFile" accept="image/*" style="margin-top:8px" />
+            <div class="small muted" style="margin-top:6px">选择本机图片上传为自定义封面（上传后自动选中）</div>
           </div>
           <div class="field">
             <label>赛事状态</label>
@@ -639,7 +642,7 @@
               ${[
                 ["DRAFT", "筹备中"],
                 ["SIGNUP", "报名中"],
-                ["REVIEW", "评审中"],
+                ["REVIEW", "进行中"],
                 ["PUBLISHED", "已公示"],
                 ["FINISHED", "已结束"],
               ]
@@ -653,6 +656,13 @@
               <option value="ONLINE" ${(c.mode || "ONLINE") === "ONLINE" ? "selected" : ""}>线上比赛（提交作品）</option>
               <option value="OFFLINE" ${(c.mode || "ONLINE") === "OFFLINE" ? "selected" : ""}>线下比赛（无作品，评委按选手打分）</option>
             </select>
+          </div>
+          <div class="field span-2">
+            <label>赛事视频（线下赛事录像，可选，所有人可观看/下载）</label>
+            <input class="input" type="file" id="videoFile" accept="video/mp4,video/quicktime,.mp4,.mov" style="margin-bottom:8px" />
+            <input class="input" name="videoUrl" value="${B.escapeHtml(c.videoUrl || "")}" placeholder="视频链接（上传后自动填入，也可手动粘贴）" />
+            <input class="input" name="videoName" style="margin-top:8px" value="${B.escapeHtml(c.videoName || "")}" placeholder="视频名称，如：决赛录像.mp4" />
+            <div class="small muted" style="margin-top:6px">选择本机 MP4/MOV 上传，保存赛事后生效</div>
           </div>
           <div class="field">
             <label>奖金总额（元）</label>
@@ -703,6 +713,8 @@
           rules: formValue(form, "rules"),
           prizeAmount: formValue(form, "prizeAmount") === "" ? null : Number(formValue(form, "prizeAmount")),
           mode: formValue(form, "mode") || "ONLINE",
+          videoUrl: formValue(form, "videoUrl") || null,
+          videoName: formValue(form, "videoName") || null,
           signupStart: formValue(form, "signupStart") || null,
           signupEnd: formValue(form, "signupEnd") || null,
           reviewStart: formValue(form, "reviewStart") || null,
@@ -721,6 +733,54 @@
         await loadContests();
         loadContestTable();
       },
+      onMount: (form) => {
+        const file = form.querySelector("#coverFile");
+        if (!file) return;
+        file.addEventListener("change", async () => {
+          if (!file.files.length) return;
+          const f = file.files[0];
+          if (!/^image\//.test(f.type)) {
+            B.toast("封面请上传图片文件", "warn");
+            file.value = "";
+            return;
+          }
+          const fd = new FormData();
+          fd.append("file", f);
+          B.toast("正在上传封面…", "info", 1500);
+          try {
+            const data = await B.api.upload("/files?purpose=cover", fd);
+            const select = form.querySelector('[name="cover"]');
+            const opt = document.createElement("option");
+            opt.value = data.url;
+            opt.textContent = "自定义封面";
+            select.appendChild(opt);
+            select.value = data.url;
+            B.toast("封面上传成功", "success");
+          } catch (err) {
+            B.toast(err.message || "封面上传失败", "error");
+          }
+        });
+        const vfile = form.querySelector("#videoFile");
+        if (vfile) {
+          vfile.addEventListener("change", async () => {
+            if (!vfile.files.length) return;
+            const v = vfile.files[0];
+            const fd = new FormData();
+            fd.append("file", v);
+            B.toast("正在上传赛事视频…", "info", 1500);
+            try {
+              const data = await B.api.upload("/files?purpose=work", fd);
+              const vu = form.querySelector('[name="videoUrl"]');
+              const vn = form.querySelector('[name="videoName"]');
+              if (vu) vu.value = data.url;
+              if (vn) vn.value = v.name;
+              B.toast("赛事视频已上传，保存赛事后生效", "success");
+            } catch (err) {
+              B.toast(err.message || "视频上传失败", "error");
+            }
+          });
+        }
+      },
     });
   }
 
@@ -728,9 +788,9 @@
     const options = [
       ["DRAFT", "筹备中", "不对公众开放，可继续完善信息"],
       ["SIGNUP", "报名中", "开放报名与作品提交"],
-      ["REVIEW", "评审中", "锁定全部作品，评委开始打分"],
+      ["REVIEW", "进行中", "开放作品提交与修改，评委可打分"],
+      ["FINISHED", "已结束", "作品锁定，评委完成评审收尾"],
       ["PUBLISHED", "已公示", "生成并固化获奖名单，发送通知"],
-      ["FINISHED", "已结束", "赛事归档，保留榜单展示"],
     ];
     openModal({
       title: "变更赛事状态 · " + contest.title,
@@ -750,7 +810,7 @@
         <div class="alert alert-warn" style="margin-top: 16px">
           ${contest.mode === "OFFLINE"
             ? "线下比赛：评审对象为报名选手（无需提交作品）。进入「已公示」会按当前榜单固化获奖名单。"
-            : "进入「评审中」会锁定全部作品；进入「已公示」会按当前榜单固化获奖名单。"}
+            : "进入「进行中」开放作品提交与修改；进入「已结束」锁定全部作品；进入「已公示」按当前榜单固化获奖名单。"}
         </div>`,
       onSubmit: async (form) => {
         const status = formValue(form, "status");
@@ -1043,7 +1103,7 @@
             <td class="title-cell">${B.escapeHtml(a.judgeName || "—")}</td>
             <td>
               <b>${B.escapeHtml(a.contestTitle || "—")}</b>
-              ${a.contestStatus === "REVIEW" ? '<span class="badge badge-review">评审中</span>' : ""}
+              ${a.contestStatus === "REVIEW" ? '<span class="badge badge-review">进行中</span>' : ""}
             </td>
             <td>${a.workCount} 件</td>
             <td>${a.scoredCount} / ${a.workCount}</td>
@@ -2256,7 +2316,7 @@
 
   /* ------------------------------- 数据统计 ------------------------------- */
   const STATUS_CN = {
-    DRAFT: "筹备中", SIGNUP: "报名中", REVIEW: "评审中", PUBLISHED: "已公示", FINISHED: "已结束",
+    DRAFT: "筹备中", SIGNUP: "报名中", REVIEW: "进行中", PUBLISHED: "已公示", FINISHED: "已结束",
   };
   const MODE_CN = { ONLINE: "线上比赛", OFFLINE: "线下比赛" };
 

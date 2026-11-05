@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f4f7">
+<title>评委工作台 · BTR赛事平台</title>
+<meta name="description" content="BTR 赛事平台手机版评委工作台。" />
+<link rel="stylesheet" href="/m/m.css?v=20261105m2">
+<style>
+  .jd-prog { display: flex; gap: 8px; padding: 12px 14px; }
+  .jd-prog .card { flex: 1; text-align: center; padding: 10px 4px; }
+  .jd-prog b { display: block; font-size: 20px; }
+  .jd-prog span { font-size: 11.5px; color: var(--muted); }
+  .jd-proj { background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow);
+    margin: 10px 14px 0; padding: 14px; }
+  .jd-proj h3 { margin: 0 0 4px; font-size: 15.5px; }
+  .jd-proj .sub { font-size: 12px; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; }
+  .jd-proj .bar { height: 6px; border-radius: 99px; background: var(--line); margin-top: 10px; overflow: hidden; }
+  .jd-proj .bar i { display: block; height: 100%; background: var(--brand); border-radius: 99px; }
+  .jd-task { display: flex; align-items: center; gap: 12px; background: var(--surface);
+    border-radius: var(--radius-sm); box-shadow: var(--shadow); margin: 10px 14px 0; padding: 12px 14px; }
+  .jd-task .thumb { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; background: #eef0f3; flex: none; }
+  .jd-task .info { flex: 1; min-width: 0; }
+  .jd-task b { display: block; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .jd-task span { font-size: 12px; color: var(--muted); }
+  .jd-task .st { font-size: 12.5px; font-weight: 600; flex: none; }
+  .jd-task .st.done { color: var(--green); }
+  .jd-task .st.todo { color: var(--amber); }
+  .jd-score-btn { flex: none; font-size: 13px; font-weight: 600; color: var(--brand);
+    border: 1.5px solid var(--brand); border-radius: 99px; padding: 7px 16px; background: var(--surface); }
+  .jd-score-btn:disabled { border-color: var(--line); color: var(--muted); }
+  .jd-sheet { position: fixed; inset: 0; z-index: 90; display: none; }
+  .jd-sheet.is-open { display: block; }
+  .jd-sheet .mask { position: absolute; inset: 0; background: rgba(15,17,20,.45); }
+  .jd-sheet .panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 82vh; overflow: auto;
+    background: var(--surface); border-radius: 20px 20px 0 0; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .jd-sheet .grab { width: 40px; height: 4px; border-radius: 99px; background: var(--line); margin: 0 auto 14px; }
+  .jd-sheet .row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .jd-sheet .field { display: flex; align-items: center; gap: 10px; background: var(--surface);
+    border: 1.5px solid var(--line); border-radius: 14px; padding: 0 14px; height: 52px; margin-bottom: 10px; }
+  .jd-sheet .field:focus-within { border-color: var(--brand); }
+  .jd-sheet .field input { flex: 1; min-width: 0; height: 100%; border: 0; outline: none;
+    background: transparent; font-size: 16px; }
+  .jd-sheet .row .box { flex: 1; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+    padding: 9px 0; text-align: center; font-size: 14px; font-weight: 600; color: var(--ink-2);
+    background: var(--surface); }
+  .jd-sheet .row .box.is-on { border-color: var(--brand); background: var(--brand-soft); color: var(--brand); }
+  .jd-sheet textarea { width: 100%; min-height: 92px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+    padding: 10px 12px; font-size: 15px; resize: vertical; outline: none; background: var(--surface); }
+  .jd-sheet textarea:focus { border-color: var(--brand); }
+  .jd-sheet .btns { display: flex; gap: 10px; margin-top: 6px; }
+  .jd-sheet .btns button { flex: 1; height: 48px; border-radius: 14px; font-size: 15px; font-weight: 600; }
+  .jd-sheet .cancel { background: var(--bg); color: var(--ink-2); }
+  .jd-sheet .save { background: var(--brand); color: #fff; }
+</style>
+</head>
+<body data-page="judge">
+<div id="app" style="padding-bottom:0">
+  <header class="m-header">
+    <a class="back" href="#" aria-label="返回"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <h1 id="pageTitle">评委工作台</h1>
+    <div class="side"></div>
+  </header>
+
+  <main class="m-main" style="padding-top:0">
+    <div class="jd-prog" id="jdProg">
+      <div class="card"><b id="pAssigned">–</b><span>已分配</span></div>
+      <div class="card"><b id="pScored">–</b><span>已评分</span></div>
+      <div class="card"><b id="pPending">–</b><span>待评分</span></div>
+    </div>
+
+    <div class="filter-scroll" style="padding:4px 14px 0">
+      <div id="jdProjects" style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px"></div>
+    </div>
+
+    <div id="jdTasks" style="padding-bottom:20px"></div>
+  </main>
+
+  <!-- 打分面板 -->
+  <div class="jd-sheet" id="jdSheet">
+    <div class="mask" data-close-sheet></div>
+    <div class="panel">
+      <div class="grab"></div>
+      <h3 id="jdScoreTitle" style="font-size:17px;margin:0 0 4px">作品评分</h3>
+      <p id="jdScoreSub" style="font-size:12.5px;color:var(--muted);margin:0 0 12px"></p>
+      <div class="field"><input id="jdScore" type="number" min="0" max="100" step="0.5" placeholder="综合评分（0-100）" inputmode="decimal" /></div>
+      <div class="row" id="jdQuick">
+        <button class="box" data-n="70" type="button">70</button>
+        <button class="box" data-n="80" type="button">80</button>
+        <button class="box" data-n="85" type="button">85</button>
+        <button class="box" data-n="90" type="button">90</button>
+        <button class="box" data-n="95" type="button">95</button>
+      </div>
+      <textarea id="jdComment" placeholder="评语（必填）——请写下具体、可执行的评审意见" required></textarea>
+      <div class="btns">
+        <button class="cancel" type="button" data-close-sheet>取消</button>
+        <button class="save" type="button" id="jdSave">保存评分</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/assets/js/api.js?v=20261105a2"></script>
+<script src="/m/m.js?v=20261105b1"></script>
+</body>
+</html>

@@ -175,6 +175,7 @@
               <span class="stat">报名截止 <b>${signupEnd}</b></span>
               ${prizeHtml}
             </div>
+            <a class="btn btn-outline btn-sm card-detail-link" href="/contest-detail.html?id=${contest.id}">查看详情</a>
           </div>
         </div>
         <div class="flip-face flip-back">

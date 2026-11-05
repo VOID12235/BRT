@@ -4,11 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>提交作品 · BTR 赛事平台</title>
-  <link rel="stylesheet" href="/assets/css/base.css" />
-  <link rel="stylesheet" href="/assets/css/layout.css" />
-  <link rel="stylesheet" href="/assets/css/components.css" />
-  <link rel="stylesheet" href="/assets/css/pages.css" />
-  <link rel="stylesheet" href="/assets/css/responsive.css" />
+  <meta name="description" content="BTR 赛事平台作品提交：上传参赛作品与封面，参加线上作品赛。" />
+  <meta name="keywords" content="作品提交,上传作品,参赛作品,BTR赛事平台" />
+  <link rel="stylesheet" href="/assets/css/base.css?v=20261105c" />
+  <link rel="stylesheet" href="/assets/css/layout.css?v=20261105c" />
+  <link rel="stylesheet" href="/assets/css/components.css?v=20261105c" />
+  <link rel="stylesheet" href="/assets/css/pages.css?v=20261105c" />
+  <link rel="stylesheet" href="/assets/css/responsive.css?v=20261105c" />
 </head>
 <body>
   <div data-header></div>
@@ -39,6 +41,19 @@
               <textarea class="textarea" id="workDesc" placeholder="介绍创作思路、使用工具或作品亮点（选填）" maxlength="2000"></textarea>
             </div>
             <div class="field">
+              <label>作品封面（选填）</label>
+              <div class="upload-box" id="coverUploadBox">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4L8 8"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
+                <b>点击或拖拽上传封面图</b>
+                <span>用于作品列表展示，建议 16:9</span>
+              </div>
+              <input type="file" id="coverInput" class="hidden" accept="image/*" />
+              <div class="upload-file hidden" id="coverInfo">
+                <span class="grow">已上传封面</span>
+                <button type="button" class="btn btn-ghost btn-xs" id="removeCover">移除</button>
+              </div>
+            </div>
+            <div class="field">
               <label>作品文件</label>
               <div class="upload-box" id="uploadBox">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4m0 0 4 4m-4-4L8 8"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg>
@@ -67,8 +82,8 @@
 
   <div data-footer></div>
 
-  <script src="/assets/js/api.js"></script>
-  <script src="/assets/js/common.js"></script>
-  <script src="/assets/js/work-submit.js"></script>
+  <script src="/assets/js/api.js?v=20261105a2"></script>
+  <script src="/assets/js/common.js?v=20261105c"></script>
+  <script src="/assets/js/work-submit.js?v=20261105c"></script>
 </body>
 </html>

@@ -53,9 +53,10 @@ public class ExportService {
         }
         query.orderByAsc("created_at");
         List<Signup> signups = signupMapper.selectList(query);
-        Map<Long, Contest> contests = contestMapper.selectBatchIds(signups.stream()
-                        .map(Signup::getContestId).distinct().toList()).stream()
-                .collect(Collectors.toMap(Contest::getId, Function.identity()));
+        List<Long> contestIds = signups.stream().map(Signup::getContestId).distinct().toList();
+        Map<Long, Contest> contests = contestIds.isEmpty() ? Map.of()
+                : contestMapper.selectBatchIds(contestIds).stream()
+                        .collect(Collectors.toMap(Contest::getId, Function.identity()));
         Map<Long, User> users = signups.isEmpty() ? Map.of() : userMapper.selectBatchIds(signups.stream()
                         .map(Signup::getUserId).distinct().toList()).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));

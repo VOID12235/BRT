@@ -3,6 +3,8 @@ spring:
     name: btr-platform
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
   servlet:
     multipart:
       max-file-size: 50MB
@@ -12,8 +14,17 @@ spring:
 
 server:
   port: ${SERVER_PORT:8080}
+  shutdown: graceful
+  compression:
+    enabled: true
+    min-response-size: 1024
+    mime-types: application/json,application/javascript,text/html,text/css,text/plain,text/xml,image/svg+xml
   error:
-    include-message: always
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+    whitelabel:
+      enabled: false
 
 mybatis-plus:
   configuration:
@@ -37,6 +48,9 @@ app:
   seed-demo: ${SEED_DEMO:true}
   cors:
     allowed-origins: ${CORS_ORIGINS:*}
+  security:
+    # 默认不信任代理头；部署在 Nginx 之后时设为 true（docker-compose 已默认开启）
+    trust-proxy: ${TRUST_PROXY:false}
 
 logging:
   level:

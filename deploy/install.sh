@@ -68,6 +68,23 @@ if [ -f /etc/os-release ]; then
 fi
 info "发行版: ${ID:-unknown} ${VERSION_ID:-}"
 
+# ---------- 2.5 国内 apt 源优化（Ubuntu/Debian，访问官方源超时时换阿里云） ----------
+mirror_apt_source() {
+  [ "$PKG_MGR" = "apt" ] || return
+  if [ -f /etc/apt/sources.list ] && \
+     grep -qE "archive\.ubuntu\.com|security\.ubuntu\.com" /etc/apt/sources.list 2>/dev/null; then
+    cp /etc/apt/sources.list /etc/apt/sources.list.bak 2>/dev/null || true
+    sed -i \
+      -e 's|https\?://archive.ubuntu.com|https://mirrors.aliyun.com|g' \
+      -e 's|https\?://security.ubuntu.com|https://mirrors.aliyun.com|g' \
+      -e 's|https\?://deb.debian.org|https://mirrors.aliyun.com|g' \
+      /etc/apt/sources.list
+    info "apt 源已切换为阿里云镜像（原文件备份为 sources.list.bak）"
+    apt-get update -y 2>/dev/null || true
+  fi
+}
+mirror_apt_source
+
 # ---------- 3. 安装 Docker（若未安装） ----------
 install_docker() {
   if command -v docker >/dev/null 2>&1; then

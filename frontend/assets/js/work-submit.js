@@ -6,6 +6,7 @@
   let currentSignup = null;
   let currentWork = null;
   let uploaded = null;
+  let uploadedCover = null;
 
   async function init() {
     const user = B.requireAuth(["PLAYER"]);
@@ -26,7 +27,7 @@
     const candidates = mySignups.filter((s) => {
       if (s.status !== "APPROVED") return false;
       const c = contests[s.contestId];
-      return !c || c.status === "SIGNUP";
+      return !c || ((c.status === "SIGNUP" || c.status === "REVIEW") && c.mode !== "OFFLINE");
     });
     if (!candidates.length) {
       showEmpty();
@@ -56,6 +57,7 @@
     const c = contests[signup.contestId];
     currentWork = works.find((w) => w.signupId === signup.id && w.status === "SUBMITTED") || null;
     uploaded = currentWork && currentWork.fileUrl ? { url: currentWork.fileUrl, name: currentWork.fileName } : null;
+    uploadedCover = currentWork && currentWork.cover ? currentWork.cover : null;
     fillForm();
     renderSummary(c, currentWork);
   }
@@ -71,10 +73,16 @@
     } else {
       fileInfo.classList.add("hidden");
     }
+    const coverInfo = document.getElementById("coverInfo");
+    if (uploadedCover) {
+      coverInfo.classList.remove("hidden");
+    } else {
+      coverInfo.classList.add("hidden");
+    }
     const saveBtn = document.getElementById("saveBtn");
     const c = currentSignup ? contests[currentSignup.contestId] : null;
     const locked = currentWork && currentWork.locked;
-    saveBtn.disabled = Boolean(locked) || (c && c.status !== "SIGNUP");
+    saveBtn.disabled = Boolean(locked) || (c && !(c.status === "SIGNUP" || c.status === "REVIEW"));
     saveBtn.textContent = locked ? "作品已锁定" : currentWork ? "保存修改" : "提交作品";
   }
 
@@ -152,6 +160,7 @@
         description,
         fileUrl: uploaded ? uploaded.url : null,
         fileName: uploaded ? uploaded.name : null,
+        cover: uploadedCover || null,
       });
       B.toast("作品已保存", "success");
       setTimeout(() => (location.href = "/user-center.html"), 600);
@@ -182,6 +191,46 @@
       input.value = "";
       document.getElementById("fileInfo").classList.add("hidden");
     });
+
+    /* 封面 */
+    const coverBox = document.getElementById("coverUploadBox");
+    const coverInput = document.getElementById("coverInput");
+    coverBox.addEventListener("click", () => coverInput.click());
+    coverBox.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      coverBox.classList.add("is-drag");
+    });
+    coverBox.addEventListener("dragleave", () => coverBox.classList.remove("is-drag"));
+    coverBox.addEventListener("drop", (e) => {
+      e.preventDefault();
+      coverBox.classList.remove("is-drag");
+      uploadCover(e.dataTransfer.files[0]);
+    });
+    coverInput.addEventListener("change", () => uploadCover(coverInput.files[0]));
+    document.getElementById("removeCover").addEventListener("click", () => {
+      uploadedCover = null;
+      coverInput.value = "";
+      document.getElementById("coverInfo").classList.add("hidden");
+    });
+  }
+
+  async function uploadCover(file) {
+    if (!file) return;
+    if (!/^image\//.test(file.type)) {
+      B.toast("封面请上传图片文件", "warn");
+      return;
+    }
+    const form = new FormData();
+    form.append("file", file);
+    B.toast("正在上传封面…", "info", 1500);
+    try {
+      const data = await B.api.upload("/files?purpose=cover", form);
+      uploadedCover = data.url;
+      document.getElementById("coverInfo").classList.remove("hidden");
+      B.toast("封面上传成功", "success");
+    } catch (e) {
+      B.toast(e.message || "封面上传失败", "error");
+    }
   }
 
   document.addEventListener("DOMContentLoaded", () => {

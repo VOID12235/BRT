@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f3f4f7">
+<title>管理后台 · BTR赛事平台</title>
+<meta name="description" content="BTR 赛事平台手机版管理后台。" />
+<link rel="stylesheet" href="/m/m.css?v=20261105m2">
+<style>
+  .ad-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px 14px 0; }
+  .ad-stats .card { text-align: center; padding: 10px 4px; }
+  .ad-stats b { display: block; font-size: 19px; }
+  .ad-stats span { font-size: 11px; color: var(--muted); }
+  .ad-tabs { display: flex; gap: 6px; padding: 10px 14px 0; overflow-x: auto; }
+  .ad-tabs .chip { flex: none; }
+  .ad-list { padding: 10px 14px 24px; }
+  .ad-row { background: var(--surface); border-radius: var(--radius-sm); box-shadow: var(--shadow);
+    padding: 12px 14px; margin-bottom: 8px; }
+  .ad-row .t1 { display: flex; align-items: center; gap: 8px; }
+  .ad-row .t1 b { flex: 1; min-width: 0; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ad-row .t2 { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .ad-row .acts { display: flex; gap: 8px; margin-top: 10px; }
+  .ad-row .acts button { font-size: 12.5px; font-weight: 600; border-radius: 99px; padding: 6px 14px; }
+  .ad-row .acts .mini { border: 1.5px solid var(--line); color: var(--ink-2); background: var(--surface); }
+  .ad-row .acts .danger { border: 1.5px solid var(--brand); color: var(--brand); background: var(--surface); }
+  .ad-row .acts .ok { background: var(--brand); color: #fff; }
+  .ad-sheet { position: fixed; inset: 0; z-index: 90; display: none; }
+  .ad-sheet.is-open { display: block; }
+  .ad-sheet .mask { position: absolute; inset: 0; background: rgba(15,17,20,.45); }
+  .ad-sheet .panel { position: absolute; left: 0; right: 0; bottom: 0; max-height: 86vh; overflow: auto;
+    background: var(--surface); border-radius: 20px 20px 0 0; padding: 16px 16px calc(20px + env(safe-area-inset-bottom)); }
+  .ad-sheet .grab { width: 40px; height: 4px; border-radius: 99px; background: var(--line); margin: 0 auto 14px; }
+  .ad-sheet .field { display: flex; align-items: center; gap: 10px; background: var(--surface);
+    border: 1.5px solid var(--line); border-radius: 14px; padding: 0 14px; height: 50px; margin-bottom: 10px; }
+  .ad-sheet .field:focus-within { border-color: var(--brand); }
+  .ad-sheet .field input, .ad-sheet .field select { flex: 1; min-width: 0; height: 100%; border: 0; outline: none;
+    background: transparent; font-size: 16px; }
+  .ad-sheet textarea { width: 100%; min-height: 110px; border: 1.5px solid var(--line); border-radius: var(--radius-sm);
+    padding: 10px 12px; font-size: 15px; resize: vertical; outline: none; }
+  .ad-sheet textarea:focus { border-color: var(--brand); }
+  .ad-sheet .btns { display: flex; gap: 10px; margin-top: 6px; }
+  .ad-sheet .btns button { flex: 1; height: 48px; border-radius: 14px; font-size: 15px; font-weight: 600; }
+  .ad-sheet .cancel { background: var(--bg); color: var(--ink-2); }
+  .ad-sheet .save { background: var(--brand); color: #fff; }
+  .ad-rank-row { display: flex; align-items: center; gap: 10px; background: var(--surface);
+    border-radius: var(--radius-sm); box-shadow: var(--shadow); padding: 10px 12px; margin-bottom: 6px; }
+  .ad-rank-row .rank-no { width: 30px; height: 30px; border-radius: 50%; flex: none; background: var(--amber-soft);
+    color: var(--amber); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 13px; }
+  .ad-rank-row .info { flex: 1; min-width: 0; }
+  .ad-rank-row b { display: block; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ad-rank-row span { font-size: 11.5px; color: var(--muted); }
+  .ad-rank-row .score { font-size: 13px; font-weight: 700; color: var(--brand); flex: none; }
+  .ad-recalc { width: 100%; height: 48px; border-radius: 14px; background: var(--brand); color: #fff;
+    font-size: 15px; font-weight: 700; margin: 12px 0 6px; }
+</style>
+</head>
+<body data-page="admin">
+<div id="app" style="padding-bottom:0">
+  <header class="m-header">
+    <a class="back" href="#" aria-label="返回"><svg viewBox="0 0 24 24" width="20" height="20"><path d="M15 6l-6 6 6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+    <h1 id="pageTitle">管理后台</h1>
+    <div class="side"></div>
+  </header>
+
+  <main class="m-main" style="padding-top:0">
+    <div class="ad-stats">
+      <div class="card"><b id="dUsers">–</b><span>用户</span></div>
+      <div class="card"><b id="dContests">–</b><span>赛事</span></div>
+      <div class="card"><b id="dSignups">–</b><span>报名</span></div>
+      <div class="card"><b id="dWorks">–</b><span>作品</span></div>
+      <div class="card"><b id="dNotices">–</b><span>公告</span></div>
+      <div class="card"><b id="dReviews">–</b><span>待评审</span></div>
+    </div>
+
+    <div class="ad-tabs" id="adTabs">
+      <button class="chip is-active" data-sec="contests">赛事管理</button>
+      <button class="chip" data-sec="notices">公告管理</button>
+      <button class="chip" data-sec="users">用户管理</button>
+      <button class="chip" data-sec="rank">榜单维护</button>
+    </div>
+
+    <div class="ad-list" id="adList"></div>
+  </main>
+
+  <!-- 编辑弹层 -->
+  <div class="ad-sheet" id="adSheet">
+    <div class="mask" data-close-sheet></div>
+    <div class="panel">
+      <div class="grab"></div>
+      <h3 id="adSheetTitle" style="font-size:17px;margin:0 0 12px">编辑</h3>
+      <div id="adSheetBody"></div>
+      <div class="btns">
+        <button class="cancel" type="button" data-close-sheet>取消</button>
+        <button class="save" type="button" id="adSheetSave">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="/assets/js/api.js?v=20261105a2"></script>
+<script src="/m/m.js?v=20261105b1"></script>
+</body>
+</html>

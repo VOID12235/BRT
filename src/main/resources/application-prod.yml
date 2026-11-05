@@ -4,6 +4,15 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: ${DB_USER:btr}
     password: ${DB_PASSWORD:btr_pass}
+    hikari:
+      pool-name: btr-hikari
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: ${DB_POOL_MIN:5}
+      connection-timeout: 10000
+      validation-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      keepalive-time: 60000
   sql:
     init:
       mode: never
@@ -12,7 +21,11 @@ spring:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      connect-timeout: 2s
       timeout: 2s
+      lettuce:
+        shutdown-timeout: 200ms
   mail:
     host: ${MAIL_HOST:}
     port: ${MAIL_PORT:465}
@@ -24,6 +37,18 @@ spring:
           auth: true
           ssl:
             enable: true
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
+server:
+  forward-headers-strategy: none
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 20
+    accept-count: 200
+    max-connections: 8192
 
 app:
   captcha:
@@ -36,3 +61,5 @@ app:
     email: ${ADMIN_EMAIL:}
   cors:
     allowed-origins: ${CORS_ORIGINS:https://btr.example.com}
+  security:
+    trust-proxy: ${TRUST_PROXY:true}

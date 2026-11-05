@@ -6,7 +6,8 @@
 
   async function init() {
     if (!contestId) {
-      contestId = 1;
+      location.replace("/contest-list.html");
+      return;
     }
     try {
       detail = await B.api.get("/contests/" + contestId);
@@ -66,10 +67,23 @@
       .join("");
   }
 
+  function downloadUrl(url) {
+    if (!url) return "";
+    return /\/download$/i.test(url) ? url : url.replace(/\/files\/([^/]+(?:\/[^/]+)?)$/, "/files/$1/download");
+  }
+
   function renderIntro(c) {
+    const videoHtml = c.videoUrl
+      ? `<div class="card" style="padding:16px;margin-bottom:16px">
+          <h3 style="margin:0 0 10px">赛事视频${c.videoName ? " · " + B.escapeHtml(c.videoName) : ""}</h3>
+          <video controls preload="metadata" style="width:100%;border-radius:10px;background:#000;max-height:360px" src="${B.escapeHtml(c.videoUrl)}"></video>
+          <a class="btn btn-outline btn-sm" style="margin-top:10px" href="${B.escapeHtml(downloadUrl(c.videoUrl))}" download="${B.escapeHtml(c.videoName || "赛事视频.mp4")}">下载视频</a>
+        </div>`
+      : "";
     document.getElementById("panelIntro").innerHTML = `
       <h3 style="margin-top:0">关于这场赛事</h3>
       ${formatText(c.description || c.summary)}
+      ${videoHtml}
       <h3>参赛对象</h3>
       <p>面向所有对赛事主题感兴趣的创作者与选手，具体资格以参赛规则为准。</p>`;
   }
@@ -118,16 +132,15 @@
       actions.push(`<a class="btn btn-dark" href="/judge/judge-index.html">评委工作台</a>`);
       actions.push(`<a class="btn btn-outline" href="/rank.html?contestId=${c.id}">查看榜单</a>`);
     } else if (mySignup && mySignup.status === "APPROVED") {
-      if (c.status === "SIGNUP") {
-        if (c.mode === "OFFLINE") {
-          actions.push(`<button class="btn btn-primary" disabled>已报名 · 等待评审</button>`);
-        } else {
-          actions.push(
-            myWork
-              ? `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">修改我的作品</a>`
-              : `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">提交作品</a>`
-          );
-        }
+      const inProgress = c.status === "SIGNUP" || c.status === "REVIEW";
+      if (inProgress && c.mode === "OFFLINE") {
+        actions.push(`<button class="btn btn-primary" disabled>已报名 · 赛事进行中</button>`);
+      } else if (inProgress) {
+        actions.push(
+          myWork
+            ? `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">修改我的作品</a>`
+            : `<a class="btn btn-primary" href="/work-submit.html?contestId=${c.id}">提交作品</a>`
+        );
       } else if (c.mode === "OFFLINE") {
         actions.push(`<a class="btn btn-outline" href="/rank.html?contestId=${c.id}">查看榜单</a>`);
       } else {
@@ -139,7 +152,7 @@
     } else if (isPublished) {
       actions.push(`<a class="btn btn-primary" href="/rank.html?contestId=${c.id}">查看榜单</a>`);
     } else {
-      actions.push(`<button class="btn btn-outline" disabled>${c.status === "REVIEW" ? "评审进行中" : "暂未开放报名"}</button>`);
+      actions.push(`<button class="btn btn-outline" disabled>${c.status === "REVIEW" ? "赛事进行中 · 报名已截止" : "暂未开放报名"}</button>`);
     }
 
     if (!isPublished && c.status !== "SIGNUP") {
@@ -208,15 +221,23 @@
         return;
       }
       const showScore = detail.contest.status === "PUBLISHED" || detail.contest.status === "FINISHED";
+      function downloadUrl(url) {
+        if (!url) return "";
+        return /\/download$/i.test(url) ? url : url.replace(/\/files\/([^/]+(?:\/[^/]+)?)$/, "/files/$1/download");
+      }
       host.innerHTML = `<div class="work-grid">${list
         .map(
           (w) => `<div class="work-item">
-            <h4>${B.escapeHtml(w.title)}</h4>
-            <p>${B.escapeHtml(w.description || "暂无作品描述")}</p>
-            <div class="meta">
-              <span>${B.escapeHtml(w.author || "匿名选手")}${w.school ? " · " + B.escapeHtml(w.school) : ""}</span>
-              ${showScore && w.avgScore ? `<b class="mono">${Number(w.avgScore).toFixed(2)} 分</b>` : "<span>评审中</span>"}
+            <img class="cover-thumb" src="${B.escapeHtml(w.cover || "/assets/img/cover-1.svg")}" alt="${B.escapeHtml(w.title)}" loading="lazy" />
+            <div style="flex:1;min-width:0">
+              <h4>${B.escapeHtml(w.title)}</h4>
+              <p>${B.escapeHtml(w.description || "暂无作品描述")}</p>
+              <div class="meta">
+                <span>${B.escapeHtml(w.author || "匿名选手")}${w.school ? " · " + B.escapeHtml(w.school) : ""}</span>
+                ${showScore && w.avgScore ? `<b class="mono">${Number(w.avgScore).toFixed(2)} 分</b>` : "<span>进行中</span>"}
+              </div>
             </div>
+            ${w.fileUrl ? `<div style="display:flex;gap:6px;align-self:flex-start"><a class="btn btn-outline btn-sm" href="${B.escapeHtml(downloadUrl(w.fileUrl))}" download="${B.escapeHtml(w.fileName || "作品文件")}">下载</a><a class="btn btn-outline btn-sm" href="${B.escapeHtml(w.fileUrl)}" target="_blank" rel="noopener">观看</a></div>` : ""}
           </div>`
         )
         .join("")}</div>`;

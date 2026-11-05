@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760">
+<rect width="1200" height="760" fill="#F4F3EE"/>
+<text x="60" y="70" font-size="34" font-weight="600" fill="#1A1B1C" font-family="sans-serif">BTR 平台网页评审清单</text>
+<text x="60" y="110" font-size="20" fill="#6B7280" font-family="sans-serif">严重度：红=高（建议尽快处理）  黄=中  绿=低</text>
+<rect x="60" y="140" width="1080" height="70" rx="12" fill="#FFF" stroke="#E4E3DD"/><rect x="60" y="140" width="10" height="70" rx="5" fill="#EA6668"/>
+<text x="95" y="172" font-size="22" font-weight="600" fill="#1A1B1C" font-family="sans-serif">1. 全站 HTTP 明文传输（无 HTTPS）</text>
+<text x="95" y="200" font-size="18" fill="#6B7280" font-family="sans-serif">公网经 NAT 直连 20757，账号密码与 Token 明文传输，存在被窃听风险</text>
+<rect x="60" y="230" width="1080" height="70" rx="12" fill="#FFF" stroke="#E4E3DD"/><rect x="60" y="230" width="10" height="70" rx="5" fill="#EA6668"/>
+<text x="95" y="262" font-size="22" font-weight="600" fill="#1A1B1C" font-family="sans-serif">2. 作品下载接口完全公开</text>
+<text x="95" y="290" font-size="18" fill="#6B7280" font-family="sans-serif">GET /files/{id}/download 无鉴权，任何人可下载所有作品文件，建议按赛事状态控制</text>
+<rect x="60" y="320" width="1080" height="70" rx="12" fill="#FFF" stroke="#E4E3DD"/><rect x="60" y="320" width="10" height="70" rx="5" fill="#EA6668"/>
+<text x="95" y="352" font-size="22" font-weight="600" fill="#1A1B1C" font-family="sans-serif">3. 验证码无失败次数限制</text>
+<text x="95" y="380" font-size="18" fill="#6B7280" font-family="sans-serif">4 位字符表验证码一次即删，但登录无重试锁定/频率限制，可被暴力尝试</text>
+<rect x="60" y="410" width="1080" height="70" rx="12" fill="#FFF" stroke="#E4E3DD"/><rect x="60" y="410" width="10" height="70" rx="5" fill="#F5B301"/>
+<text x="95" y="442" font-size="22" font-weight="600" fill="#1A1B1C" font-family="sans-serif">4. 手机首页热门赛事标题被截断</text>
+<text x="95" y="470" font-size="18" fill="#6B7280" font-family="sans-serif">轮播卡片标题被 clamp 截断为省略号，建议两行完整展示或精简文案</text>
+<rect x="60" y="500" width="1080" height="70" rx="12" fill="#FFF" stroke="#E4E3DD"/><rect x="60" y="500" width="10" height="70" rx="5" fill="#F5B301"/>
+<text x="95" y="532" font-size="22" font-weight="600" fill="#1A1B1C" font-family="sans-serif">5. 管理员封面只有文字下拉、无缩略图预览</text>
+<text x="95" y="560" font-size="18" fill="#6B7280" font-family="sans-serif">4 张预设 SVG 仅显示「封面 N」文字，建议下拉内嵌缩略图便于选择</text>
+<rect x="60" y="590" width="1080" height="70" rx="12" fill="#FFF" stroke="#E4E3DD"/><rect x="60" y="590" width="10" height="70" rx="5" fill="#52C41A"/>
+<text x="95" y="622" font-size="22" font-weight="600" fill="#1A1B1C" font-family="sans-serif">6. 上传无进度条、大小限制提示不统一</text>
+<text x="95" y="650" font-size="18" fill="#6B7280" font-family="sans-serif">PC 提示单文件 50MB 上限，移动端无提示，两端均无上传进度反馈</text>
+<rect x="60" y="680" width="1080" height="70" rx="12" fill="#FFF" stroke="#E4E3DD"/><rect x="60" y="680" width="10" height="70" rx="5" fill="#52C41A"/>
+<text x="95" y="712" font-size="22" font-weight="600" fill="#1A1B1C" font-family="sans-serif">7. 历史作品多为占位数据</text>
+<text x="95" y="740" font-size="18" fill="#6B7280" font-family="sans-serif">多数作品 file_url 为空、文件名 demo.pdf，前端已不显示下载按钮，建议后台补充真实文件</text>
+</svg>

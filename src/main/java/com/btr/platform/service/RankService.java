@@ -90,6 +90,13 @@ public class RankService {
             empty.setGroups(List.of());
             return empty;
         }
+        // 已公示赛事优先展示公示获奖名单（winner 表），保证公开榜单与获奖名单/证书一致；
+        // 管理员预览（includeUnpublished）仍返回实时分数结果。
+        if (published && !includeUnpublished) {
+            if (winnerMapper.selectCount(new QueryWrapper<Winner>().eq("contest_id", contestId)) > 0) {
+                return buildFromWinners(contest);
+            }
+        }
         String key = CACHE_PREFIX + contestId;
         if (published) {
             String cached = cacheService.get(key);
@@ -105,6 +112,119 @@ public class RankService {
         if (published) {
             cache(result);
         }
+        return result;
+    }
+
+    /** 从公示获奖名单（winner 表）组装公开榜单，管理员手动调整立即生效。 */
+    private RankResult buildFromWinners(Contest contest) {
+        Long contestId = contest.getId();
+        boolean offline = "OFFLINE".equals(contest.getMode());
+        List<Winner> winners = winnerMapper.selectList(new QueryWrapper<Winner>()
+                .eq("contest_id", contestId).orderByAsc("rank_no"));
+        RankResult result = new RankResult();
+        result.setContestId(contestId);
+        result.setContestTitle(contest.getTitle());
+        result.setStatus(contest.getStatus());
+        result.setMode(contest.getMode());
+        result.setPublished(true);
+        result.setUpdatedAt(LocalDateTime.now());
+        result.setWorkCount(workMapper.selectCount(new QueryWrapper<Work>()
+                .eq("contest_id", contestId).eq("status", "SUBMITTED")));
+        result.setJudgeCount(scoreMapper.judgeCount(contestId));
+        result.setScoredCount(scoreMapper.countScoredWorks(contestId));
+        if (winners.isEmpty()) {
+            result.setRows(List.of());
+            result.setGroups(List.of());
+            return result;
+        }
+
+        Map<Long, Work> works = new HashMap<>();
+        Map<Long, Signup> signups = new HashMap<>();
+        Map<Long, Award> awards = new HashMap<>();
+        if (!offline) {
+            List<Long> workIds = winners.stream().map(Winner::getWorkId)
+                    .filter(java.util.Objects::nonNull).distinct().toList();
+            if (!workIds.isEmpty()) {
+                workMapper.selectBatchIds(workIds).forEach(w -> works.put(w.getId(), w));
+            }
+        }
+        List<Long> signupIds = winners.stream().map(Winner::getSignupId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        if (!signupIds.isEmpty()) {
+            signupMapper.selectBatchIds(signupIds).forEach(s -> signups.put(s.getId(), s));
+        }
+        List<Long> awardIds = winners.stream().map(Winner::getAwardId)
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        if (!awardIds.isEmpty()) {
+            awardMapper.selectBatchIds(awardIds).forEach(a -> awards.put(a.getId(), a));
+        }
+        Map<Long, WorkScore> scoreMap = offline
+                ? scoreMapper.avgByContestSignup(contestId).stream()
+                        .collect(Collectors.toMap(WorkScore::getSignupId, Function.identity(), (a, b) -> a))
+                : scoreMapper.avgByContest(contestId).stream()
+                        .collect(Collectors.toMap(WorkScore::getWorkId, Function.identity(), (a, b) -> a));
+
+        List<RankRow> rows = new ArrayList<>();
+        Map<Long, RankGroup> groupMap = new java.util.LinkedHashMap<>();
+        for (Winner winner : winners) {
+            RankRow row = new RankRow();
+            row.setRank(winner.getRankNo());
+            row.setUserId(null);
+            WorkScore score = null;
+            if (offline) {
+                Signup signup = signups.get(winner.getSignupId());
+                if (signup == null) {
+                    continue;
+                }
+                row.setSignupId(signup.getId());
+                row.setUserId(signup.getUserId());
+                row.setWorkTitle("选手：" + signup.getRealName());
+                row.setAuthor(signup.getRealName());
+                row.setRealName(signup.getRealName());
+                row.setSchool(signup.getSchool());
+                score = scoreMap.get(signup.getId());
+            } else {
+                Work work = works.get(winner.getWorkId());
+                if (work == null) {
+                    continue;
+                }
+                row.setWorkId(work.getId());
+                row.setUserId(work.getUserId());
+                row.setWorkTitle(work.getTitle());
+                Signup signup = signups.get(work.getSignupId());
+                if (signup != null) {
+                    row.setAuthor(signup.getRealName());
+                    row.setRealName(signup.getRealName());
+                    row.setSchool(signup.getSchool());
+                }
+                score = scoreMap.get(work.getId());
+            }
+            if (score != null) {
+                row.setAvgScore(score.getAvgScore() == null ? null
+                        : score.getAvgScore().setScale(2, RoundingMode.HALF_UP));
+                row.setScoreCount(score.getScoreCount() == null ? 0 : score.getScoreCount());
+            }
+            Award award = awards.get(winner.getAwardId());
+            if (award != null) {
+                row.setAwardName(award.getName());
+                row.setPrizeAmount(award.getPrizeAmount());
+                row.setGift(award.getGift());
+                RankGroup group = groupMap.computeIfAbsent(award.getId(), k -> {
+                    RankGroup g = new RankGroup();
+                    g.setAwardId(award.getId());
+                    g.setAwardName(award.getName());
+                    g.setQuota(award.getQuota());
+                    g.setPrizeAmount(award.getPrizeAmount());
+                    g.setGift(award.getGift());
+                    g.setItems(new ArrayList<>());
+                    return g;
+                });
+                group.getItems().add(row);
+            }
+            rows.add(row);
+        }
+        result.setRows(rows);
+        result.setGroups(new ArrayList<>(groupMap.values()));
         return result;
     }
 
@@ -275,6 +395,36 @@ public class RankService {
         boolean offline = contest != null && "OFFLINE".equals(contest.getMode());
         RankResult result = computeAndCache(contestId);
         winnerMapper.delete(new QueryWrapper<Winner>().eq("contest_id", contestId));
+
+        // 批量预加载选手/作品/用户，避免逐条获奖记录产生 N+1 查询
+        java.util.Set<Long> signupIds = new java.util.HashSet<>();
+        java.util.Set<Long> workIds = new java.util.HashSet<>();
+        for (RankGroup group : result.getGroups()) {
+            for (RankRow row : group.getItems()) {
+                if (offline && row.getSignupId() != null) {
+                    signupIds.add(row.getSignupId());
+                } else if (row.getWorkId() != null) {
+                    workIds.add(row.getWorkId());
+                }
+            }
+        }
+        Map<Long, Signup> signupMap = signupIds.isEmpty() ? Map.of()
+                : signupMapper.selectBatchIds(signupIds).stream()
+                        .collect(Collectors.toMap(Signup::getId, Function.identity(), (a, b) -> a));
+        Map<Long, Work> workMap = workIds.isEmpty() ? Map.of()
+                : workMapper.selectBatchIds(workIds).stream()
+                        .collect(Collectors.toMap(Work::getId, Function.identity(), (a, b) -> a));
+        java.util.Set<Long> userIds = new java.util.HashSet<>();
+        signupMap.values().forEach(s -> {
+            if (s.getUserId() != null) userIds.add(s.getUserId());
+        });
+        workMap.values().forEach(w -> {
+            if (w.getUserId() != null) userIds.add(w.getUserId());
+        });
+        Map<Long, User> userMap = userIds.isEmpty() ? Map.of()
+                : userMapper.selectBatchIds(userIds).stream()
+                        .collect(Collectors.toMap(User::getId, Function.identity(), (a, b) -> a));
+
         for (RankGroup group : result.getGroups()) {
             for (RankRow row : group.getItems()) {
                 Winner winner = new Winner();
@@ -292,14 +442,14 @@ public class RankService {
 
                 User user = null;
                 if (offline && row.getSignupId() != null) {
-                    Signup signup = signupMapper.selectById(row.getSignupId());
+                    Signup signup = signupMap.get(row.getSignupId());
                     if (signup != null) {
-                        user = userMapper.selectById(signup.getUserId());
+                        user = userMap.get(signup.getUserId());
                     }
                 } else if (row.getWorkId() != null) {
-                    Work work = workMapper.selectById(row.getWorkId());
+                    Work work = workMap.get(row.getWorkId());
                     if (work != null) {
-                        user = userMapper.selectById(work.getUserId());
+                        user = userMap.get(work.getUserId());
                     }
                 }
                 if (user != null) {
@@ -353,7 +503,16 @@ public class RankService {
         }
     }
 
-    public List<Winner> winners(Long contestId) {
+    /** 公示获奖名单；未公示赛事仅管理员可查看（避免名单提前泄露）。 */
+    public List<Winner> winners(Long contestId, boolean admin) {
+        Contest contest = contestMapper.selectById(contestId);
+        if (contest == null) {
+            throw new BizException(404, "赛事不存在");
+        }
+        boolean published = "PUBLISHED".equals(contest.getStatus()) || "FINISHED".equals(contest.getStatus());
+        if (!published && !admin) {
+            throw new BizException(403, "榜单尚未公示");
+        }
         return winnerMapper.selectList(new QueryWrapper<Winner>()
                 .eq("contest_id", contestId).orderByAsc("rank_no"));
     }
@@ -367,7 +526,6 @@ public class RankService {
     }
 
     public long scoredWorks(Long contestId) {
-        return scoreMapper.selectList(new QueryWrapper<Score>().eq("contest_id", contestId))
-                .stream().map(Score::getWorkId).distinct().count();
+        return scoreMapper.countScoredWorks(contestId);
     }
 }

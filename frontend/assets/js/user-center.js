@@ -232,7 +232,7 @@
         const canCancel = s.status !== "CANCELED" && contest && contest.status === "SIGNUP" && !s.workId;
         const workAction = s.workId
           ? `<a class="btn btn-ghost btn-sm" href="/work-submit.html?contestId=${s.contestId}">查看作品</a>`
-          : contest && contest.status === "SIGNUP" && s.status === "APPROVED"
+          : contest && (contest.status === "SIGNUP" || contest.status === "REVIEW") && s.status === "APPROVED"
           ? `<a class="btn btn-primary btn-sm" href="/work-submit.html?contestId=${s.contestId}">提交作品</a>`
           : "";
         return `<div class="list-item">

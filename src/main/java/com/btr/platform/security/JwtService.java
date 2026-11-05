@@ -16,6 +16,8 @@ import java.util.UUID;
 @Service
 public class JwtService {
 
+    private static final int MIN_SECRET_BYTES = 32;
+
     private final SecretKey key;
     private final long accessHours;
     private final long refreshDays;
@@ -23,7 +25,12 @@ public class JwtService {
     public JwtService(@Value("${app.jwt.secret}") String secret,
                       @Value("${app.jwt.access-hours:2}") long accessHours,
                       @Value("${app.jwt.refresh-days:7}") long refreshDays) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] bytes = secret == null ? new byte[0] : secret.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length < MIN_SECRET_BYTES) {
+            throw new IllegalStateException(
+                    "JWT_SECRET 长度不足：至少需要 " + MIN_SECRET_BYTES + " 字节（当前 " + bytes.length + " 字节）");
+        }
+        this.key = Keys.hmacShaKeyFor(bytes);
         this.accessHours = accessHours;
         this.refreshDays = refreshDays;
     }
@@ -43,6 +50,7 @@ public class JwtService {
                 .claim("account", user.account())
                 .claim("nickname", user.nickname())
                 .claim("role", user.role())
+                .claim("ver", user.tokenVersion())
                 .claim("type", type)
                 .issuedAt(new Date())
                 .expiration(Date.from(expireAt))
@@ -55,11 +63,13 @@ public class JwtService {
     }
 
     public UserPrincipal toPrincipal(Claims claims) {
+        Integer version = claims.get("ver", Integer.class);
         return new UserPrincipal(
                 Long.valueOf(claims.getSubject()),
                 claims.get("account", String.class),
                 claims.get("nickname", String.class),
-                claims.get("role", String.class)
+                claims.get("role", String.class),
+                version == null ? 0 : version
         );
     }
 

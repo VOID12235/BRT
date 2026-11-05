@@ -104,15 +104,15 @@ public class SignupService {
     public List<SignupView> mine(Long userId) {
         List<Signup> signups = signupMapper.selectList(new QueryWrapper<Signup>()
                 .eq("user_id", userId).orderByDesc("created_at"));
-        Map<Long, Contest> contests = contestMapper.selectBatchIds(signups.stream()
-                        .map(Signup::getContestId).distinct().toList()).stream()
-                .collect(Collectors.toMap(Contest::getId, Function.identity()));
+        List<Long> contestIds = signups.stream().map(Signup::getContestId).distinct().toList();
+        Map<Long, Contest> contests = contestIds.isEmpty() ? Map.of()
+                : contestMapper.selectBatchIds(contestIds).stream()
+                        .collect(Collectors.toMap(Contest::getId, Function.identity()));
         User user = userMapper.selectById(userId);
-        return signups.stream().map(s -> {
-            Work work = workMapper.selectOne(new QueryWrapper<Work>()
-                    .eq("signup_id", s.getId()).last("limit 1"));
-            return toView(s, contests.get(s.getContestId()), user, work);
-        }).toList();
+        Map<Long, Work> works = worksBySignup(signups);
+        return signups.stream()
+                .map(s -> toView(s, contests.get(s.getContestId()), user, works.get(s.getId())))
+                .toList();
     }
 
     public PageResult<SignupView> adminList(Long contestId, String status, long page, long size) {
@@ -132,12 +132,23 @@ public class SignupService {
         Map<Long, User> users = records.isEmpty() ? Map.of() : userMapper.selectBatchIds(records.stream()
                         .map(Signup::getUserId).distinct().toList()).stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
-        List<SignupView> views = records.stream().map(s -> {
-            Work work = workMapper.selectOne(new QueryWrapper<Work>()
-                    .eq("signup_id", s.getId()).last("limit 1"));
-            return toView(s, contests.get(s.getContestId()), users.get(s.getUserId()), work);
-        }).toList();
+        Map<Long, Work> works = worksBySignup(records);
+        List<SignupView> views = records.stream()
+                .map(s -> toView(s, contests.get(s.getContestId()), users.get(s.getUserId()),
+                        works.get(s.getId())))
+                .toList();
         return PageResult.of(views, result.getTotal(), page, size);
+    }
+
+    /** 批量加载报名对应的作品，避免逐条查询。 */
+    private Map<Long, Work> worksBySignup(List<Signup> signups) {
+        if (signups.isEmpty()) {
+            return Map.of();
+        }
+        List<Long> ids = signups.stream().map(Signup::getId).toList();
+        return workMapper.selectList(new QueryWrapper<Work>().in("signup_id", ids)).stream()
+                .filter(w -> w.getSignupId() != null)
+                .collect(Collectors.toMap(Work::getSignupId, Function.identity(), (a, b) -> a));
     }
 
     @Transactional

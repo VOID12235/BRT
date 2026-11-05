@@ -1,6 +1,7 @@
 package com.btr.platform.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.btr.platform.common.BizException;
 import com.btr.platform.dto.Views.DbConfig;
 import com.btr.platform.dto.Views.MailConfig;
 import com.btr.platform.dto.Views.RedisConfig;
@@ -28,6 +29,8 @@ import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -95,7 +98,13 @@ public class ConfigService {
                     + "颁发日期：{date}\n"
                     + "BTR 赛事平台 · 本证书以公示获奖名单为准";
 
+    private static final Set<String> SENSITIVE_KEYS = Set.of(
+            KEY_MAIL_PASSWORD, KEY_DB_MYSQL_PASSWORD, KEY_REDIS_PASSWORD);
+    private static final Set<String> TEMPLATE_KEYS = Set.of(
+            KEY_TPL_SIGNUP, KEY_TPL_REVIEW, KEY_TPL_WINNER, KEY_TPL_VERIFY, KEY_TPL_CERT);
+
     private final SysConfigMapper sysConfigMapper;
+    private final Map<String, String> cache = new ConcurrentHashMap<>();
 
     @Value("${app.config.secret:}")
     private String configSecret;
@@ -157,6 +166,7 @@ public class ConfigService {
         setDefault(KEY_REDIS_PORT, "6379", "Redis 端口");
         setDefault(KEY_REDIS_PASSWORD, "", "Redis 密码（加密存储）");
         setDefault(KEY_REDIS_DATABASE, "0", "Redis 数据库索引");
+        reloadCache();
         log.info("系统配置默认值初始化完成");
     }
 
@@ -175,12 +185,18 @@ public class ConfigService {
     /* ------------------------- 通用 KV ------------------------- */
 
     public String get(String key, String def) {
-        SysConfig config = sysConfigMapper.selectOne(new QueryWrapper<SysConfig>()
-                .eq("config_key", key).last("limit 1"));
-        if (config == null || config.getConfigValue() == null || config.getConfigValue().isBlank()) {
-            return def;
+        String value = cache.get(key);
+        if (value == null) {
+            // 运行期新增的键（或缓存未命中）回源一次，避免每个请求都查库
+            SysConfig config = sysConfigMapper.selectOne(new QueryWrapper<SysConfig>()
+                    .eq("config_key", key).last("limit 1"));
+            if (config == null) {
+                return def;
+            }
+            value = config.getConfigValue() == null ? "" : config.getConfigValue();
+            cache.put(key, value);
         }
-        return config.getConfigValue();
+        return value.isBlank() ? def : value;
     }
 
     public boolean getBool(String key, boolean def) {
@@ -215,6 +231,18 @@ public class ConfigService {
         } else {
             sysConfigMapper.updateById(config);
         }
+        cache.put(key, value == null ? "" : value);
+    }
+
+    /** 从数据库重新加载配置缓存（启动或批量变更后调用）。 */
+    public void reloadCache() {
+        Map<String, String> loaded = new LinkedHashMap<>();
+        for (SysConfig config : sysConfigMapper.selectList(
+                new QueryWrapper<SysConfig>().orderByAsc("config_key"))) {
+            loaded.put(config.getConfigKey(), config.getConfigValue() == null ? "" : config.getConfigValue());
+        }
+        cache.clear();
+        cache.putAll(loaded);
     }
 
     /* ------------------------- 邮件配置 ------------------------- */
@@ -358,8 +386,10 @@ public class ConfigService {
     }
 
     public void updateTemplate(String key, String content) {
-        String desc = key + " 模板";
-        set(key, content, desc);
+        if (key == null || !TEMPLATE_KEYS.contains(key)) {
+            throw new BizException(400, "未知的模板键");
+        }
+        set(key, content, key + " 模板");
     }
 
     public static String render(String template, Map<String, String> vars) {
@@ -547,12 +577,19 @@ public class ConfigService {
         }
     }
 
-    /** 全部配置键值（管理端调试/展示用） */
+    /** 全部配置键值（管理端调试/展示用），敏感项统一脱敏。 */
     public Map<String, String> all() {
         return sysConfigMapper.selectList(new QueryWrapper<SysConfig>()
                         .orderByAsc("config_key")).stream()
                 .collect(Collectors.toMap(SysConfig::getConfigKey,
-                        c -> c.getConfigValue() == null ? "" : c.getConfigValue(),
+                        c -> maskIfSensitive(c.getConfigKey(), c.getConfigValue()),
                         (a, b) -> a, LinkedHashMap::new));
+    }
+
+    private String maskIfSensitive(String key, String value) {
+        if (value == null || value.isBlank()) {
+            return "";
+        }
+        return SENSITIVE_KEYS.contains(key) ? MASKED : value;
     }
 }

@@ -74,10 +74,12 @@ public class JudgeService {
         Map<Long, Contest> contests = contestMapper.selectBatchIds(assigns.stream()
                         .map(JudgeAssign::getContestId).distinct().toList()).stream()
                 .collect(Collectors.toMap(Contest::getId, Function.identity()));
-        Map<Long, Signup> signups = signupMapper.selectBatchIds(
-                        java.util.stream.Stream.concat(works.values().stream().map(Work::getSignupId),
-                                signupIds.stream()).distinct().toList()).stream()
-                .collect(Collectors.toMap(Signup::getId, Function.identity()));
+        List<Long> concatIds = java.util.stream.Stream.concat(
+                        works.values().stream().map(Work::getSignupId), signupIds.stream())
+                .filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, Signup> signups = concatIds.isEmpty() ? Map.of()
+                : signupMapper.selectBatchIds(concatIds).stream()
+                        .collect(Collectors.toMap(Signup::getId, Function.identity()));
         Map<String, Score> scores = scoreMapper.selectList(new QueryWrapper<Score>()
                         .eq("judge_id", judgeId)).stream()
                 .collect(Collectors.toMap(s -> s.getWorkId() != null
@@ -293,7 +295,7 @@ public class JudgeService {
             throw new BizException(403, "该评审对象未分配给你评审");
         }
         Contest contest = contestMapper.selectById(assign.getContestId());
-        if (contest == null || !"REVIEW".equals(contest.getStatus())) {
+        if (contest == null || !(Set.of("REVIEW", "FINISHED").contains(contest.getStatus()))) {
             throw new BizException("当前不在评审阶段，无法打分");
         }
         Score score;

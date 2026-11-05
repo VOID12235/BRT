@@ -35,19 +35,6 @@
       btn.addEventListener("click", () => switchTab(btn.dataset.authTab));
     });
 
-    document.querySelectorAll(".demo-accounts button").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document.getElementById("loginAccount").value = btn.dataset.account;
-        document.getElementById("loginPassword").value = btn.dataset.password;
-        if (captchaEnabled) {
-          document.getElementById("captchaCode").focus();
-        } else {
-          document.getElementById("loginSubmit").focus();
-        }
-        B.toast("已填入演示账号，点击登录即可", "info");
-      });
-    });
-
     document.getElementById("loginForm").addEventListener("submit", login);
     document.getElementById("registerForm").addEventListener("submit", register);
     document.getElementById("sendRegCodeBtn").addEventListener("click", sendRegisterCode);

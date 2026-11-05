@@ -50,6 +50,8 @@ public final class Requests {
             @DecimalMin(value = "0.00", message = "奖金不能为负") @DecimalMax(value = "999999999.99", message = "奖金数额过大")
             BigDecimal prizeAmount,
             String mode,
+            String videoUrl,
+            String videoName,
             LocalDateTime signupStart,
             LocalDateTime signupEnd,
             LocalDateTime reviewStart,
@@ -77,7 +79,8 @@ public final class Requests {
             @NotBlank(message = "请输入作品名称") @Size(max = 160, message = "作品名称过长") String title,
             @Size(max = 2000, message = "作品描述最长 2000 字") String description,
             String fileUrl,
-            String fileName) {
+            String fileName,
+            @Size(max = 500, message = "封面地址过长") String cover) {
     }
 
     public record ScoreReq(

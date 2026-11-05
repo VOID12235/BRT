@@ -1,6 +1,7 @@
 package com.btr.platform.controller;
 
 import com.btr.platform.common.ApiResponse;
+import com.btr.platform.common.ClientIpResolver;
 import com.btr.platform.dto.Requests;
 import com.btr.platform.dto.Requests.ForgotPasswordReq;
 import com.btr.platform.dto.Requests.LoginReq;
@@ -30,28 +31,31 @@ public class AuthController {
 
     private final AuthService authService;
     private final CaptchaService captchaService;
+    private final ClientIpResolver clientIpResolver;
 
-    public AuthController(AuthService authService, CaptchaService captchaService) {
+    public AuthController(AuthService authService, CaptchaService captchaService,
+                          ClientIpResolver clientIpResolver) {
         this.authService = authService;
         this.captchaService = captchaService;
+        this.clientIpResolver = clientIpResolver;
     }
 
     @PostMapping("/register")
     public ApiResponse<AuthResult> register(@Valid @RequestBody RegisterReq req, HttpServletRequest request) {
-        return ApiResponse.ok(authService.register(req, ip(request)));
+        return ApiResponse.ok(authService.register(req, clientIpResolver.resolve(request)));
     }
 
     @PostMapping("/send-register-code")
     public ApiResponse<Map<String, String>> sendRegisterCode(@Valid @RequestBody ForgotPasswordReq req,
                                                              HttpServletRequest request) {
-        String result = authService.sendRegisterCode(req, ip(request));
-        return ApiResponse.ok(Map.of("message",
-                result == null ? "验证码已发送，请查收邮件" : "验证码已发送至 " + result));
+        authService.sendRegisterCode(req, clientIpResolver.resolve(request));
+        // 统一文案，避免通过响应差异枚举已注册邮箱
+        return ApiResponse.ok(Map.of("message", "如果该邮箱可用，验证码将发送至该邮箱"));
     }
 
     @PostMapping("/login")
     public ApiResponse<AuthResult> login(@Valid @RequestBody LoginReq req, HttpServletRequest request) {
-        return ApiResponse.ok(authService.login(req, ip(request)));
+        return ApiResponse.ok(authService.login(req, clientIpResolver.resolve(request)));
     }
 
     @PostMapping("/refresh")
@@ -83,25 +87,15 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ApiResponse<Map<String, String>> forgotPassword(@Valid @RequestBody ForgotPasswordReq req,
                                                            HttpServletRequest request) {
-        String result = authService.forgotPassword(req, ip(request));
-        if (result == null) {
-            return ApiResponse.ok(Map.of("message", "如果该邮箱已注册，验证码邮件将发送至对应邮箱"));
-        }
-        return ApiResponse.ok(Map.of("message", "验证码已发送，请查收邮件"));
+        authService.forgotPassword(req, clientIpResolver.resolve(request));
+        // 统一文案，避免通过响应差异枚举已注册邮箱
+        return ApiResponse.ok(Map.of("message", "如果该邮箱已注册，验证码邮件将发送至对应邮箱"));
     }
 
     @PostMapping("/reset-password")
     public ApiResponse<Void> resetPassword(@Valid @RequestBody ResetPasswordByCodeReq req,
                                            HttpServletRequest request) {
-        authService.resetPassword(req, ip(request));
+        authService.resetPassword(req, clientIpResolver.resolve(request));
         return ApiResponse.ok();
-    }
-
-    private String ip(HttpServletRequest request) {
-        String forwarded = request.getHeader("X-Forwarded-For");
-        if (forwarded != null && !forwarded.isBlank()) {
-            return forwarded.split(",")[0].trim();
-        }
-        return request.getRemoteAddr();
     }
 }

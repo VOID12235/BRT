@@ -9,10 +9,12 @@ import com.btr.platform.dto.Views.WorkScore;
 import com.btr.platform.dto.Views.WorkView;
 import com.btr.platform.entity.Contest;
 import com.btr.platform.entity.Signup;
+import com.btr.platform.entity.UploadFile;
 import com.btr.platform.entity.Work;
 import com.btr.platform.mapper.ContestMapper;
 import com.btr.platform.mapper.ScoreMapper;
 import com.btr.platform.mapper.SignupMapper;
+import com.btr.platform.mapper.UploadFileMapper;
 import com.btr.platform.mapper.WorkMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -30,14 +33,16 @@ public class WorkService {
     private final SignupMapper signupMapper;
     private final ContestMapper contestMapper;
     private final ScoreMapper scoreMapper;
+    private final UploadFileMapper uploadFileMapper;
     private final RankService rankService;
 
     public WorkService(WorkMapper workMapper, SignupMapper signupMapper, ContestMapper contestMapper,
-                       ScoreMapper scoreMapper, RankService rankService) {
+                       ScoreMapper scoreMapper, UploadFileMapper uploadFileMapper, RankService rankService) {
         this.workMapper = workMapper;
         this.signupMapper = signupMapper;
         this.contestMapper = contestMapper;
         this.scoreMapper = scoreMapper;
+        this.uploadFileMapper = uploadFileMapper;
         this.rankService = rankService;
     }
 
@@ -51,15 +56,20 @@ public class WorkService {
             throw new BizException("报名尚未通过审核，暂不能提交作品");
         }
         Contest contest = contestMapper.selectById(signup.getContestId());
-        if (contest == null || !"SIGNUP".equals(contest.getStatus())) {
-            throw new BizException("赛事已进入评审阶段，作品已锁定");
+        if (contest == null || !(Set.of("SIGNUP", "REVIEW").contains(contest.getStatus()))) {
+            throw new BizException("赛事当前不在投稿期，作品已锁定");
         }
         if ("OFFLINE".equals(contest.getMode())) {
             throw new BizException("线下比赛不提交作品，报名后由评委按选手表现打分");
         }
-        if (contest.getSignupEnd() != null && LocalDateTime.now().isAfter(contest.getSignupEnd())) {
+        // 报名阶段受报名截止时间约束；进入「进行中」后以赛事状态为准，可继续提交/修改作品
+        if ("SIGNUP".equals(contest.getStatus())
+                && contest.getSignupEnd() != null && LocalDateTime.now().isAfter(contest.getSignupEnd())) {
             throw new BizException("作品提交已截止");
         }
+        // 文件归属校验：fileUrl 必须是本人通过上传接口产生的文件，防止提交他人作品文件
+        validateOwnFile(req.fileUrl(), userId);
+        validateOwnFile(req.cover(), userId);
         Work work = workMapper.selectOne(new QueryWrapper<Work>()
                 .eq("signup_id", req.signupId()).last("limit 1"));
         if (work != null && Boolean.TRUE.equals(work.getLocked())) {
@@ -76,6 +86,7 @@ public class WorkService {
         work.setDescription(req.description());
         work.setFileUrl(req.fileUrl());
         work.setFileName(req.fileName());
+        work.setCover(req.cover());
         work.setStatus("SUBMITTED");
         work.setLocked(false);
         work.setUpdatedAt(LocalDateTime.now());
@@ -98,8 +109,8 @@ public class WorkService {
             throw new BizException("作品已锁定，不可撤回");
         }
         Contest contest = contestMapper.selectById(work.getContestId());
-        if (contest == null || !"SIGNUP".equals(contest.getStatus())) {
-            throw new BizException("评审阶段不可撤回作品");
+        if (contest == null || !(Set.of("SIGNUP", "REVIEW").contains(contest.getStatus()))) {
+            throw new BizException("赛事当前不在投稿期，不可撤回作品");
         }
         work.setStatus("WITHDRAWN");
         work.setUpdatedAt(LocalDateTime.now());
@@ -110,22 +121,28 @@ public class WorkService {
     public List<WorkView> mine(Long userId) {
         List<Work> works = workMapper.selectList(new QueryWrapper<Work>()
                 .eq("user_id", userId).orderByDesc("updated_at"));
-        Map<Long, Contest> contests = contestMapper.selectBatchIds(works.stream()
-                        .map(Work::getContestId).distinct().toList()).stream()
-                .collect(Collectors.toMap(Contest::getId, Function.identity()));
-        Map<Long, Signup> signups = signupMapper.selectBatchIds(works.stream()
-                        .map(Work::getSignupId).distinct().toList()).stream()
-                .collect(Collectors.toMap(Signup::getId, Function.identity()));
+        List<Long> contestIds = works.stream().map(Work::getContestId).distinct().toList();
+        Map<Long, Contest> contests = contestIds.isEmpty() ? Map.of()
+                : contestMapper.selectBatchIds(contestIds).stream()
+                        .collect(Collectors.toMap(Contest::getId, Function.identity()));
+        List<Long> signupIds = works.stream().map(Work::getSignupId).distinct().toList();
+        Map<Long, Signup> signups = signupIds.isEmpty() ? Map.of()
+                : signupMapper.selectBatchIds(signupIds).stream()
+                        .collect(Collectors.toMap(Signup::getId, Function.identity()));
         Map<Long, WorkScore> scores = new java.util.HashMap<>();
-        works.stream().map(Work::getContestId).distinct().forEach(contestId ->
-                scoreMapper.avgByContest(contestId)
-                        .forEach(score -> scores.put(score.getWorkId(), score)));
+        List<Long> workIds = works.stream().map(Work::getId).toList();
+        if (!workIds.isEmpty()) {
+            scoreMapper.avgByWorkIds(workIds).forEach(score -> scores.put(score.getWorkId(), score));
+        }
         return works.stream().map(w -> toView(w, contests.get(w.getContestId()),
                 signups.get(w.getSignupId()), scores.get(w.getId()))).toList();
     }
 
     public PageResult<WorkView> publicList(Long contestId, long page, long size) {
         QueryWrapper<Work> query = new QueryWrapper<Work>().eq("status", "SUBMITTED");
+        // 只展示已公示 / 已结束且公开赛事中的作品，避免评审阶段作品提前泄露
+        query.inSql("contest_id",
+                "SELECT id FROM contest WHERE status IN ('PUBLISHED','FINISHED') AND is_public = TRUE");
         if (contestId != null) {
             query.eq("contest_id", contestId);
         }
@@ -151,16 +168,21 @@ public class WorkService {
         if (works.isEmpty()) {
             return List.of();
         }
-        Map<Long, Contest> contests = contestMapper.selectBatchIds(works.stream()
-                        .map(Work::getContestId).distinct().toList()).stream()
-                .collect(Collectors.toMap(Contest::getId, Function.identity()));
-        Map<Long, Signup> signups = signupMapper.selectBatchIds(works.stream()
-                        .map(Work::getSignupId).distinct().toList()).stream()
-                .collect(Collectors.toMap(Signup::getId, Function.identity()));
+        List<Long> contestIds = works.stream()
+                .map(Work::getContestId).filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, Contest> contests = contestIds.isEmpty() ? Map.of()
+                : contestMapper.selectBatchIds(contestIds).stream()
+                        .collect(Collectors.toMap(Contest::getId, Function.identity()));
+        List<Long> signupIds = works.stream()
+                .map(Work::getSignupId).filter(java.util.Objects::nonNull).distinct().toList();
+        Map<Long, Signup> signups = signupIds.isEmpty() ? Map.of()
+                : signupMapper.selectBatchIds(signupIds).stream()
+                        .collect(Collectors.toMap(Signup::getId, Function.identity()));
         Map<Long, WorkScore> scores = new java.util.HashMap<>();
-        works.stream().map(Work::getContestId).distinct().forEach(contestId ->
-                scoreMapper.avgByContest(contestId)
-                        .forEach(score -> scores.put(score.getWorkId(), score)));
+        List<Long> workIds = works.stream().map(Work::getId).toList();
+        if (!workIds.isEmpty()) {
+            scoreMapper.avgByWorkIds(workIds).forEach(score -> scores.put(score.getWorkId(), score));
+        }
         return works.stream().map(w -> toView(w, contests.get(w.getContestId()),
                 signups.get(w.getSignupId()), scores.get(w.getId()))).toList();
     }
@@ -184,6 +206,26 @@ public class WorkService {
         return work;
     }
 
+    /**
+     * 校验文件 URL 归属：作品文件/封面必须是当前用户本人上传（upload_file.uploader_id）。
+     * 仅接受平台上传接口生成的文件地址，拒绝任意外部 URL。
+     */
+    private void validateOwnFile(String url, Long userId) {
+        if (url == null || url.isBlank()) {
+            return;
+        }
+        java.util.regex.Matcher m = java.util.regex.Pattern
+                .compile("^/api/v1/files/(\\d+)/[0-9a-fA-F]{32}$").matcher(url);
+        if (!m.matches()) {
+            throw new BizException("文件地址无效，请重新上传");
+        }
+        Long fileId = Long.valueOf(m.group(1));
+        UploadFile file = uploadFileMapper.selectById(fileId);
+        if (file == null || !userId.equals(file.getUploaderId())) {
+            throw new BizException("只能使用本人上传的文件");
+        }
+    }
+
     private WorkView toView(Work work, Contest contest, Signup signup, WorkScore score) {
         WorkView view = new WorkView();
         view.setId(work.getId());
@@ -197,6 +239,7 @@ public class WorkService {
         view.setDescription(work.getDescription());
         view.setFileUrl(work.getFileUrl());
         view.setFileName(work.getFileName());
+        view.setCover(work.getCover());
         view.setStatus(work.getStatus());
         view.setLocked(work.getLocked());
         view.setSubmittedAt(work.getSubmittedAt());

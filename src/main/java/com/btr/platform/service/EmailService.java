@@ -9,6 +9,8 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -25,16 +27,19 @@ public class EmailService {
     private final ObjectProvider<JavaMailSender> mailSenderProvider;
     private final EmailRecordMapper emailRecordMapper;
     private final ConfigService configService;
+    private final ObjectProvider<EmailService> selfProvider;
 
     public EmailService(ObjectProvider<JavaMailSender> mailSenderProvider,
                         EmailRecordMapper emailRecordMapper,
-                        ConfigService configService) {
+                        ConfigService configService,
+                        ObjectProvider<EmailService> selfProvider) {
         this.mailSenderProvider = mailSenderProvider;
         this.emailRecordMapper = emailRecordMapper;
         this.configService = configService;
+        this.selfProvider = selfProvider;
     }
 
-    @Async
+    @Async("mailExecutor")
     public void send(String recipient, String template, String subject, String html) {
         if (recipient == null || recipient.isBlank()) {
             return;
@@ -166,24 +171,47 @@ public class EmailService {
 
     /* ------------------------- 业务邮件 ------------------------- */
 
+    /**
+     * 事务内注册「提交后发送」：避免事务回滚仍发出邮件，也保证异步线程能读到已提交的数据。
+     */
+    private void dispatch(String recipient, String template, String subject, String html) {
+        Runnable task = () -> selfProvider.getObject().send(recipient, template, subject, html);
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+        } else {
+            task.run();
+        }
+    }
+
+    public void welcome(String email, String nickname, String account) {
+        dispatch(email, "WELCOME", "欢迎加入 BTR",
+                "<p>Hi " + nickname + "，欢迎加入 BTR 赛事平台。</p>"
+                        + "<p>你的登录账号即注册邮箱：<b>" + account + "</b>，登录时输入邮箱与密码即可。</p>");
+    }
+
     public void signupReceipt(String email, String nickname, String contestTitle) {
         String tpl = configService.getTemplate(ConfigService.KEY_TPL_SIGNUP,
                 "<p>Hi {nickname}，</p><p>你已成功报名 <b>{contestTitle}</b>，请留意作品提交截止时间。</p>");
-        send(email, "SIGNUP_RECEIPT", "报名成功 · " + contestTitle,
+        dispatch(email, "SIGNUP_RECEIPT", "报名成功 · " + contestTitle,
                 ConfigService.render(tpl, Map.of("nickname", nickname, "contestTitle", contestTitle)));
     }
 
     public void reviewReminder(String email, String nickname, String contestTitle) {
         String tpl = configService.getTemplate(ConfigService.KEY_TPL_REVIEW,
                 "<p>Hi {nickname}，</p><p><b>{contestTitle}</b> 的评审已开始，请尽快完成分配作品的打分。</p>");
-        send(email, "REVIEW_REMINDER", "评审提醒 · " + contestTitle,
+        dispatch(email, "REVIEW_REMINDER", "评审提醒 · " + contestTitle,
                 ConfigService.render(tpl, Map.of("nickname", nickname, "contestTitle", contestTitle)));
     }
 
     public void winnerNotice(String email, String nickname, String contestTitle, String awardName) {
         String tpl = configService.getTemplate(ConfigService.KEY_TPL_WINNER,
                 "<p>Hi {nickname}，</p><p>恭喜你在 <b>{contestTitle}</b> 中获得 <b>{awardName}</b>！</p>");
-        send(email, "WINNER_NOTICE", "获奖通知 · " + contestTitle,
+        dispatch(email, "WINNER_NOTICE", "获奖通知 · " + contestTitle,
                 ConfigService.render(tpl, Map.of("nickname", nickname, "contestTitle", contestTitle, "awardName", awardName)));
     }
 
@@ -192,7 +220,7 @@ public class EmailService {
         String tpl = configService.getTemplate(ConfigService.KEY_TPL_VERIFY,
                 "<p>Hi {nickname}，</p><p>你的验证码是：<b style=\"font-size:18px\">{code}</b></p>"
                         + "<p>验证码 10 分钟内有效，请勿泄露给他人。</p>");
-        send(email, "VERIFY_CODE", "验证码 · BTR 赛事平台",
+        dispatch(email, "VERIFY_CODE", "验证码 · BTR 赛事平台",
                 ConfigService.render(tpl, Map.of("nickname", nickname == null ? "" : nickname, "code", code)));
     }
 }
