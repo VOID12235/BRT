@@ -111,8 +111,24 @@ public final class Requests {
 
     public record AssignReq(
             @NotNull(message = "请选择赛事") Long contestId,
-            @NotNull(message = "请选择评委") Long judgeId,
+            /** 兼容旧版单评委 */
+            Long judgeId,
+            /** 多评委批量分配 */
+            List<Long> judgeIds,
+            /** 空=整赛事（动态跟随）；指定=勾选作品/选手 */
             List<Long> workIds) {
+    }
+
+    /** 管理员改最终分（改分驱动排名重算，必填原因留痕） */
+    public record ScoreAdjustReq(
+            @NotNull(message = "缺少评分记录") Long scoreId,
+            @NotNull(message = "请填写最终分") @DecimalMin(value = "0", message = "分数不能低于 0")
+            @DecimalMax(value = "100", message = "分数不能高于 100") BigDecimal score,
+            @NotBlank(message = "请填写调整原因") String reason) {
+    }
+
+    /** 固化成绩：按聚合排名自动生成获奖并锁定 */
+    public record FinalizeReq(@NotNull(message = "请选择赛事") Long contestId) {
     }
 
     /** 管理员手动调整榜单：每条指定获奖对象（workId 或 signupId 二选一）、奖项与名次 */

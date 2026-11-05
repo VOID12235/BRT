@@ -154,6 +154,7 @@ public final class Views {
         private String contestTitle;
         private long assigned;
         private long scored;
+        private long pending;
     }
 
     @Data
@@ -318,6 +319,54 @@ public final class Views {
         private long scoredCount;
         private LocalDateTime createdAt;
         private List<Long> assignIds;
+    }
+
+    /** 评委单条打分明细（成绩排名视图内嵌） */
+    @Data
+    public static class JudgeScoreItem {
+        private Long scoreId;
+        private Long judgeId;
+        private String judgeName;
+        private BigDecimal score;
+        private BigDecimal adjustedScore;
+        private String comment;
+        private Boolean adjusted;
+        private LocalDateTime adjustedAt;
+    }
+
+    /** 管理端：作品成绩与排名（多评委聚合） */
+    @Data
+    public static class ScoreResultRow {
+        private int rankNo;
+        private Long workId;
+        private Long signupId;
+        private String title;
+        private String realName;
+        private String school;
+        /** 聚合分（AVG/TRIM），有管理员改分时取改后分 */
+        private BigDecimal aggregateScore;
+        /** 是否人工改分 */
+        private Boolean adjusted;
+        /** 待复核：分差 >= 15 */
+        private Boolean reviewFlag;
+        /** 最大分差 */
+        private BigDecimal maxGap;
+        private int judgeCount;
+        private int scoredCount;
+        private List<JudgeScoreItem> judgeScores;
+    }
+
+    /** 管理端：成绩排名视图（含赛事评审配置） */
+    @Data
+    public static class ScoreResultView {
+        private Long contestId;
+        private String contestTitle;
+        private String contestStatus;
+        private Boolean resultsLocked;
+        private LocalDateTime finalizedAt;
+        private String aggregateMode;
+        private Integer judgePerWork;
+        private List<ScoreResultRow> rows;
     }
 
     @Data

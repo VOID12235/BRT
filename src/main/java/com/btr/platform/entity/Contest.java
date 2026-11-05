@@ -32,6 +32,16 @@ public class Contest {
     private LocalDateTime reviewEnd;
     private String status;
     private Boolean isPublic;
+    /** 每个项目评委数（多评委互评） */
+    private Integer judgePerWork;
+    /** 聚合模式：AVG=均分 TRIM=去极值 */
+    private String aggregateMode;
+    /** 评审截止时间 */
+    private LocalDateTime reviewDeadline;
+    /** 成绩固化锁定 */
+    private Boolean resultsLocked;
+    /** 固化时间 */
+    private LocalDateTime finalizedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

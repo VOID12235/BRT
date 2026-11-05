@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="/assets/css/admin.css?v=20261105c" />
   <link rel="stylesheet" href="/assets/css/responsive.css?v=20261105c" />
 </head>
-<body class="admin-body" data-page="judges" data-title="评委分配" data-crumb="评审 / 分配">
+<body class="admin-body" data-page="judges" data-title="评委分配" data-crumb="评委 / 分配">
   <div class="admin-shell">
     <aside class="admin-sidebar" id="adminSidebar"></aside>
     <div class="admin-main">
@@ -20,7 +20,7 @@
         <div class="admin-page-head">
           <div>
             <h2>评委分配</h2>
-            <p>按项目（赛事）整体派发给评委，评委进入项目后评审该赛事全部已提交作品。</p>
+            <p>支持多评委独立评审（一个项目可配多个评委）；整体分配后评审期新提交作品自动进入评委任务池。</p>
           </div>
           <div class="actions">
             <button class="btn btn-primary" id="assignBtn">+ 分配项目</button>
@@ -48,8 +48,39 @@
             </table>
           </div>
           <div class="admin-table-foot">
-            <span id="assignFoot">—</span>
-            <span class="tiny muted">分配按赛事整体进行，评委可评审该赛事全部已提交作品</span>
+            <span id="assignFoot">…</span>
+            <span class="tiny muted">整体分配（动态跟随）按赛事授权，新提交作品自动进池；也可按作品精确分配</span>
+          </div>
+        </div>
+
+        <div class="admin-page-head" style="margin-top: 30px">
+          <div>
+            <h2>成绩与排名</h2>
+            <p>系统按评委打分聚合自动生成成绩与排名；管理员可改最终分（留痕），分差≥15自动标记待复核，固化后榜单/获奖联动锁定。</p>
+          </div>
+          <div class="actions">
+            <button class="btn btn-warning" id="finalizeBtn">固化成绩</button>
+          </div>
+        </div>
+        <div class="admin-filters">
+          <select class="select" id="scoreContestFilter">
+            <option value="">请选择赛事</option>
+          </select>
+          <span class="tiny muted" id="scoreLockedTip" style="margin-left:auto"></span>
+        </div>
+        <div class="admin-table-card">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr><th>排名</th><th>作品/选手</th><th>学校</th><th>评委打分</th><th>聚合分</th><th>状态</th><th>操作</th></tr>
+              </thead>
+              <tbody id="scoreTable">
+                <tr><td colspan="7" class="muted center" style="padding: 24px">选择赛事后查看成绩与排名</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="admin-table-foot">
+            <span class="tiny muted">聚合模式由赛事配置（均分 / 去极值）；改最终分后排名自动重算，固化前可反复调整</span>
           </div>
         </div>
       </div>
@@ -58,6 +89,6 @@
   <div class="admin-backdrop" id="adminBackdrop"></div>
 
   <script src="/assets/js/api.js?v=20261105a3"></script>
-  <script src="/assets/js/admin.js?v=20261105e"></script>
+  <script src="/assets/js/admin.js?v=20261105f"></script>
 </body>
 </html>

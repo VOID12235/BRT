@@ -20,6 +20,13 @@ public class Score {
     private Long judgeId;
     private BigDecimal score;
     private String comment;
+    /** 管理员改分：最终分（覆盖后排名用此分） */
+    private BigDecimal adjustedScore;
+    /** 改分原因（必填，写操作日志） */
+    private String adjustReason;
+    /** 改分操作人 */
+    private Long adjustBy;
+    private LocalDateTime adjustedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

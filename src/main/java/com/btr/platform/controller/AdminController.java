@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.btr.platform.common.ApiResponse;
 import com.btr.platform.common.ClientIpResolver;
 import com.btr.platform.common.PageResult;
+import com.btr.platform.dto.Requests;
 import com.btr.platform.dto.Requests.AdminCreateUserReq;
 import com.btr.platform.dto.Requests.AssignReq;
 import com.btr.platform.dto.Views;
@@ -217,6 +218,30 @@ public class AdminController {
     @DeleteMapping("/judge-assign/{id}")
     public ApiResponse<Void> unassign(@PathVariable Long id) {
         judgeService.unassign(id);
+        return ApiResponse.ok();
+    }
+
+    /** 作品成绩与排名视图（多评委聚合，含待复核/改分明细） */
+    @GetMapping("/judge-assign/scores")
+    public ApiResponse<Views.ScoreResultView> assignScores(@RequestParam Long contestId) {
+        return ApiResponse.ok(judgeService.scoreResults(contestId));
+    }
+
+    /** 管理员改最终分（必填原因，留痕，驱动排名/奖项自动重算） */
+    @PutMapping("/judge-assign/scores")
+    public ApiResponse<Void> adjustScore(@Valid @RequestBody Requests.ScoreAdjustReq req,
+                                         HttpServletRequest request) {
+        judgeService.adjustScore(req.scoreId(), req.score(), req.reason(),
+                SecurityUtils.current().id(), clientIpResolver.resolve(request));
+        return ApiResponse.ok();
+    }
+
+    /** 固化成绩：按聚合排名自动生成获奖并锁定（榜单/获奖/证书联动） */
+    @PostMapping("/judge-assign/finalize")
+    public ApiResponse<Void> finalizeResults(@Valid @RequestBody Requests.FinalizeReq req,
+                                             HttpServletRequest request) {
+        judgeService.finalizeResults(req.contestId(),
+                SecurityUtils.current().id(), clientIpResolver.resolve(request));
         return ApiResponse.ok();
     }
 

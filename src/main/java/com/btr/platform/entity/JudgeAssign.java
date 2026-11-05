@@ -17,5 +17,7 @@ public class JudgeAssign {
     private Long workId;
     /** 线下赛事分配对象为报名选手（signup_id），此时 work_id 为空 */
     private Long signupId;
+    /** 分配类型：ALL=赛事整体（动态跟随，新作品自动进任务池） ITEM=指定作品/选手 */
+    private String assignType;
     private LocalDateTime createdAt;
 }

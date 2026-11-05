@@ -1102,6 +1102,126 @@
     document.getElementById("assignBtn").addEventListener("click", openAssignModal);
     await loadJudges();
     loadAssignments();
+    initScoreResults();
+  }
+
+  /* 成绩与排名（多评委聚合） */
+  let scoreState = { contestId: "" };
+
+  function initScoreResults() {
+    const filter = document.getElementById("scoreContestFilter");
+    if (!filter) return;
+    filter.innerHTML = '<option value="">请选择赛事</option>' + state.contests
+      .map((c) => `<option value="${c.id}">${B.escapeHtml(c.title)}</option>`)
+      .join("");
+    filter.addEventListener("change", (e) => {
+      scoreState.contestId = e.target.value;
+      loadScoreResults();
+    });
+    const finalizeBtn = document.getElementById("finalizeBtn");
+    if (finalizeBtn) finalizeBtn.addEventListener("click", () => {
+      if (!scoreState.contestId) return B.toast("请先选择赛事", "warn");
+      confirmAction("固化成绩后：按当前聚合排名自动生成获奖名单并锁定，榜单/获奖/证书联动，固化后不能再改分。确认固化？", async () => {
+        try {
+          await B.api.post("/admin/judge-assign/finalize", { contestId: Number(scoreState.contestId) });
+          B.toast("成绩已固化，榜单/获奖已生成", "success");
+          loadScoreResults();
+        } catch (e) {
+          B.toast(e.message || "固化失败", "error");
+        }
+      });
+    });
+  }
+
+  async function loadScoreResults() {
+    const tbody = document.getElementById("scoreTable");
+    if (!tbody) return;
+    const tip = document.getElementById("scoreLockedTip");
+    if (!scoreState.contestId) {
+      tbody.innerHTML = '<tr><td colspan="7" class="muted center" style="padding:24px">选择赛事后查看成绩与排名</td></tr>';
+      if (tip) tip.textContent = "";
+      return;
+    }
+    tbody.innerHTML = '<tr><td colspan="7"><div class="skeleton" style="height:60px"></div></td></tr>';
+    try {
+      const view = await B.api.get("/admin/judge-assign/scores?contestId=" + scoreState.contestId);
+      if (tip) {
+        tip.textContent = (view.resultsLocked ? "已固化锁定 · " : "未固化 · ") +
+          "聚合模式：" + (view.aggregateMode === "TRIM" ? "去极值" : "均分") +
+          " · 每项目评委：" + view.judgePerWork + " 名";
+      }
+      const rows = view.rows || [];
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="muted center" style="padding:24px">暂无已提交作品</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map((r) => {
+        const scores = (r.judgeScores || []).map((s) => {
+          const val = s.adjustedScore != null ? s.adjustedScore : s.score;
+          const adjMark = s.adjusted ? ' <span class="badge badge-warn" title="人工改分">改</span>' : "";
+          return `<span class="mono" style="margin-right:8px">${Number(val).toFixed(1)}${adjMark}</span>`;
+        }).join("");
+        const locked = view.resultsLocked;
+        const status = [];
+        if (r.reviewFlag) status.push('<span class="badge badge-warn">待复核</span>');
+        if (r.adjusted) status.push('<span class="badge badge-review">已改分</span>');
+        if (r.scoredCount < r.judgeCount) status.push('<span class="badge badge-ghost">未评全</span>');
+        const agg = r.aggregateScore != null ? `<b class="mono" style="font-size:15px">${Number(r.aggregateScore).toFixed(1)}</b>` : '<span class="muted">—</span>';
+        const action = locked
+          ? '<span class="muted tiny">已锁定</span>'
+          : (r.judgeScores || []).length
+            ? `<button class="btn btn-ghost btn-xs" data-adjust="${r.judgeScores[0].scoreId}" data-now="${r.aggregateScore != null ? r.aggregateScore : ""}" style="color:var(--brand)">改分</button>`
+            : '<span class="muted tiny">待评委打分</span>';
+        return `<tr>
+          <td><b class="mono">${r.rankNo > 0 ? r.rankNo : "—"}</b></td>
+          <td class="title-cell"><b>${B.escapeHtml(r.title || "—")}</b>${
+            r.realName ? `<span class="tiny muted" style="display:block">${B.escapeHtml(r.realName)}</span>` : ""
+          }</td>
+          <td>${B.escapeHtml(r.school || "—")}</td>
+          <td>${scores || '<span class="muted">—</span>'}</td>
+          <td>${agg}</td>
+          <td>${status.join(" ") || '<span class="muted tiny">正常</span>'}</td>
+          <td>${action}</td>
+        </tr>`;
+      }).join("");
+      tbody.querySelectorAll("[data-adjust]").forEach((btn) =>
+        btn.addEventListener("click", () => openAdjustModal(btn.dataset))
+      );
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="7" class="muted center" style="padding:24px">${B.escapeHtml(e.message || "加载失败")}</td></tr>`;
+    }
+  }
+
+  function openAdjustModal(ds) {
+    openModal({
+      title: "调整最终分",
+      size: "modal-sm",
+      submitText: "保存调整",
+      body: `
+        <div class="form-grid">
+          <div class="field span-2">
+            <label>当前聚合分</label>
+            <div class="mono" id="adjustNow">${ds.now || "—"}</div>
+          </div>
+          <div class="field span-2">
+            <label>最终分（覆盖对应评委打分，排名自动重算）*</label>
+            <input class="input" type="number" name="adjustScore" min="0" max="100" step="0.1" required placeholder="0-100" />
+          </div>
+          <div class="field span-2">
+            <label>调整原因（必填，写入操作日志）*</label>
+            <textarea class="input" name="adjustReason" rows="2" required placeholder="如：评委争议复核后裁定"></textarea>
+          </div>
+        </div>`,
+      onSubmit: async (form) => {
+        const score = Number(formValue(form, "adjustScore"));
+        const reason = formValue(form, "adjustReason").trim();
+        if (!Number.isFinite(score) || score < 0 || score > 100) throw new Error("分数需在 0-100 之间");
+        if (!reason) throw new Error("请填写调整原因");
+        await B.api.put("/admin/judge-assign/scores", { scoreId: Number(ds.adjust), score, reason });
+        B.toast("最终分已调整，排名已重算", "success");
+        loadScoreResults();
+      },
+    });
   }
 
   async function loadJudges() {
@@ -1192,11 +1312,11 @@
     }
     openModal({
       title: "分配项目给评委",
-      size: "modal-md",
+      size: "modal-lg",
       submitText: "确认分配",
       body: `
         <div class="form-grid">
-          <div class="field">
+          <div class="field span-2">
             <label>赛事项目 *</label>
             <select class="select" name="contestId" id="assignContestSelect">
               <option value="">请选择赛事</option>
@@ -1205,30 +1325,84 @@
                 .join("")}
             </select>
           </div>
-          <div class="field">
-            <label>评委 *</label>
-            <select class="select" name="judgeId">
-              ${judgesCache
-                .map((j) => `<option value="${j.id}">${B.escapeHtml(j.nickname || j.account)}</option>`)
-                .join("")}
-            </select>
+          <div class="field span-2">
+            <label>分配方式</label>
+            <div style="display:flex;gap:20px;padding:6px 0;flex-wrap:wrap">
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="radio" name="assignMode" value="ALL" checked /> 整赛事分配（新作品自动进池）
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="radio" name="assignMode" value="PICK" /> 按作品分配
+              </label>
+            </div>
+          </div>
+          <div class="field span-2" id="pickWorksBox" style="display:none">
+            <label>选择作品（可多选，多评委独立评审）</label>
+            <div id="pickWorksList" style="max-height:200px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:8px">
+              <div class="muted small" style="padding:6px">请先选择赛事</div>
+            </div>
           </div>
           <div class="field span-2">
-            <div class="alert" style="margin: 4px 0 0">
-              项目为整体分发：确认后，该评委将获得该项目（赛事）下<strong>全部已提交作品</strong>的评审任务。
+            <label>评委（可多选，一个项目多个评委独立打分）*</label>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;padding:6px 0">
+              ${judgesCache
+                .map(
+                  (j) => `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;border:1px solid var(--border);border-radius:20px;padding:6px 12px">
+                    <input type="checkbox" name="judgeId" value="${j.id}" /> ${B.escapeHtml(j.nickname || j.account)}
+                  </label>`
+                )
+                .join("")}
             </div>
           </div>
         </div>`,
+      onMount: (form) => {
+        form.querySelectorAll('input[name="assignMode"]').forEach((m) =>
+          m.addEventListener("change", () => {
+            form.querySelector("#pickWorksBox").style.display = m.value === "PICK" ? "" : "none";
+          })
+        );
+        const contestSelect = form.querySelector("#assignContestSelect");
+        contestSelect.addEventListener("change", async () => {
+          const cid = contestSelect.value;
+          const list = form.querySelector("#pickWorksList");
+          if (!cid) {
+            list.innerHTML = '<div class="muted small" style="padding:6px">请先选择赛事</div>';
+            return;
+          }
+          list.innerHTML = '<div class="muted small" style="padding:6px">加载中…</div>';
+          try {
+            const data = await B.api.get("/admin/works?contestId=" + cid + "&page=1&size=500");
+            const works = (data.records || []).filter((w) => w.status === "SUBMITTED");
+            if (!works.length) {
+              list.innerHTML = '<div class="muted small" style="padding:6px">该赛事暂无已提交作品</div>';
+              return;
+            }
+            list.innerHTML = works
+              .map(
+                (w) => `<label style="display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px;border-bottom:1px solid var(--border)">
+                  <input type="checkbox" name="workId" value="${w.id}" /> ${B.escapeHtml(w.title)}
+                </label>`
+              )
+              .join("");
+          } catch (e) {
+            list.innerHTML =
+              '<div class="muted small" style="padding:6px">' + B.escapeHtml(e.message || "作品加载失败") + "</div>";
+          }
+        });
+      },
       onSubmit: async (form) => {
         const contestId = Number(formValue(form, "contestId"));
-        const judgeId = Number(formValue(form, "judgeId"));
         if (!contestId) throw new Error("请选择赛事");
-        if (!judgeId) throw new Error("请选择评委");
-        await B.api.post("/admin/judge-assign", {
-          contestId,
-          judgeId,
-          workIds: null,
-        });
+        const judgeIds = Array.from(form.querySelectorAll('input[name="judgeId"]:checked')).map((x) => Number(x.value));
+        if (!judgeIds.length) throw new Error("请至少选择一位评委");
+        const modeEl = form.querySelector('input[name="assignMode"]:checked');
+        const mode = modeEl ? modeEl.value : "ALL";
+        let workIds = null;
+        if (mode === "PICK") {
+          workIds = Array.from(form.querySelectorAll('input[name="workId"]:checked')).map((x) => Number(x.value));
+          if (!workIds.length) throw new Error("请选择作品");
+        }
+        await B.api.post("/admin/judge-assign", { contestId, judgeIds, workIds });
         B.toast("项目分配完成", "success");
         loadAssignments();
       },
