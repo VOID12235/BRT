@@ -15,6 +15,9 @@ files = [
     (os.path.join(mdir, "m.css"), "/var/www/btr/m/m.css"),
     (os.path.join(FE, "assets", "js", "rank.js"), "/var/www/btr/assets/js/rank.js"),
     (os.path.join(FE, "assets", "js", "dplayer.min.js"), "/var/www/btr/assets/js/dplayer.min.js"),
+    (os.path.join(FE, "assets", "js", "docx-preview.min.js"), "/var/www/btr/assets/js/docx-preview.min.js"),
+    (os.path.join(FE, "assets", "js", "jszip.min.js"), "/var/www/btr/assets/js/jszip.min.js"),
+    (os.path.join(FE, "assets", "js", "xlsx.full.min.js"), "/var/www/btr/assets/js/xlsx.full.min.js"),
     (os.path.join(FE, "rank.html"), "/var/www/btr/rank.html"),
 ]
 for name in os.listdir(mdir):

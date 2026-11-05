@@ -7,8 +7,8 @@ mdir = os.path.join(FE, "m")
 
 def repl(content):
     c = content
-    c = c.replace("m.js?v=20261105b9", "m.js?v=20261105b10")
-    c = c.replace("assets/js/rank.js?v=20261105k", "assets/js/rank.js?v=20261105l")
+    c = c.replace("m.js?v=20261105b10", "m.js?v=20261105b11")
+    c = c.replace("assets/js/rank.js?v=20261105l", "assets/js/rank.js?v=20261105m")
     return c
 
 n = 0

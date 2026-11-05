@@ -34,31 +34,83 @@
     document.head.appendChild(s);
   }
 
-  /** 弹出播放器 Modal 预览音视频作品 */
-  function openMediaPreview(url, name, isAudio) {
+  /** 通用预览弹窗：创建遮罩+内容框，mountFn(box, close) 渲染内容 */
+  function openPreviewModal(title, mountFn, minHeight) {
     const modal = document.createElement("div");
     modal.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box;";
     modal.innerHTML =
-      '<div style="background:#fff;border-radius:12px;width:min(94vw,840px);max-width:840px;padding:14px;box-sizing:border-box;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.35)">' +
+      '<div style="background:#fff;border-radius:12px;width:min(94vw,860px);max-width:860px;padding:14px;box-sizing:border-box;position:relative;box-shadow:0 8px 40px rgba(0,0,0,.35)' + (minHeight ? ";min-height:" + minHeight : "") + '">' +
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px">' +
-      '<b style="font-size:15px;color:#222;word-break:break-all;line-height:1.4">' + B.escapeHtml(name || "作品预览") + '</b>' +
+      '<b style="font-size:15px;color:#222;word-break:break-all;line-height:1.4">' + B.escapeHtml(title || "作品预览") + '</b>' +
       '<button id="pm-close" style="border:none;background:#f1f2f4;border-radius:50%;width:34px;height:34px;font-size:18px;line-height:1;cursor:pointer;flex:none;color:#555">×</button></div>' +
-      '<div id="pm-player" style="width:100%"></div></div>';
+      '<div id="pm-body" style="width:100%"></div></div>';
     document.body.appendChild(modal);
-    let dp = null;
-    function close() {
-      try { if (dp) dp.destroy(); } catch (e) { /* ignore */ }
-      modal.remove();
-    }
+    function close() { modal.remove(); }
     const closeBtn = modal.querySelector("#pm-close");
     if (closeBtn) closeBtn.onclick = close;
     modal.addEventListener("click", function (ev) { if (ev.target === modal) close(); });
-    ensureDPlayer(function () {
-      const box = modal.querySelector("#pm-player");
-      if (!box || !modal.isConnected) return;
-      const opt = { container: box, autoplay: false, lang: "zh-cn" };
-      opt.video = { url: url, type: "auto" };
-      try { dp = new DPlayer(opt); } catch (e) { alert("播放器初始化失败，请使用下载作品"); }
+    const box = modal.querySelector("#pm-body");
+    try { mountFn(box, close); } catch (e) { box.innerHTML = '<p style="padding:20px;color:#888">预览失败，请使用下载作品</p>'; }
+  }
+
+  /** 通用按需加载 JS 库（开源库本地托管） */
+  function ensureLib(names, cb) {
+    const need = names.filter(function (n) { return !document.querySelector('script[data-lib="' + n + '"]'); });
+    if (!need.length) { cb && cb(); return; }
+    let done = 0;
+    need.forEach(function (n) {
+      const s = document.createElement("script");
+      s.src = "/assets/js/" + n;
+      s.dataset.lib = n;
+      s.onload = function () { done++; if (done === need.length) cb && cb(); };
+      s.onerror = function () { alert("预览组件加载失败，请使用下载作品"); };
+      document.head.appendChild(s);
+    });
+  }
+
+  /** 音视频预览：DPlayer 开源播放器 */
+  function previewMedia(url, name) {
+    openPreviewModal(name, function (box) {
+      ensureDPlayer(function () {
+        if (!box.isConnected) return;
+        const opt = { container: box, autoplay: false, lang: "zh-cn" };
+        opt.video = { url: url, type: "auto" };
+        try { new DPlayer(opt); } catch (e) { box.innerHTML = '<p style="padding:20px;color:#888">播放器初始化失败，请使用下载作品</p>'; }
+      });
+    });
+  }
+
+  /** Word 文档预览（docx-preview 开源库，MIT） */
+  function previewDocx(url, name) {
+    openPreviewModal(name, function (box) {
+      box.style.minHeight = "70vh";
+      box.style.overflow = "auto";
+      box.style.background = "#f7f8fa";
+      box.innerHTML = '<p style="padding:24px;color:#888">文档加载中…</p>';
+      ensureLib(["jszip.min.js", "docx-preview.min.js"], function () {
+        if (!box.isConnected) return;
+        fetch(url).then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+          box.innerHTML = "";
+          return window.docx.renderAsync(buf, box, null, { inWrapper: false });
+        }).catch(function () { box.innerHTML = '<p style="padding:20px;color:#888">文档解析失败，请使用下载作品</p>'; });
+      });
+    });
+  }
+
+  /** Excel 预览（SheetJS 开源库，Apache 2.0） */
+  function previewXlsx(url, name) {
+    openPreviewModal(name, function (box) {
+      box.style.minHeight = "60vh";
+      box.innerHTML = '<p style="padding:24px;color:#888">表格加载中…</p>';
+      ensureLib(["xlsx.full.min.js"], function () {
+        if (!box.isConnected) return;
+        fetch(url).then(function (r) { return r.arrayBuffer(); }).then(function (buf) {
+          const wb = window.XLSX.read(buf, { type: "array" });
+          const sheet = wb.Sheets[wb.SheetNames[0]];
+          const html = window.XLSX.utils.sheet_to_html(sheet);
+          box.innerHTML = '<div style="overflow:auto;max-height:70vh">' + html + '</div>';
+        }).catch(function () { box.innerHTML = '<p style="padding:20px;color:#888">表格解析失败，请使用下载作品</p>'; });
+      });
     });
   }
 
@@ -69,13 +121,10 @@
     if (!url) { alert("此文件不可预览"); return; }
     const media = ["mp4", "mov", "webm", "ogg", "mp3", "wav", "m4a", "aac"];
     const inline = ["jpg", "jpeg", "png", "gif", "webp", "bmp", "pdf", "txt", "md"];
-    if (media.includes(ext)) {
-      const isAudio = ["mp3", "wav", "m4a", "aac", "ogg"].includes(ext);
-      return openMediaPreview(url, name, isAudio);
-    }
-    if (inline.includes(ext)) {
-      return window.open(url, "_blank", "noopener");
-    }
+    if (media.includes(ext)) return previewMedia(url, name);
+    if (ext === "docx") return previewDocx(url, name);
+    if (ext === "xlsx" || ext === "xls") return previewXlsx(url, name);
+    if (inline.includes(ext)) return window.open(url, "_blank", "noopener");
     alert("此文件不可预览");
   }
   window.previewWork = previewWork;
