@@ -6,6 +6,17 @@
   const page = document.body.dataset.page || "";
   const esc = B.escapeHtml;
 
+  /* ---------- App 内环境：隐藏 APP 安装入口（网页版保留） ---------- */
+  (function () {
+    try {
+      const inApp = /BTRApp/i.test(navigator.userAgent);
+      if (inApp) {
+        const bars = document.querySelectorAll(".install-bar");
+        bars.forEach((el) => el.remove());
+      }
+    } catch (e) { /* 忽略 */ }
+  })();
+
   /** 文件 URL 转为下载 URL：/api/v1/files/{id} -> /api/v1/files/{id}/download */
   function downloadFile(url) {
     if (!url) return "";
@@ -426,7 +437,7 @@
       try {
         const data = await B.api.get("/auth/captcha");
         captchaEnabled = Boolean(data.enabled);
-        document.getElementById("captchaRow").style.display = captchaEnabled ? "grid" : "none";
+        document.getElementById("captchaRow").style.display = captchaEnabled ? "flex" : "none";
         if (captchaEnabled) {
           document.getElementById("captchaImg").src = data.image;
           document.getElementById("captchaImg").dataset.key = data.key;

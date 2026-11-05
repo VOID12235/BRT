@@ -105,7 +105,7 @@ public class AuthService {
         return issue(user);
     }
 
-    /** 发送注册验证码邮件。邮箱已注册时返回 null（统一提示已发送，防账号枚举） */
+    /** 发送注册验证码邮件。邮箱已注册时同样发送验证码（统一行为，防账号枚举） */
     public String sendRegisterCode(ForgotPasswordReq req, String ip) {
         rateLimitService.check("mail-ip", ip, 10, Duration.ofHours(1));
         String email = req.email().trim().toLowerCase();
@@ -114,9 +114,10 @@ public class AuthService {
         if (!mail.enabled || mail.host.isBlank()) {
             throw new BizException("管理员暂未配置邮件服务，暂不支持邮箱注册");
         }
-        if (userMapper.selectCount(new QueryWrapper<User>().eq("email", email)) > 0) {
-            logService.record(null, "REGISTER_CODE", "exists:" + email, ip);
-            return null;
+        boolean exists = userMapper.selectCount(new QueryWrapper<User>().eq("email", email)) > 0;
+        if (exists) {
+            // 已注册账号同样发送验证码，保持注册接口行为一致，避免暴露账号是否已注册
+            logService.record(null, "REGISTER_CODE", "exists-send:" + email, ip);
         }
         if (cacheService.get(REG_KEY_PREFIX + email) != null) {
             throw new BizException("发送过于频繁，请 1 分钟后再试");
