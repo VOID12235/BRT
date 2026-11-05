@@ -19,7 +19,6 @@
     const url = B.escapeHtml(row.fileUrl);
     const name = B.escapeHtml(row.fileName || "作品文件");
     return `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-      <a class="btn btn-outline btn-xs" href="${B.escapeHtml(downloadUrl(row.fileUrl))}" download="${name}">下载作品</a>
       <button class="btn btn-outline btn-xs" data-preview="${url}" data-name="${name}" onclick="window.previewWork && previewWork(this)">在线预览</button>
     </div>`;
   }
@@ -117,7 +116,6 @@
             prize ? B.escapeHtml(prize) : '<span class="muted">—</span>'
           }</div>
           ${workActions(row)}
-          ${row.awardName ? `<span class="award-pill ${isFirst ? "gold" : "silver"}" style="margin-top:10px">${B.escapeHtml(row.awardName)}</span>` : ""}
         </div>`;
       })
       .join("");
@@ -126,7 +124,7 @@
     const table = `<div class="admin-table-card" style="margin-top: 24px">
       <div class="table-wrap">
         <table class="table">
-          <thead><tr><th>排名</th><th>作品</th><th>选手</th><th>学校</th><th>奖励</th><th>评审人数</th><th>奖项</th></tr></thead>
+          <thead><tr><th>排名</th><th>作品</th><th>选手</th><th>学校</th><th>奖品 / 奖金</th><th>评审人数</th></tr></thead>
           <tbody>${rows
             .map(
               (row) => `<tr>
@@ -137,10 +135,9 @@
                 <td>${
                   B.formatPrize(row)
                     ? `<b class="mono" style="color:var(--brand,#e8a33d)">${B.escapeHtml(B.formatPrize(row))}</b>`
-                    : '<span class="muted">—</span>'
+                    : '<span class="muted">未获奖</span>'
                 }</td>
                 <td class="num">${row.scoreCount}</td>
-                <td>${row.awardName ? `<span class="award-pill">${B.escapeHtml(row.awardName)}</span>` : '<span class="muted">未获奖</span>'}</td>
               </tr>`
             )
             .join("")}</tbody>

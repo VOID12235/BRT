@@ -24,6 +24,16 @@
     return url.replace(/\/files\/([^/]+(?:\/[^/]+)?)$/, "/files/$1/download");
   }
 
+  /** 奖品/奖金文本（不显示奖项名称，显示具体奖品与奖金） */
+  function prizeText(row) {
+    const parts = [];
+    if (row.prizeAmount != null && row.prizeAmount !== "" && Number(row.prizeAmount) > 0) {
+      parts.push("奖金 ¥" + Number(row.prizeAmount).toLocaleString("zh-CN"));
+    }
+    if (row.gift) parts.push("奖品 " + row.gift);
+    return parts.join(" · ");
+  }
+
   /** 在线预览：图片/PDF/音视频可在浏览器直接预览，其他类型弹窗提示不可预览 */
   function previewWork(btn) {
     const url = btn && btn.getAttribute("data-preview");
@@ -769,8 +779,8 @@
               .map(
                 (row) => `<div class="rank-row">
                   <span class="rank-no ${row.rank === 1 ? "top" : ""}">${row.rank || "—"}</span>
-                  <div class="info"><b>${esc(row.workTitle)}</b><span>${esc(row.author || "选手")}${row.school ? " · " + esc(row.school) : ""}</span>${row.fileUrl ? `<div style="display:flex;gap:8px;margin-top:6px"><a class="btn-download" href="${esc(downloadFile(row.fileUrl))}" download="${esc(row.fileName || "作品文件")}">下载作品</a><button class="btn-download" data-preview="${esc(row.fileUrl)}" data-name="${esc(row.fileName || "")}" onclick="previewWork(this)">在线预览</button></div>` : ""}</div>
-                  <span class="award-pill ${row.awardName ? (row.rank === 1 ? "gold" : "silver") : "plain"}">${row.awardName ? esc(row.awardName) : "未获奖"}</span>
+                  <div class="info"><b>${esc(row.workTitle)}</b><span>${esc(row.author || "选手")}${row.school ? " · " + esc(row.school) : ""}</span>${row.fileUrl ? `<div style="display:flex;gap:8px;margin-top:6px"><button class="btn-download" data-preview="${esc(row.fileUrl)}" data-name="${esc(row.fileName || "")}" onclick="previewWork(this)">在线预览</button></div>` : ""}</div>
+                  <span class="prize-box ${row.prizeAmount || row.gift ? "" : "plain"}">${(row.prizeAmount || row.gift) ? esc(prizeText(row)) : "未获奖"}</span>
                 </div>`
               )
               .join("")}</div>`
