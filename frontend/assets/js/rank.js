@@ -19,6 +19,7 @@
     const url = B.escapeHtml(row.fileUrl);
     const name = B.escapeHtml(row.fileName || "作品文件");
     return `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+      <a class="btn btn-outline btn-xs" href="${B.escapeHtml(downloadUrl(row.fileUrl))}" download="${name}">下载作品</a>
       <button class="btn btn-outline btn-xs" data-preview="${url}" data-name="${name}" onclick="window.previewWork && previewWork(this)">在线预览</button>
     </div>`;
   }

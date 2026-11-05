@@ -779,7 +779,7 @@
               .map(
                 (row) => `<div class="rank-row">
                   <span class="rank-no ${row.rank === 1 ? "top" : ""}">${row.rank || "—"}</span>
-                  <div class="info"><b>${esc(row.workTitle)}</b><span>${esc(row.author || "选手")}${row.school ? " · " + esc(row.school) : ""}</span>${row.fileUrl ? `<div style="display:flex;gap:8px;margin-top:6px"><button class="btn-download" data-preview="${esc(row.fileUrl)}" data-name="${esc(row.fileName || "")}" onclick="previewWork(this)">在线预览</button></div>` : ""}</div>
+                  <div class="info"><b>${esc(row.workTitle)}</b><span>${esc(row.author || "选手")}${row.school ? " · " + esc(row.school) : ""}</span>${row.fileUrl ? `<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><a class="btn-download" href="${esc(downloadFile(row.fileUrl))}" download="${esc(row.fileName || "作品文件")}">下载作品</a><button class="btn-download" data-preview="${esc(row.fileUrl)}" data-name="${esc(row.fileName || "")}" onclick="previewWork(this)">在线预览</button></div>` : ""}</div>
                   <span class="prize-box ${row.prizeAmount || row.gift ? "" : "plain"}">${(row.prizeAmount || row.gift) ? esc(prizeText(row)) : "未获奖"}</span>
                 </div>`
               )
