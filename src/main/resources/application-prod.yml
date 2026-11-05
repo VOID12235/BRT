@@ -53,6 +53,10 @@ server:
 app:
   captcha:
     enabled: true
+  jwt:
+    secret: ${JWT_SECRET:bcmYipJB-8GB5UIw7FIUVuFlDNqJNs2dm3p8Xqn65CLzz9ycPtb8RwvUL4p03JSd}
+    access-hours: 2
+    refresh-days: 7
   seed-demo: ${SEED_DEMO:false}
   bootstrap-admin:
     account: ${ADMIN_ACCOUNT:admin}
