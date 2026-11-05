@@ -43,7 +43,7 @@
                 <div><h3>近 7 日报名趋势</h3><p class="tiny muted" style="margin-top:3px">按报名创建时间统计</p></div>
                 <span class="badge badge-soft badge-plain" id="trendTotal">—</span>
               </div>
-              <div class="trend-bars" id="trendBars"></div>
+              <div id="trendChart" style="height:240px;width:100%"></div>
             </div>
 
             <div class="card dash-table" style="margin-top: 20px">
@@ -71,6 +71,12 @@
             </div>
 
             <div class="card side-card">
+              <h3>赛事状态分布</h3>
+              <p class="tiny muted" style="margin-top:3px">各赛事当前所处阶段</p>
+              <div id="contestStatusChart" style="height:220px;width:100%"></div>
+            </div>
+
+            <div class="card side-card">
               <h3>快捷入口</h3>
               <div class="quick-grid">
                 <a class="quick-link" href="/admin/contest-manage.html"><b>赛事管理</b><span>创建与状态流转</span></a>
@@ -86,7 +92,8 @@
   </div>
   <div class="admin-backdrop" id="adminBackdrop"></div>
 
+  <script src="/assets/js/echarts.min.js"></script>
   <script src="/assets/js/api.js?v=20261105a3"></script>
-  <script src="/assets/js/admin.js?v=20261105c"></script>
+  <script src="/assets/js/admin.js?v=20261105d"></script>
 </body>
 </html>

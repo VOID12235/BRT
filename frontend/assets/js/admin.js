@@ -419,6 +419,7 @@
       const data = await B.api.get("/admin/dashboard");
       renderDashboardStats(data);
       renderTrend(data.trend || []);
+      renderContestStatus();
       renderRecentSignups(data.recentSignups || []);
       renderPending(data);
     } catch (e) {
@@ -433,24 +434,74 @@
   }
 
   function renderTrend(trend) {
-    const host = document.getElementById("trendBars");
+    const host = document.getElementById("trendChart");
     if (!host) return;
-    const max = Math.max(1, ...trend.map((p) => p.count));
     const total = trend.reduce((sum, p) => sum + p.count, 0);
-    document.getElementById("trendTotal").textContent = "近 7 日 " + total + " 人";
-    host.innerHTML = trend
-      .map((point) => {
-        const date = B.parseDate(point.date);
-        const label = date ? date.getMonth() + 1 + "/" + date.getDate() : point.date;
-        const height = Math.max(4, Math.round((point.count / max) * 100));
-        return `<div class="trend-bar">
-          <div class="bar ${point.count === max && max > 0 ? "is-peak" : ""}" style="height:${height}%">
-            <span>${point.count}</span>
-          </div>
-          <em>${label}</em>
-        </div>`;
-      })
-      .join("");
+    const el = document.getElementById("trendTotal");
+    if (el) el.textContent = "近 7 日 " + total + " 人";
+    if (!window.echarts) {
+      host.innerHTML = '<p class="muted center" style="padding:40px">图表组件加载失败</p>';
+      return;
+    }
+    const labels = trend.map((p) => {
+      const d = B.parseDate(p.date);
+      return d ? d.getMonth() + 1 + "/" + d.getDate() : p.date;
+    });
+    const chart = echarts.init(host);
+    chart.setOption({
+      tooltip: { trigger: "axis", confine: true, backgroundColor: "rgba(255,255,255,.96)", textStyle: { color: "#333", fontSize: 11 } },
+      grid: { left: 36, right: 14, top: 26, bottom: 28 },
+      xAxis: { type: "category", data: labels, axisLabel: { color: "#666", fontSize: 11 }, axisLine: { lineStyle: { color: "#e4e3dd" } } },
+      yAxis: { type: "value", minInterval: 1, axisLabel: { color: "#666", fontSize: 11 }, splitLine: { lineStyle: { color: "#f0efea" } } },
+      series: [{
+        type: "bar",
+        data: trend.map((p) => p.count),
+        barWidth: 22,
+        itemStyle: { color: "#8BC8EA", borderRadius: [6, 6, 0, 0] },
+        label: { show: true, position: "top", fontSize: 10, color: "#555" }
+      }]
+    });
+    const onResize = function () { chart.resize(); };
+    window.addEventListener("resize", onResize);
+  }
+
+  async function renderContestStatus() {
+    const host = document.getElementById("contestStatusChart");
+    if (!host) return;
+    try {
+      const data = await B.api.get("/contests?page=1&size=100");
+      const recs = data.records || [];
+      const map = {};
+      recs.forEach((c) => {
+        const label = (B.STATUS && B.STATUS[c.status] && B.STATUS[c.status].label) || c.status || "未知";
+        map[label] = (map[label] || 0) + 1;
+      });
+      const names = Object.keys(map);
+      if (!names.length) {
+        host.innerHTML = '<p class="muted center" style="padding:36px">暂无赛事数据</p>';
+        return;
+      }
+      if (!window.echarts) {
+        host.innerHTML = '<p class="muted center" style="padding:36px">图表组件加载失败</p>';
+        return;
+      }
+      const chart = echarts.init(host);
+      chart.setOption({
+        tooltip: { trigger: "item", confine: true, backgroundColor: "rgba(255,255,255,.96)", textStyle: { color: "#333", fontSize: 11 } },
+        legend: { bottom: 0, textStyle: { fontSize: 11, color: "#555" } },
+        series: [{
+          type: "pie",
+          radius: ["44%", "68%"],
+          center: ["50%", "44%"],
+          itemStyle: { borderRadius: 6, borderColor: "#fff", borderWidth: 2 },
+          label: { fontSize: 11, color: "#555", formatter: "{b} {c}" },
+          color: ["#9BBBF4", "#8BC8EA", "#94D8C3", "#F4B393", "#C9A7E8", "#E4D48F"],
+          data: names.map((n) => ({ name: n, value: map[n] }))
+        }]
+      });
+      const onResize = function () { chart.resize(); };
+      window.addEventListener("resize", onResize);
+    } catch (e) { /* 静默：图表非关键路径 */ }
   }
 
   function renderRecentSignups(list) {
