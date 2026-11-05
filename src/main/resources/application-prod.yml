@@ -60,6 +60,6 @@ app:
     nickname: ${ADMIN_NICKNAME:平台管理员}
     email: ${ADMIN_EMAIL:}
   cors:
-    allowed-origins: ${CORS_ORIGINS:https://btr.example.com}
+    allowed-origins: ${CORS_ORIGINS:*}
   security:
     trust-proxy: ${TRUST_PROXY:true}

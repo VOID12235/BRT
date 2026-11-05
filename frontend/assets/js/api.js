@@ -145,7 +145,11 @@
 
     const contentType = res.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
-      if (!res.ok) throw new ApiError("请求失败（" + res.status + "）", res.status, res.status);
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        const plain = text ? text.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim().slice(0, 120) : "";
+        throw new ApiError(plain || "请求失败（" + res.status + "）", res.status, res.status);
+      }
       return res;
     }
 
