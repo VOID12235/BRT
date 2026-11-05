@@ -82,7 +82,10 @@
       sidebar.innerHTML = `
         <div class="admin-brand">
           <span class="brand-mark">B</span>
-          <div><span>BTR</span><small>Admin Console</small></div>
+          <div class="brand-text"><span>BTR</span><small>Admin Console</small></div>
+          <button class="btn btn-icon admin-collapse-btn" id="adminCollapseBtn" aria-label="折叠菜单" title="折叠 / 展开菜单">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+          </button>
         </div>
         <nav class="admin-nav">
           ${NAV.map(
@@ -90,7 +93,7 @@
             <div class="group-label">${group.group}</div>
             ${group.items
               .map(
-                (item) => `<a href="${item.href}" class="${item.key === page ? "is-active" : ""}">
+                (item) => `<a href="${item.href}" class="${item.key === page ? "is-active" : ""}" title="${item.label}">
                   ${ICONS[item.icon] || ""}<span>${item.label}</span>
                 </a>`
               )
@@ -98,7 +101,8 @@
           ).join("")}
         </nav>
         <div class="admin-sidebar-foot">
-          当前版本 v1.0.0<br />© 2026 BTR Platform
+          <a class="admin-front-link" href="/index.html" target="_blank" rel="noopener">前台首页 <span>↗</span></a>
+          <div class="ver">当前版本 v1.0.0<br />© 2026 BTR Platform</div>
         </div>`;
     }
 
@@ -107,18 +111,41 @@
         <button class="btn btn-ghost btn-icon admin-menu-btn" id="adminMenuBtn" aria-label="打开菜单" style="display:none">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
         </button>
-        <div>
+        <div class="admin-topbar-title">
+          <div class="crumb">${B.escapeHtml(crumb || "管理后台")} / ${B.escapeHtml(title)}</div>
           <h1>${B.escapeHtml(title)}</h1>
-          <div class="crumb">${B.escapeHtml(crumb)}</div>
         </div>
         <div class="admin-topbar-actions">
           <a class="btn btn-ghost btn-sm" href="/index.html" target="_blank" rel="noopener">前台首页</a>
-          <div class="mini-user">
+          <div class="mini-user" id="adminUserToggle" role="button" aria-haspopup="true" aria-expanded="false">
             <span class="avatar">${B.escapeHtml((state.user.nickname || "A").slice(0, 1))}</span>
-            <span>${B.escapeHtml(state.user.nickname || state.user.account || "管理员")}</span>
+            <span class="mini-user-meta">
+              <b>${B.escapeHtml(state.user.nickname || state.user.account || "管理员")}</b>
+              <small>${B.escapeHtml(state.user.account || "")}</small>
+            </span>
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
           </div>
-          <button class="btn btn-outline btn-sm" id="adminLogout">退出</button>
+          <div class="user-dropdown admin-user-drop" id="adminUserDrop">
+            <a href="/m/center.html" target="_blank" rel="noopener">个人中心</a>
+            <hr />
+            <button id="adminLogout">退出登录</button>
+          </div>
         </div>`;
+
+      const userToggle = document.getElementById("adminUserToggle");
+      const userDrop = document.getElementById("adminUserDrop");
+      if (userToggle && userDrop) {
+        userToggle.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const open = userDrop.classList.toggle("is-open");
+          userToggle.classList.toggle("is-open", open);
+          userToggle.setAttribute("aria-expanded", open ? "true" : "false");
+        });
+        document.addEventListener("click", () => {
+          userDrop.classList.remove("is-open");
+          userToggle.classList.remove("is-open");
+        });
+      }
 
       document.getElementById("adminLogout").addEventListener("click", async () => {
         try {
@@ -142,6 +169,40 @@
           backdrop.classList.remove("is-open");
         });
       }
+
+      /* 桌面折叠 */
+      const collapseBtn = document.getElementById("adminCollapseBtn");
+      const shell = document.querySelector(".admin-shell");
+      const stored = localStorage.getItem("btr_admin_collapsed");
+      let collapsed = stored === "1";
+      function applyCollapse(v) {
+        collapsed = v;
+        if (shell) shell.classList.toggle("is-collapsed", v);
+      }
+      applyCollapse(collapsed && window.innerWidth > 900);
+      if (collapseBtn) {
+        collapseBtn.addEventListener("click", () => {
+          applyCollapse(!collapsed);
+          localStorage.setItem("btr_admin_collapsed", collapsed ? "1" : "0");
+        });
+      }
+      /* 窄屏自动折叠（<1200px），宽屏恢复用户偏好 */
+      const mq = window.matchMedia("(max-width: 1200px)");
+      const onMq = (e) => {
+        if (e.matches) applyCollapse(true);
+        else applyCollapse(localStorage.getItem("btr_admin_collapsed") === "1");
+      };
+      if (mq.addEventListener) mq.addEventListener("change", onMq);
+      else mq.addListener(onMq);
+      onMq(mq);
+    }
+
+    /* 仪表盘问候语（按时间段） */
+    const greetEl = document.getElementById("adminGreeting");
+    if (greetEl) {
+      const h = new Date().getHours();
+      const word = h < 6 ? "夜深了" : h < 11 ? "早上好" : h < 14 ? "中午好" : h < 18 ? "下午好" : "晚上好";
+      greetEl.textContent = word + "，" + (state.user.nickname || "管理员");
     }
   }
 
@@ -171,6 +232,20 @@
   function contestTitle(id) {
     const contest = state.contests.find((c) => String(c.id) === String(id));
     return contest ? contest.title : "—";
+  }
+
+  function fillStatusSelect(select) {
+    if (!select) return;
+    const opts = [
+      ["", "全部状态"],
+      ["DRAFT", "筹备中"],
+      ["SIGNUP", "报名中"],
+      ["REVIEW", "进行中"],
+      ["JUDGING", "打分中"],
+      ["FINISHED", "已结束"],
+      ["PUBLISHED", "已公示"],
+    ];
+    select.innerHTML = opts.map(([v, t]) => `<option value="${v}">${t}</option>`).join("");
   }
 
   function renderPagination(container, page, total, size, onChange) {
@@ -413,8 +488,6 @@
 
   /* ------------------------------- 仪表盘 ------------------------------- */
   async function initDashboard() {
-    document.getElementById("adminGreeting").textContent =
-      state.user.nickname || state.user.account || "管理员";
     try {
       const data = await B.api.get("/admin/dashboard");
       renderDashboardStats(data);
@@ -431,6 +504,14 @@
     const values = document.querySelectorAll("#dashStats .stat-card .value");
     const list = [data.users, data.contests, data.signups, data.works];
     values.forEach((el, i) => (el.textContent = Number(list[i] || 0).toLocaleString("zh-CN")));
+    const uf = document.getElementById("userFoot");
+    const cf = document.getElementById("contestFoot2");
+    const sf = document.getElementById("signupFoot");
+    const wf = document.getElementById("workFoot");
+    if (uf) uf.textContent = "含评委与管理员账号";
+    if (cf) cf.textContent = data.activeContests != null ? "活跃赛事 " + data.activeContests + " 场" : "在办赛事";
+    if (sf) sf.textContent = data.pendingSignups != null ? "待审核 " + data.pendingSignups + " 条" : "累计报名";
+    if (wf) wf.textContent = data.pendingWorks != null ? "待评审 " + data.pendingWorks + " 件" : "累计作品";
   }
 
   function renderTrend(trend) {
@@ -528,18 +609,19 @@
   function renderPending(data) {
     const host = document.getElementById("dashPending");
     if (!host) return;
+    const pill = (n) => `<b class="pill ${Number(n) === 0 ? "zero" : ""}">${Number(n || 0)}</b>`;
     host.innerHTML = `
-      <div><span>待评审作品</span><b>${data.pendingReviews || 0}</b></div>
-      <div><span>评委人数</span><b>${data.judges || 0}</b></div>
-      <div><span>选手人数</span><b>${data.players || 0}</b></div>
-      <div><span>公告数量</span><b>${data.notices || 0}</b></div>`;
+      <div><span>待评审作品</span>${pill(data.pendingReviews || 0)}</div>
+      <div><span>评委人数</span>${pill(data.judges || 0)}</div>
+      <div><span>选手人数</span>${pill(data.players || 0)}</div>
+      <div><span>公告数量</span>${pill(data.notices || 0)}</div>`;
   }
 
   /* ------------------------------- 赛事管理 ------------------------------- */
   const contestState = { page: 1, size: 10, keyword: "", status: "" };
 
   async function initContests() {
-    fillContestSelect(document.getElementById("contestStatusFilter"));
+    fillStatusSelect(document.getElementById("contestStatusFilter"));
     document.getElementById("newContestBtn").addEventListener("click", () => openContestModal());
     const keyword = document.getElementById("contestKeyword");
     keyword.addEventListener(

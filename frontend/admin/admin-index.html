@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>仪表盘 · BTR 管理后台</title>
   <link rel="stylesheet" href="/assets/css/base.css?v=20261105d" />
-  <link rel="stylesheet" href="/assets/css/layout.css?v=20261105d" />
+  <link rel="stylesheet" href="/assets/css/layout.css?v=20261105e" />
   <link rel="stylesheet" href="/assets/css/components.css?v=20261105d" />
   <link rel="stylesheet" href="/assets/css/pages.css?v=20261105d" />
-  <link rel="stylesheet" href="/assets/css/admin.css?v=20261105d" />
+  <link rel="stylesheet" href="/assets/css/admin.css?v=20261105e" />
   <link rel="stylesheet" href="/assets/css/responsive.css?v=20261105d" />
 </head>
 <body class="admin-body" data-page="dashboard" data-title="仪表盘" data-crumb="总览">
@@ -20,20 +20,40 @@
         <div class="admin-hero">
           <div>
             <span class="badge badge-plain">BTR Admin</span>
-            <h2 style="margin-top: 10px">下午好，<span id="adminGreeting">管理员</span></h2>
+            <h2 style="margin-top: 10px"><span id="adminGreeting">管理员</span></h2>
             <p>这里是平台运行概览。今天也请让每一场比赛，被认真对待。</p>
           </div>
           <div class="admin-hero-actions">
-            <a class="btn btn-outline btn-sm" href="/admin/contest-manage.html" style="border-color: rgba(255,255,255,.24); color:#fff">新建赛事</a>
+            <a class="btn btn-outline btn-sm" href="/admin/contest-manage.html">新建赛事</a>
             <a class="btn btn-primary btn-sm" href="/admin/export.html">导出名单</a>
           </div>
         </div>
 
         <div class="grid-4" id="dashStats">
-          <div class="stat-card"><div class="label"><span class="dot"></span>用户总数</div><div class="value">—</div></div>
-          <div class="stat-card"><div class="label"><span class="dot"></span>赛事总数</div><div class="value">—</div></div>
-          <div class="stat-card"><div class="label"><span class="dot"></span>报名人次</div><div class="value">—</div></div>
-          <div class="stat-card"><div class="label"><span class="dot"></span>提交作品</div><div class="value">—</div></div>
+          <div class="stat-card ic-red">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <div class="label"><span class="dot"></span>用户总数</div>
+            <div class="value">—</div>
+            <div class="foot"><span id="userFoot">加载中…</span></div>
+          </div>
+          <div class="stat-card ic-blue">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span>
+            <div class="label"><span class="dot"></span>赛事总数</div>
+            <div class="value">—</div>
+            <div class="foot"><span id="contestFoot2">加载中…</span></div>
+          </div>
+          <div class="stat-card ic-green">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span>
+            <div class="label"><span class="dot"></span>报名人次</div>
+            <div class="value">—</div>
+            <div class="foot"><span id="signupFoot">加载中…</span></div>
+          </div>
+          <div class="stat-card ic-violet">
+            <span class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h5"/></svg></span>
+            <div class="label"><span class="dot"></span>提交作品</div>
+            <div class="value">—</div>
+            <div class="foot"><span id="workFoot">加载中…</span></div>
+          </div>
         </div>
 
         <div class="dash-grid" style="margin-top: 20px">
@@ -79,10 +99,22 @@
             <div class="card side-card">
               <h3>快捷入口</h3>
               <div class="quick-grid">
-                <a class="quick-link" href="/admin/contest-manage.html"><b>赛事管理</b><span>创建与状态流转</span></a>
-                <a class="quick-link" href="/admin/signup-manage.html"><b>报名管理</b><span>审核与导出</span></a>
-                <a class="quick-link" href="/admin/judge-manage.html"><b>评委分配</b><span>作品派发与进度</span></a>
-                <a class="quick-link" href="/admin/notice-manage.html"><b>公告管理</b><span>发布平台通知</span></a>
+                <a class="quick-link" href="/admin/contest-manage.html">
+                  <span class="qi qi-red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 21h8M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M17 5h3v2a3 3 0 0 1-3 3M7 5H4v2a3 3 0 0 0 3 3"/></svg></span>
+                  <span><b>赛事管理</b><span>创建与状态流转</span></span>
+                </a>
+                <a class="quick-link" href="/admin/signup-manage.html">
+                  <span class="qi qi-blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></span>
+                  <span><b>报名管理</b><span>审核与导出</span></span>
+                </a>
+                <a class="quick-link" href="/admin/judge-manage.html">
+                  <span class="qi qi-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span>
+                  <span><b>评委分配</b><span>作品派发与进度</span></span>
+                </a>
+                <a class="quick-link" href="/admin/notice-manage.html">
+                  <span class="qi qi-violet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>
+                  <span><b>公告管理</b><span>发布平台通知</span></span>
+                </a>
               </div>
             </div>
           </div>
@@ -94,6 +126,6 @@
 
   <script src="/assets/js/echarts.min.js"></script>
   <script src="/assets/js/api.js?v=20261105a4"></script>
-  <script src="/assets/js/admin.js?v=20261105g"></script>
+  <script src="/assets/js/admin.js?v=20261105h"></script>
 </body>
 </html>

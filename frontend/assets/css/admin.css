@@ -29,6 +29,12 @@
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   overflow: hidden;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-table-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow);
 }
 
 .admin-table-card .table th:first-child,
@@ -44,6 +50,14 @@
 .admin-table-card .table td {
   padding-top: 15px;
   padding-bottom: 15px;
+}
+
+.admin-table-card .table tbody tr {
+  transition: background 0.14s ease;
+}
+
+.admin-table-card .table tbody tr:hover {
+  background: var(--surface-2);
 }
 
 .admin-table-foot {
@@ -67,6 +81,7 @@
   min-width: 30px;
 }
 
+/* 仪表盘布局 ------------------------------------------------------------ */
 .dash-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
@@ -85,29 +100,151 @@
   padding-bottom: 12px;
 }
 
+/* 统计卡（带图标） ------------------------------------------------------ */
+.stat-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card .stat-icon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 42px;
+  height: 42px;
+  border-radius: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.stat-card:hover .stat-icon {
+  transform: scale(1.06);
+}
+
+.stat-card .stat-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.stat-card.ic-red .stat-icon { background: var(--brand-soft); color: var(--brand); }
+.stat-card.ic-blue .stat-icon { background: var(--blue-soft); color: var(--blue); }
+.stat-card.ic-green .stat-icon { background: var(--green-soft); color: var(--green); }
+.stat-card.ic-violet .stat-icon { background: var(--violet-soft); color: var(--violet); }
+
+.stat-card .label .dot {
+  border-radius: 50%;
+  background: var(--brand-soft);
+}
+
+.stat-card .value {
+  font-size: 30px;
+}
+
+.stat-card .foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* 快捷入口（带图标） ---------------------------------------------------- */
+.quick-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.quick-link .qi {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  transition: transform 0.18s ease;
+}
+
+.quick-link:hover .qi {
+  transform: scale(1.08);
+}
+
+.quick-link .qi svg {
+  width: 18px;
+  height: 18px;
+}
+
+.quick-link .qi.qi-red { background: var(--brand-soft); color: var(--brand); }
+.quick-link .qi.qi-blue { background: var(--blue-soft); color: var(--blue); }
+.quick-link .qi.qi-green { background: var(--green-soft); color: var(--green); }
+.quick-link .qi.qi-violet { background: var(--violet-soft); color: var(--violet); }
+
+.quick-link b {
+  font-size: 13px;
+}
+
+.quick-link span {
+  font-size: 11.5px;
+}
+
+/* 待处理徽标 ------------------------------------------------------------ */
+.meta-list b.pill {
+  min-width: 24px;
+  text-align: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 12px;
+}
+
+.meta-list b.pill.zero {
+  background: var(--bg-soft);
+  color: var(--muted);
+}
+
+/* Hero 渐变 -------------------------------------------------------------- */
 .admin-hero {
   position: relative;
   overflow: hidden;
   padding: 26px 28px;
   border-radius: var(--radius);
-  background: var(--ink);
+  background: linear-gradient(118deg, #191d31 0%, #222848 56%, #41233f 100%);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
   margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+
+.admin-hero::before {
+  content: "";
+  position: absolute;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(229, 72, 77, 0.28), transparent 68%);
+  right: -70px;
+  top: -160px;
 }
 
 .admin-hero::after {
   content: "";
   position: absolute;
-  width: 280px;
-  height: 280px;
+  width: 260px;
+  height: 260px;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  right: -80px;
-  top: -130px;
+  right: 60px;
+  bottom: -140px;
+}
+
+.admin-hero > * {
+  position: relative;
+  z-index: 2;
 }
 
 .admin-hero h2 {
@@ -116,7 +253,7 @@
 
 .admin-hero p {
   margin-top: 6px;
-  color: rgba(255, 255, 255, 0.55);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 12.5px;
 }
 
@@ -126,24 +263,20 @@
 }
 
 .admin-hero-actions {
-  position: relative;
-  z-index: 2;
   display: flex;
   gap: 10px;
 }
 
-.mini-user {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 12px;
+.admin-hero-actions .btn-outline {
+  border-color: rgba(255, 255, 255, 0.24) !important;
+  color: #fff !important;
 }
 
-.mini-user .avatar {
-  width: 30px;
-  height: 30px;
+.admin-hero-actions .btn-outline:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
 }
 
+/* 顶栏用户（覆盖旧定义，由 layout.css 接管） ------------------------------ */
 .admin-search {
   position: relative;
 }
@@ -204,6 +337,54 @@
   text-align: center;
   color: var(--muted);
   font-size: 13px;
+}
+
+/* 侧边栏折叠态 ------------------------------------------------------------ */
+.admin-shell.is-collapsed {
+  grid-template-columns: 78px minmax(0, 1fr);
+}
+
+.admin-shell.is-collapsed .admin-sidebar {
+  padding: 22px 9px;
+}
+
+.admin-shell.is-collapsed .admin-brand {
+  justify-content: center;
+  padding: 0;
+}
+
+.admin-shell.is-collapsed .admin-brand .brand-text,
+.admin-shell.is-collapsed .admin-nav .group-label,
+.admin-shell.is-collapsed .admin-nav a span,
+.admin-shell.is-collapsed .admin-sidebar-foot .admin-front-link,
+.admin-shell.is-collapsed .admin-sidebar-foot .ver {
+  display: none;
+}
+
+.admin-shell.is-collapsed .admin-collapse-btn {
+  display: none;
+}
+
+.admin-shell.is-collapsed .admin-nav a {
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.admin-shell.is-collapsed .admin-nav a svg {
+  width: 18px;
+  height: 18px;
+}
+
+.admin-shell.is-collapsed .admin-sidebar-foot {
+  align-items: center;
+  padding: 14px 0 4px;
+}
+
+.admin-shell.is-collapsed .admin-sidebar-foot::after {
+  content: "BTR";
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* 后台移动端遮罩 */

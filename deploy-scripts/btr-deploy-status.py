@@ -11,6 +11,8 @@ files = [
     (os.path.join(FE, "assets", "js", "api.js"), "/var/www/btr/assets/js/api.js"),
     (os.path.join(FE, "assets", "css", "base.css"), "/var/www/btr/assets/css/base.css"),
     (os.path.join(FE, "assets", "css", "components.css"), "/var/www/btr/assets/css/components.css"),
+    (os.path.join(FE, "assets", "css", "layout.css"), "/var/www/btr/assets/css/layout.css"),
+    (os.path.join(FE, "assets", "css", "admin.css"), "/var/www/btr/assets/css/admin.css"),
     (os.path.join(FE, "m", "m.css"), "/var/www/btr/m/m.css"),
 ]
 for lp, rp in files:
