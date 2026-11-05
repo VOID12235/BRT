@@ -1127,6 +1127,35 @@ button {
   color: var(--brand);
 }
 
+/* ---------- 奖项标签 ---------- */
+.award-pill {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.award-pill.gold {
+  background: linear-gradient(135deg, #f7d98a, #f0b64a);
+  color: #6b4700;
+}
+
+.award-pill.silver {
+  background: linear-gradient(135deg, #e3e6ea, #c3c9d1);
+  color: #3c4550;
+}
+
+.award-pill.plain {
+  background: var(--bg);
+  color: var(--muted);
+}
+
 /* ---------- 空状态 / 加载 ---------- */
 .empty {
   text-align: center;

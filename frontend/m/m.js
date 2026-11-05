@@ -24,6 +24,21 @@
     return url.replace(/\/files\/([^/]+(?:\/[^/]+)?)$/, "/files/$1/download");
   }
 
+  /** 在线预览：图片/PDF/音视频可在浏览器直接预览，其他类型弹窗提示不可预览 */
+  function previewWork(btn) {
+    const url = btn && btn.getAttribute("data-preview");
+    const name = (btn && btn.getAttribute("data-name")) || "";
+    const ext = name.split(".").pop().toLowerCase();
+    const ok = ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "pdf",
+      "mp4", "webm", "ogg", "mov", "mp3", "wav", "m4a", "aac", "txt"].includes(ext);
+    if (url && ok) {
+      window.open(url, "_blank", "noopener");
+    } else {
+      alert("此文件不可预览");
+    }
+  }
+  window.previewWork = previewWork;
+
   /* ---------- Toast ---------- */
   let toastWrap = null;
   function toast(msg) {
@@ -753,13 +768,13 @@
           ? `<div class="card" style="overflow:hidden">${rows
               .map(
                 (row) => `<div class="rank-row">
-                  <span class="rank-no ${row.rank === 1 ? "top" : ""}">${row.rank}</span>
-                  <div class="info"><b>${esc(row.workTitle)}</b><span>${esc(row.author || "选手")}${row.school ? " · " + esc(row.school) : ""}</span>${row.fileUrl ? `<div style="display:flex;gap:8px;margin-top:6px"><a class="btn-download" href="${esc(downloadFile(row.fileUrl))}" download="${esc(row.fileName || "作品文件")}">下载作品</a><a class="btn-download" href="${esc(row.fileUrl)}" target="_blank" rel="noopener">观看</a></div>` : ""}</div>
-                  <span class="score">${Number(row.avgScore).toFixed(2)}</span>
+                  <span class="rank-no ${row.rank === 1 ? "top" : ""}">${row.rank || "—"}</span>
+                  <div class="info"><b>${esc(row.workTitle)}</b><span>${esc(row.author || "选手")}${row.school ? " · " + esc(row.school) : ""}</span>${row.fileUrl ? `<div style="display:flex;gap:8px;margin-top:6px"><a class="btn-download" href="${esc(downloadFile(row.fileUrl))}" download="${esc(row.fileName || "作品文件")}">下载作品</a><button class="btn-download" data-preview="${esc(row.fileUrl)}" data-name="${esc(row.fileName || "")}" onclick="previewWork(this)">在线预览</button></div>` : ""}</div>
+                  <span class="award-pill ${row.awardName ? (row.rank === 1 ? "gold" : "silver") : "plain"}">${row.awardName ? esc(row.awardName) : "未获奖"}</span>
                 </div>`
               )
               .join("")}</div>`
-          : empty("暂无排名", "等待评委完成打分");
+          : empty("暂无参赛作品", "等待选手提交作品");
       } catch (e) {
         listBox.innerHTML = empty("榜单暂不可用", "请稍后再试");
       }

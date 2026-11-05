@@ -16,11 +16,27 @@
 
   function workActions(row) {
     if (!row.fileUrl) return "";
+    const url = B.escapeHtml(row.fileUrl);
+    const name = B.escapeHtml(row.fileName || "作品文件");
     return `<div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
-      <a class="btn btn-outline btn-xs" href="${B.escapeHtml(downloadUrl(row.fileUrl))}" download="${B.escapeHtml(row.fileName || "作品文件")}">下载作品</a>
-      <a class="btn btn-outline btn-xs" href="${B.escapeHtml(row.fileUrl)}" target="_blank" rel="noopener">观看</a>
+      <a class="btn btn-outline btn-xs" href="${B.escapeHtml(downloadUrl(row.fileUrl))}" download="${name}">下载作品</a>
+      <button class="btn btn-outline btn-xs" data-preview="${url}" data-name="${name}" onclick="window.previewWork && previewWork(this)">在线预览</button>
     </div>`;
   }
+
+  function previewWork(btn) {
+    const url = btn && btn.getAttribute("data-preview");
+    const name = (btn && btn.getAttribute("data-name")) || "";
+    const ext = name.split(".").pop().toLowerCase();
+    const ok = ["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "pdf",
+      "mp4", "webm", "ogg", "mov", "mp3", "wav", "m4a", "aac", "txt"].includes(ext);
+    if (url && ok) {
+      window.open(url, "_blank", "noopener");
+    } else {
+      alert("此文件不可预览");
+    }
+  }
+  window.previewWork = previewWork;
 
   async function init() {
     try {
@@ -114,7 +130,7 @@
           <tbody>${rows
             .map(
               (row) => `<tr>
-                <td><span class="rank-no ${row.rank <= 3 ? "top" : ""}">${row.rank}</span></td>
+                <td><span class="rank-no ${row.rank <= 3 ? "top" : ""}">${row.rank || "—"}</span></td>
                 <td class="title-cell">${B.escapeHtml(row.workTitle)}${workActions(row)}</td>
                 <td>${playerLink(row)}</td>
                 <td>${B.escapeHtml(row.school || "—")}</td>
@@ -124,7 +140,7 @@
                     : '<span class="muted">—</span>'
                 }</td>
                 <td class="num">${row.scoreCount}</td>
-                <td>${row.awardName ? `<span class="award-pill">${B.escapeHtml(row.awardName)}</span>` : '<span class="muted">—</span>'}</td>
+                <td>${row.awardName ? `<span class="award-pill">${B.escapeHtml(row.awardName)}</span>` : '<span class="muted">未获奖</span>'}</td>
               </tr>`
             )
             .join("")}</tbody>

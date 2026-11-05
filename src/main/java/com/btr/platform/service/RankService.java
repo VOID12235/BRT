@@ -34,8 +34,10 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -132,37 +134,18 @@ public class RankService {
                 .eq("contest_id", contestId).eq("status", "SUBMITTED")));
         result.setJudgeCount(scoreMapper.judgeCount(contestId));
         result.setScoredCount(scoreMapper.countScoredWorks(contestId));
-        if (winners.isEmpty()) {
-            result.setRows(List.of());
-            result.setGroups(List.of());
-            return result;
-        }
-
         Map<Long, Work> works = new HashMap<>();
         Map<Long, Signup> signups = new HashMap<>();
         Map<Long, Award> awards = new HashMap<>();
+        // 参赛范围：线上=已提交作品、线下=报名通过（含获奖与未获奖，获奖排前）
         if (!offline) {
-            List<Long> workIds = winners.stream().map(Winner::getWorkId)
-                    .filter(java.util.Objects::nonNull).distinct().toList();
-            if (!workIds.isEmpty()) {
-                workMapper.selectBatchIds(workIds).forEach(w -> works.put(w.getId(), w));
-            }
+            workMapper.selectList(new QueryWrapper<Work>()
+                    .eq("contest_id", contestId).eq("status", "SUBMITTED"))
+                    .forEach(w -> works.put(w.getId(), w));
         }
-        List<Long> signupIds = winners.stream().map(Winner::getSignupId)
-                .filter(java.util.Objects::nonNull).distinct().toList();
-        if (!signupIds.isEmpty()) {
-            signupMapper.selectBatchIds(signupIds).forEach(s -> signups.put(s.getId(), s));
-        }
-        // 兜底：旧数据 winner.signup_id 可能缺失，按作品的 signup_id 补齐，保证榜单显示选手昵称
-        if (!offline && !works.isEmpty()) {
-            List<Long> workSignupIds = works.values().stream().map(Work::getSignupId)
-                    .filter(java.util.Objects::nonNull).distinct().toList();
-            List<Long> missing = workSignupIds.stream()
-                    .filter(id -> !signups.containsKey(id)).toList();
-            if (!missing.isEmpty()) {
-                signupMapper.selectBatchIds(missing).forEach(s -> signups.put(s.getId(), s));
-            }
-        }
+        signupMapper.selectList(new QueryWrapper<Signup>()
+                .eq("contest_id", contestId).eq("status", "APPROVED"))
+                .forEach(s -> signups.put(s.getId(), s));
         List<Long> awardIds = winners.stream().map(Winner::getAwardId)
                 .filter(java.util.Objects::nonNull).distinct().toList();
         if (!awardIds.isEmpty()) {
@@ -176,6 +159,8 @@ public class RankService {
 
         List<RankRow> rows = new ArrayList<>();
         Map<Long, RankGroup> groupMap = new java.util.LinkedHashMap<>();
+        Set<Long> awardedWorkIds = new HashSet<>();
+        Set<Long> awardedSignupIds = new HashSet<>();
         for (Winner winner : winners) {
             RankRow row = new RankRow();
             row.setRank(winner.getRankNo());
@@ -186,6 +171,7 @@ public class RankService {
                 if (signup == null) {
                     continue;
                 }
+                awardedSignupIds.add(signup.getId());
                 row.setSignupId(signup.getId());
                 row.setUserId(signup.getUserId());
                 row.setWorkTitle("选手：" + signup.getRealName());
@@ -198,6 +184,7 @@ public class RankService {
                 if (work == null) {
                     continue;
                 }
+                awardedWorkIds.add(work.getId());
                 row.setWorkId(work.getId());
                 row.setUserId(work.getUserId());
                 row.setWorkTitle(work.getTitle());
@@ -239,6 +226,61 @@ public class RankService {
                 group.getItems().add(row);
             }
             rows.add(row);
+        }
+        // 追加未获奖参赛者（获奖者已在前面按名次展示，其余按分数降序展示）
+        if (offline) {
+            for (Signup signup : signups.values()) {
+                if (awardedSignupIds.contains(signup.getId())) {
+                    continue;
+                }
+                RankRow row = new RankRow();
+                row.setSignupId(signup.getId());
+                row.setUserId(signup.getUserId());
+                row.setWorkTitle("选手：" + signup.getRealName());
+                row.setAuthor(signup.getRealName());
+                row.setRealName(signup.getRealName());
+                row.setSchool(signup.getSchool());
+                WorkScore score = scoreMap.get(signup.getId());
+                if (score != null) {
+                    row.setAvgScore(score.getAvgScore() == null ? null
+                            : score.getAvgScore().setScale(2, RoundingMode.HALF_UP));
+                    row.setScoreCount(score.getScoreCount() == null ? 0 : score.getScoreCount());
+                }
+                rows.add(row);
+            }
+        } else {
+            List<Work> rest = new ArrayList<>(works.values());
+            rest.removeIf(w -> awardedWorkIds.contains(w.getId()));
+            rest.sort(Comparator.comparing(
+                    (Work w) -> scoreMap.containsKey(w.getId()) && scoreMap.get(w.getId()).getAvgScore() != null
+                            ? scoreMap.get(w.getId()).getAvgScore() : BigDecimal.valueOf(-1),
+                    Comparator.reverseOrder()));
+            for (Work work : rest) {
+                WorkScore score = scoreMap.get(work.getId());
+                RankRow row = new RankRow();
+                row.setWorkId(work.getId());
+                row.setUserId(work.getUserId());
+                row.setWorkTitle(work.getTitle());
+                row.setFileUrl(work.getFileUrl());
+                row.setFileName(work.getFileName());
+                row.setCover(work.getCover());
+                Signup signup = signups.get(work.getSignupId());
+                if (signup != null) {
+                    row.setAuthor(signup.getRealName());
+                    row.setRealName(signup.getRealName());
+                    row.setSchool(signup.getSchool());
+                } else {
+                    User user = userMapper.selectById(work.getUserId());
+                    row.setAuthor(user == null ? "" : user.getNickname());
+                    row.setRealName(row.getAuthor());
+                }
+                if (score != null) {
+                    row.setAvgScore(score.getAvgScore() == null ? null
+                            : score.getAvgScore().setScale(2, RoundingMode.HALF_UP));
+                    row.setScoreCount(score.getScoreCount() == null ? 0 : score.getScoreCount());
+                }
+                rows.add(row);
+            }
         }
         result.setRows(rows);
         result.setGroups(new ArrayList<>(groupMap.values()));
