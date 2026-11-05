@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.btr.platform.common.BizException;
 import com.btr.platform.common.PageResult;
+import com.btr.platform.security.SecurityUtils;
 import com.btr.platform.dto.Requests.WorkReq;
 import com.btr.platform.dto.Views.WorkScore;
 import com.btr.platform.dto.Views.WorkView;
@@ -56,16 +57,11 @@ public class WorkService {
             throw new BizException("报名尚未通过审核，暂不能提交作品");
         }
         Contest contest = contestMapper.selectById(signup.getContestId());
-        if (contest == null || !(Set.of("SIGNUP", "REVIEW").contains(contest.getStatus()))) {
-            throw new BizException("赛事当前不在投稿期，作品已锁定");
+        if (contest == null || !"REVIEW".equals(contest.getStatus())) {
+            throw new BizException("作品提交仅在赛事「进行中」阶段开放，报名阶段请先完成报名，打分后作品将锁定");
         }
         if ("OFFLINE".equals(contest.getMode())) {
             throw new BizException("线下比赛不提交作品，报名后由评委按选手表现打分");
-        }
-        // 报名阶段受报名截止时间约束；进入「进行中」后以赛事状态为准，可继续提交/修改作品
-        if ("SIGNUP".equals(contest.getStatus())
-                && contest.getSignupEnd() != null && LocalDateTime.now().isAfter(contest.getSignupEnd())) {
-            throw new BizException("作品提交已截止");
         }
         // 文件归属校验：fileUrl 必须是本人通过上传接口产生的文件，防止提交他人作品文件
         validateOwnFile(req.fileUrl(), userId);
@@ -140,9 +136,14 @@ public class WorkService {
 
     public PageResult<WorkView> publicList(Long contestId, long page, long size) {
         QueryWrapper<Work> query = new QueryWrapper<Work>().eq("status", "SUBMITTED");
-        // 只展示已公示 / 已结束且公开赛事中的作品，避免评审阶段作品提前泄露
-        query.inSql("contest_id",
-                "SELECT id FROM contest WHERE status IN ('PUBLISHED','FINISHED') AND is_public = TRUE");
+        // 管理员 / 评委在评审各阶段均可查看作品（不含分数）；公众仅在已公示 / 已结束且公开赛事中可见，
+        // 避免评审阶段作品提前泄露给选手与其他用户
+        var current = SecurityUtils.currentOrNull();
+        boolean privileged = current != null && ("ADMIN".equals(current.role()) || "JUDGE".equals(current.role()));
+        if (!privileged) {
+            query.inSql("contest_id",
+                    "SELECT id FROM contest WHERE status IN ('PUBLISHED','FINISHED') AND is_public = TRUE");
+        }
         if (contestId != null) {
             query.eq("contest_id", contestId);
         }

@@ -798,6 +798,13 @@
             <input class="input" name="videoName" style="margin-top:8px" value="${B.escapeHtml(c.videoName || "")}" placeholder="视频名称，如：决赛录像.mp4" />
             <div class="small muted" style="margin-top:6px">选择本机 MP4/MOV 上传，保存赛事后生效</div>
           </div>
+          <div class="field span-2">
+            <label>赛题附件（题目文档，可选，进行中阶段对选手展示）</label>
+            <input class="input" type="file" id="topicFile" accept=".pdf,.doc,.docx,.txt,.md,.zip,image/*" style="margin-bottom:8px" />
+            <input class="input" name="topicFileUrl" value="${B.escapeHtml(c.topicFileUrl || "")}" placeholder="赛题文件链接（上传后自动填入）" />
+            <input class="input" name="topicFileName" style="margin-top:8px" value="${B.escapeHtml(c.topicFileName || "")}" placeholder="赛题文件名，如：赛题说明.pdf" />
+            <div class="small muted" style="margin-top:6px">选择本机 PDF / Word / 压缩包 / 图片上传为赛题；选手在「进行中」阶段提交作品时会看到题目</div>
+          </div>
           <div class="field">
             <label>奖金总额（元）</label>
             <input class="input" type="number" name="prizeAmount" min="0" max="999999999.99" step="0.01" placeholder="例如 10000，留空为无" value="${
@@ -849,6 +856,8 @@
           mode: formValue(form, "mode") || "ONLINE",
           videoUrl: formValue(form, "videoUrl") || null,
           videoName: formValue(form, "videoName") || null,
+          topicFileUrl: formValue(form, "topicFileUrl") || null,
+          topicFileName: formValue(form, "topicFileName") || null,
           signupStart: formValue(form, "signupStart") || null,
           signupEnd: formValue(form, "signupEnd") || null,
           reviewStart: formValue(form, "reviewStart") || null,
@@ -914,6 +923,26 @@
             }
           });
         }
+        const tfile = form.querySelector("#topicFile");
+        if (tfile) {
+          tfile.addEventListener("change", async () => {
+            if (!tfile.files.length) return;
+            const v = tfile.files[0];
+            const fd = new FormData();
+            fd.append("file", v);
+            B.toast("正在上传赛题附件…", "info", 1500);
+            try {
+              const data = await B.api.upload("/files?purpose=work", fd);
+              const tu = form.querySelector('[name="topicFileUrl"]');
+              const tn = form.querySelector('[name="topicFileName"]');
+              if (tu) tu.value = data.url;
+              if (tn) tn.value = v.name;
+              B.toast("赛题附件已上传，保存赛事后生效", "success");
+            } catch (err) {
+              B.toast(err.message || "赛题附件上传失败", "error");
+            }
+          });
+        }
       },
     });
   }
@@ -921,11 +950,11 @@
   function openStatusModal(contest) {
     const options = [
       ["DRAFT", "筹备中", "不对公众开放，可继续完善信息"],
-      ["SIGNUP", "报名中", "开放报名与作品提交"],
-      ["REVIEW", "进行中", "开放作品提交与修改"],
+      ["SIGNUP", "报名中", "仅开放报名，选手在「进行中」阶段才可提交作品"],
+      ["REVIEW", "进行中", "开放作品提交与修改，选手可见赛题附件"],
       ["JUDGING", "打分中", "作品锁定，评委开始打分，暂不公布分数与排名"],
-      ["FINISHED", "已结束", "作品锁定，公布全部作品与结果"],
-      ["PUBLISHED", "已公示", "生成并固化获奖名单，发送通知"],
+      ["FINISHED", "已结束", "作品锁定，公布全部作品、分数与排名"],
+      ["PUBLISHED", "已公示", "公布获奖名单，公示满 7 天自动转为已结束"],
     ];
     openModal({
       title: "变更赛事状态 · " + contest.title,

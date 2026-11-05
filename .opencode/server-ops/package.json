@@ -1,0 +1,14 @@
+{
+  "name": "opencode-server-ops",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "OpenCode plugin: run commands and transfer files on a remote server over SSH/SFTP",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@opencode/plugin": "^2.2.5",
+    "ssh2": "^1.17.0"
+  }
+}

@@ -15,15 +15,19 @@ import java.util.List;
 
 /**
  * 赛事状态自动推进：
- *  报名中(SIGNUP) → 报名截止(signupEnd) → 进行中(REVIEW)
- *  进行中(REVIEW) → 评审开始(reviewStart) → 打分中(JUDGING)
- *  打分中(JUDGING) → 评审截止(reviewEnd) → 已结束(FINISHED，公布全部作品与结果)
+ *  报名中(SIGNUP)  →(signupEnd)  进行中(REVIEW)
+ *  进行中(REVIEW)  →(reviewStart) 打分中(JUDGING，锁定作品)
+ *  打分中(JUDGING) →(reviewEnd)  已公示(PUBLISHED，公布分数与排名)
+ *  已公示(PUBLISHED) →(publishedAt + 7天) 已结束(FINISHED)
  * 未配置对应时间字段的赛事不自动推进，由管理员手动变更。
  */
 @Component
 public class ContestStatusScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(ContestStatusScheduler.class);
+
+    /** 公示期时长：7 天 */
+    private static final long PUBLISH_DAYS = 7L;
 
     private final ContestMapper contestMapper;
     private final WorkMapper workMapper;
@@ -36,21 +40,26 @@ public class ContestStatusScheduler {
     @Scheduled(fixedDelay = 60_000L, initialDelay = 30_000L)
     public void autoAdvance() {
         LocalDateTime now = LocalDateTime.now();
-        advance("SIGNUP", "REVIEW", "signup_end", now, null);
-        advance("REVIEW", "JUDGING", "review_start", now, true);
-        advance("JUDGING", "FINISHED", "review_end", now, true);
+        advance("SIGNUP", "REVIEW", "signup_end", now, null, false);
+        advance("REVIEW", "JUDGING", "review_start", now, true, false);
+        advance("JUDGING", "PUBLISHED", "review_end", now, true, true);
+        // 公示满 7 天自动转为已结束
+        advance("PUBLISHED", "FINISHED", "published_at", now.minusDays(PUBLISH_DAYS), null, false);
     }
 
-    private void advance(String from, String to, String timeField, LocalDateTime now, Boolean lockWorks) {
+    private void advance(String from, String to, String timeField, LocalDateTime threshold, Boolean lockWorks, boolean markPublishedAt) {
         List<Contest> list = contestMapper.selectList(new QueryWrapper<Contest>()
-                .eq("status", from).isNotNull(timeField).le(timeField, now));
+                .eq("status", from).isNotNull(timeField).le(timeField, threshold));
         if (list.isEmpty()) {
             return;
         }
         for (Contest c : list) {
             try {
                 c.setStatus(to);
-                c.setUpdatedAt(now);
+                c.setUpdatedAt(LocalDateTime.now());
+                if (markPublishedAt && c.getPublishedAt() == null) {
+                    c.setPublishedAt(LocalDateTime.now());
+                }
                 contestMapper.updateById(c);
                 if (Boolean.TRUE.equals(lockWorks) && "ONLINE".equals(c.getMode())) {
                     Work lock = new Work();
@@ -59,7 +68,7 @@ public class ContestStatusScheduler {
                 }
                 log.info("赛事状态自动推进：{} (id={}) {} → {}", c.getTitle(), c.getId(), from, to);
             } catch (Exception e) {
-                log.error("赛事状态自动推进失败：id={} {} → {}：{}", c.getId(), from, to, e.getMessage());
+                log.error("赛事状态自动推进失败：id={} {} → {}，{}", c.getId(), from, to, e.getMessage());
             }
         }
     }

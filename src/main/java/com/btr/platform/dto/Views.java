@@ -38,6 +38,10 @@ public final class Views {
         private String videoUrl;
         /** 线下赛事录像视频名称 */
         private String videoName;
+        /** 赛题附件 URL（题目文档，进行中阶段对选手展示） */
+        private String topicFileUrl;
+        /** 赛题附件名称 */
+        private String topicFileName;
         private LocalDateTime signupStart;
         private LocalDateTime signupEnd;
         private LocalDateTime reviewStart;

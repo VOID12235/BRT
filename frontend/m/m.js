@@ -575,14 +575,17 @@
 
     let html = "";
     if (!user) {
-      html = `<a class="btn btn-primary btn-block" href="/m/login.html?redirect=${encodeURIComponent("/m/contest.html?id=" + c.id)}">登录后报名</a>`;
+      const canJoin = c.status === "SIGNUP" || c.status === "REVIEW";
+      html = `<a class="btn btn-primary btn-block" href="/m/login.html?redirect=${encodeURIComponent("/m/contest.html?id=" + c.id)}">${canJoin ? "登录后报名" : "登录后查看榜单"}</a>`;
     } else if (user.role === "ADMIN") {
       html = `<a class="btn btn-primary btn-block" href="/admin/contest-manage.html">管理赛事</a>`;
     } else if (user.role === "JUDGE") {
       html = `<a class="btn btn-primary btn-block" href="/judge/judge-index.html">评委工作台</a>`;
     } else if (mySignup && mySignup.status === "APPROVED") {
-      const inProgress = c.status === "SIGNUP" || c.status === "REVIEW";
-      if (inProgress && c.mode === "OFFLINE") {
+      const inProgress = c.status === "REVIEW";
+      if (c.status === "SIGNUP") {
+        html = `<button class="btn btn-primary btn-block" disabled>已报名 · 报名中，进行后开放提交作品</button>`;
+      } else if (inProgress && c.mode === "OFFLINE") {
         html = `<button class="btn btn-primary btn-block" disabled>已报名 · 赛事进行中</button>`;
       } else if (inProgress) {
         html = myWork
@@ -1136,7 +1139,7 @@
     const candidates = signups.filter((s) => {
       if (s.status !== "APPROVED") return false;
       const c = contests[s.contestId];
-      return !c || ((c.status === "SIGNUP" || c.status === "REVIEW") && c.mode !== "OFFLINE");
+      return !c || (c.status === "REVIEW" && c.mode !== "OFFLINE");
     });
     if (!candidates.length) {
       form.innerHTML =
@@ -1162,6 +1165,33 @@
       const ci = document.getElementById("wCoverInfo");
       if (ci) ci.classList.toggle("hidden", !st.uploadedCover);
       document.getElementById("wSubmitBtn").textContent = currentWork ? "保存修改" : "提交作品";
+      renderTopic(contests[signup.contestId]);
+    }
+    function renderTopic(cc) {
+      const tCard = document.getElementById("topicCard");
+      const tBody = document.getElementById("topicBody");
+      const tFile = document.getElementById("topicFile");
+      if (!tCard) return;
+      const hasTopic = cc && (cc.topicFileUrl || (cc.description && cc.description.trim()));
+      tCard.style.display = hasTopic ? "" : "none";
+      if (!hasTopic) return;
+      if (tBody) {
+        tBody.textContent = cc.description && cc.description.trim()
+          ? cc.description.trim()
+          : "请按赛题要求完成作品并提交。";
+      }
+      if (tFile) {
+        if (cc.topicFileUrl) {
+          tFile.innerHTML =
+            '<div class="topic-file-name">' + esc(cc.topicFileName || "赛题文件") + "</div>" +
+            '<div class="topic-file-actions">' +
+            '<button class="btn btn-ghost btn-sm" type="button" data-preview="' + esc(cc.topicFileUrl) + '" onclick="previewWork(this)">在线预览</button>' +
+            '<a class="btn btn-ghost btn-sm" href="' + esc(downloadFile(cc.topicFileUrl)) + '" download="' + esc(cc.topicFileName || "赛题文件") + '">下载</a>' +
+            "</div>";
+        } else {
+          tFile.innerHTML = "";
+        }
+      }
     }
     const initial = candidates.find((s) => s.contestId === qsId) || candidates[0];
     sel.value = String(initial.id);

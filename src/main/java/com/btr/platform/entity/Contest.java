@@ -26,6 +26,10 @@ public class Contest {
     private String videoUrl;
     /** 线下赛事录像视频名称 */
     private String videoName;
+    /** 赛题附件 URL（题目文档/文件，进行中阶段对选手展示），可为空 */
+    private String topicFileUrl;
+    /** 赛题附件名称 */
+    private String topicFileName;
     private LocalDateTime signupStart;
     private LocalDateTime signupEnd;
     private LocalDateTime reviewStart;
@@ -42,6 +46,8 @@ public class Contest {
     private Boolean resultsLocked;
     /** 固化时间 */
     private LocalDateTime finalizedAt;
+    /** 公示时间 */
+    private LocalDateTime publishedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -837,6 +837,65 @@ button {
   word-break: break-all;
 }
 
+/* 赛题卡片 ------------------------------------------------------------ */
+.topic-card {
+  margin-bottom: 14px;
+  border-radius: 16px;
+  border: 1px solid var(--violet-soft, rgba(109, 91, 208, 0.3));
+  background: linear-gradient(135deg, var(--violet-soft, #f1effd), #faf9ff);
+  overflow: hidden;
+}
+
+.topic-head {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--violet, #6d5bd0);
+  background: rgba(109, 91, 208, 0.08);
+}
+
+.topic-body {
+  padding: 12px 14px 4px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+.topic-file {
+  padding: 8px 14px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.topic-file-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  word-break: break-all;
+}
+
+.topic-file-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.topic-file-actions .btn {
+  border-color: rgba(109, 91, 208, 0.35);
+  color: var(--violet, #6d5bd0);
+}
+
+.topic-file-actions .btn:hover {
+  background: var(--violet-soft, #f1effd);
+}
+
 .hidden {
   display: none !important;
 }

@@ -52,6 +52,8 @@ public final class Requests {
             String mode,
             String videoUrl,
             String videoName,
+            String topicFileUrl,
+            String topicFileName,
             LocalDateTime signupStart,
             LocalDateTime signupEnd,
             LocalDateTime reviewStart,

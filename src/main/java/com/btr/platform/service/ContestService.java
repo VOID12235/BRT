@@ -187,6 +187,11 @@ public class ContestService {
             workMapper.update(unlock, new QueryWrapper<Work>().eq("contest_id", id));
         }
         if ("PUBLISHED".equals(status)) {
+            // 进入公示：记录公示开始时间（用于"公示一周后自动转为已结束"）
+            if (contest.getPublishedAt() == null) {
+                contest.setPublishedAt(LocalDateTime.now());
+                contestMapper.updateById(contest);
+            }
             rankService.snapshotWinners(id);
         }
         return contest;
@@ -274,6 +279,13 @@ public class ContestService {
         if (req.videoName() != null) {
             contest.setVideoName(req.videoName().isBlank() ? null : req.videoName());
         }
+        // 赛题附件字段：仅在有值时写入，避免普通编辑覆盖清空
+        if (req.topicFileUrl() != null) {
+            contest.setTopicFileUrl(req.topicFileUrl().isBlank() ? null : req.topicFileUrl());
+        }
+        if (req.topicFileName() != null) {
+            contest.setTopicFileName(req.topicFileName().isBlank() ? null : req.topicFileName());
+        }
         if (req.status() != null && !req.status().isBlank()) {
             contest.setStatus(req.status());
         }
@@ -345,6 +357,8 @@ public class ContestService {
         card.setMode(contest.getMode() == null ? "ONLINE" : contest.getMode());
         card.setVideoUrl(contest.getVideoUrl());
         card.setVideoName(contest.getVideoName());
+        card.setTopicFileUrl(contest.getTopicFileUrl());
+        card.setTopicFileName(contest.getTopicFileName());
         card.setSignupStart(contest.getSignupStart());
         card.setSignupEnd(contest.getSignupEnd());
         card.setReviewStart(contest.getReviewStart());

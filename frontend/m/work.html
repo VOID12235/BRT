@@ -7,7 +7,7 @@
 <title>提交作品</title>
   <meta name="description" content="BTR 赛事平台作品提交手机版：上传作品与封面。" />
   <meta name="keywords" content="作品提交,上传作品,手机提交作品,BTR赛事平台" />
-<link rel="stylesheet" href="/m/m.css?v=20261105m4">
+<link rel="stylesheet" href="/m/m.css?v=20261105m5">
 </head>
 <body data-page="work">
 <div id="app">
@@ -17,6 +17,14 @@
     <div class="side"></div>
   </header>
   <main class="m-main">
+    <div class="topic-card" id="topicCard" style="display:none">
+      <div class="topic-head">
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>赛题要求</span>
+      </div>
+      <div class="topic-body" id="topicBody"></div>
+      <div class="topic-file" id="topicFile"></div>
+    </div>
     <form class="form-card" id="workForm">
       <div class="form-row">
         <label>参赛报名 *</label>
@@ -51,7 +59,7 @@
   </nav>
 </div>
 <script src="/assets/js/api.js?v=20261105a4"></script>
-<script src="/m/m.js?v=20261105b13"></script>
+<script src="/m/m.js?v=20261105b15"></script>
 
 </body>
 </html>
