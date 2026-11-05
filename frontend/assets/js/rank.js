@@ -132,39 +132,6 @@
       </div>
     </div>`;
 
-    const groupPanel = groups.length
-      ? `<div class="card side-card" style="margin-top: 20px">
-          <h3>奖项结果</h3>
-          <div class="stack">${groups
-            .map(
-              (g) => `<div>
-                <div class="row-between" style="margin-bottom: 8px">
-                  <span class="award-pill ${g.items.some((i) => i.rank === 1) ? "gold" : g.items.some((i) => i.rank === 2) ? "silver" : "bronze"}">${B.escapeHtml(g.awardName)}</span>
-                  <span class="tiny muted">${
-                    B.formatPrize(g)
-                      ? B.escapeHtml(B.formatPrize(g)) + " · "
-                      : ""
-                  }${g.items.length} / ${g.quota} 个名额</span>
-                </div>
-                ${g.items
-                  .map(
-                    (item) => `<div class="row" style="padding: 6px 0; font-size: 12px">
-                      <span class="muted mono">#${item.rank}</span>
-                      <span class="grow" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${B.escapeHtml(item.workTitle)}</span>
-                      <b class="mono" style="color:var(--brand,#e8a33d)">${
-                        B.formatPrize(item)
-                          ? B.escapeHtml(B.formatPrize(item))
-                          : "—"
-                      }</b>
-                    </div>`
-                  )
-                  .join("")}
-              </div>`
-            )
-            .join("")}</div>
-        </div>`
-      : "";
-
     host.innerHTML = `
       <div class="result-hero" style="padding-top: 8px">
         <span class="eyebrow">Final Ranking</span>
@@ -172,21 +139,7 @@
         <p>共 ${rank.workCount} 件作品 · ${rank.judgeCount} 位评委参与 · 更新于 ${B.formatDate(rank.updatedAt, true)}</p>
       </div>
       <div class="podium">${podium}</div>
-      <div class="split" style="margin-top: 8px">
-        <div>${table}</div>
-        <aside>
-          <div class="card side-card">
-            <h3>赛事信息</h3>
-            <div class="meta-list">
-              <div><span>赛事状态</span><b>${B.statusInfo(rank.status).label}</b></div>
-              <div><span>提交作品</span><b>${rank.workCount}</b></div>
-              <div><span>参与评委</span><b>${rank.judgeCount}</b></div>
-              <div><span>已评分作品</span><b>${rank.scoredCount}</b></div>
-            </div>
-          </div>
-          ${groupPanel}
-        </aside>
-      </div>`;
+      <div style="margin-top: 24px">${table}</div>`;
   }
 
   document.addEventListener("DOMContentLoaded", init);
