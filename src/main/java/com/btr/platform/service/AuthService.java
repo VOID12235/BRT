@@ -263,12 +263,15 @@ public class AuthService {
         return toView(userEntity(userId));
     }
 
-    /** 更新个人资料（昵称、手机号） */
+    /** 更新个人资料（昵称、手机号、头像） */
     @Transactional
     public UserView updateProfile(Long userId, com.btr.platform.dto.Requests.UpdateProfileReq req) {
         User user = userEntity(userId);
         user.setNickname(req.nickname().trim());
         user.setPhone(req.phone() == null ? "" : req.phone().trim());
+        if (req.avatar() != null) {
+            user.setAvatar(req.avatar().trim());
+        }
         user.setUpdatedAt(LocalDateTime.now());
         userMapper.updateById(user);
         return toView(user);

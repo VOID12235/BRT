@@ -86,7 +86,14 @@
       const avatar = document.getElementById("userAvatar");
       const name = document.getElementById("userName");
       const role = document.getElementById("userRole");
-      if (avatar) avatar.textContent = (user.nickname || user.account || "U").slice(0, 1);
+      if (avatar) {
+        if (user.avatar) {
+          avatar.innerHTML =
+            '<img src="' + B.escapeHtml(user.avatar) + '" alt="头像" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block" onerror="this.style.display=\'none\'" />';
+        } else {
+          avatar.textContent = (user.nickname || user.account || "U").slice(0, 1);
+        }
+      }
       if (name) name.textContent = user.nickname || user.account;
       if (role) role.textContent = B.roleLabel(user.role);
       document.querySelectorAll("[data-role-link]").forEach((el) => {

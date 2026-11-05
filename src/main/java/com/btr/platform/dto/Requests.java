@@ -223,6 +223,7 @@ public final class Requests {
             @NotBlank(message = "昵称不能为空")
             @Size(max = 32, message = "昵称最长 32 个字符")
             String nickname,
-            @Size(max = 20, message = "手机号最长 20 位") String phone) {
+            @Size(max = 20, message = "手机号最长 20 位") String phone,
+            @Size(max = 255, message = "头像链接过长") String avatar) {
     }
 }

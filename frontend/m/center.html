@@ -8,6 +8,7 @@
   <meta name="description" content="BTR 赛事平台个人中心手机版：我的报名、作品与获奖。" />
   <meta name="keywords" content="个人中心,我的报名,我的作品,BTR赛事平台" />
 <link rel="stylesheet" href="/m/m.css?v=20261105m4">
+<link rel="stylesheet" href="/assets/css/cropper.min.css">
 </head>
 <body data-page="center">
 <div id="app">
@@ -18,7 +19,8 @@
   </header>
   <main class="m-main">
     <div class="profile-head">
-      <div class="avatar" id="avatar">U</div>
+      <div class="avatar" id="avatar" style="cursor:pointer" title="点击更换头像">U</div>
+      <input type="file" id="avatarFile" accept="image/*" style="display:none" />
       <div class="who">
         <b id="nickname">—</b>
         <span id="roleLabel">—</span>
@@ -52,7 +54,7 @@
   </nav>
 </div>
 <script src="/assets/js/api.js?v=20261105a3"></script>
-<script src="/m/m.js?v=20261105b11"></script>
+<script src="/m/m.js?v=20261105b12"></script>
 
 </body>
 </html>

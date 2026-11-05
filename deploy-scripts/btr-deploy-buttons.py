@@ -14,10 +14,15 @@ files = [
     (os.path.join(mdir, "m.js"), "/var/www/btr/m/m.js"),
     (os.path.join(mdir, "m.css"), "/var/www/btr/m/m.css"),
     (os.path.join(FE, "assets", "js", "rank.js"), "/var/www/btr/assets/js/rank.js"),
+    (os.path.join(FE, "assets", "js", "common.js"), "/var/www/btr/assets/js/common.js"),
     (os.path.join(FE, "assets", "js", "dplayer.min.js"), "/var/www/btr/assets/js/dplayer.min.js"),
     (os.path.join(FE, "assets", "js", "docx-preview.min.js"), "/var/www/btr/assets/js/docx-preview.min.js"),
     (os.path.join(FE, "assets", "js", "jszip.min.js"), "/var/www/btr/assets/js/jszip.min.js"),
     (os.path.join(FE, "assets", "js", "xlsx.full.min.js"), "/var/www/btr/assets/js/xlsx.full.min.js"),
+    (os.path.join(FE, "assets", "js", "wangeditor.min.js"), "/var/www/btr/assets/js/wangeditor.min.js"),
+    (os.path.join(FE, "assets", "js", "qrcode.min.js"), "/var/www/btr/assets/js/qrcode.min.js"),
+    (os.path.join(FE, "assets", "js", "cropper.min.js"), "/var/www/btr/assets/js/cropper.min.js"),
+    (os.path.join(FE, "assets", "css", "cropper.min.css"), "/var/www/btr/assets/css/cropper.min.css"),
     (os.path.join(FE, "rank.html"), "/var/www/btr/rank.html"),
 ]
 for name in os.listdir(mdir):

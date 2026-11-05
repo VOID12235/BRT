@@ -12,6 +12,7 @@ for name in os.listdir(os.path.join(fe, "admin")):
 files += [
     (os.path.join(fe, "assets", "js", "admin.js"), "/var/www/btr/assets/js/admin.js"),
     (os.path.join(fe, "assets", "js", "echarts.min.js"), "/var/www/btr/assets/js/echarts.min.js"),
+    (os.path.join(fe, "assets", "js", "wangeditor.min.js"), "/var/www/btr/assets/js/wangeditor.min.js"),
 ]
 
 t = paramiko.Transport((HOST, PORT))

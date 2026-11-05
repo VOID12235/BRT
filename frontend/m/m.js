@@ -6,6 +6,29 @@
   const page = document.body.dataset.page || "";
   const esc = B.escapeHtml;
 
+  /** 净化富文本 HTML：移除 script/iframe/事件属性，防止存储型 XSS */
+  function sanitizeHtml(html) {
+    const t = document.createElement("div");
+    t.innerHTML = String(html || "");
+    t.querySelectorAll("script,iframe,object,embed,link,meta,style").forEach((el) => el.remove());
+    t.querySelectorAll("*").forEach((el) => {
+      [...el.attributes].forEach((a) => {
+        const k = a.name.toLowerCase();
+        if (k.startsWith("on") || k === "srcset" || (k === "href" && a.value.trim().toLowerCase().startsWith("javascript:"))) {
+          el.removeAttribute(a.name);
+        }
+      });
+    });
+    return t.innerHTML;
+  }
+
+  /** 富文本转纯文本（列表摘要用） */
+  function stripHtml(html) {
+    const t = document.createElement("div");
+    t.innerHTML = String(html || "");
+    return t.textContent || "";
+  }
+
   /* ---------- App 内环境：隐藏 APP 安装入口（网页版保留） ---------- */
   (function () {
     try {
@@ -305,7 +328,7 @@
             .map(
               (n) => `<a class="notice-item" href="/m/notices.html?id=${n.id}">
                 <div class="head"><b>${esc(n.title)}</b>${n.pinned ? '<span class="badge badge-plain">置顶</span>' : ""}<span class="date">${B.formatDate(n.publishedAt)}</span></div>
-                <p class="content">${esc(n.content || "")}</p>
+                <p class="content">${stripHtml(n.content || "").slice(0, 60)}</p>
                 <span class="more-tip">查看全文</span>
               </a>`
             )
@@ -695,6 +718,92 @@
   }
 
   /* ================= 个人中心 ================= */
+
+  /** 渲染头像：有 URL 显示图片，否则显示首字母 */
+  function renderAvatar(el, avatarUrl, name) {
+    if (!el) return;
+    if (avatarUrl) {
+      el.innerHTML = '<img src="' + esc(avatarUrl) + '" alt="头像" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block" onerror="this.style.display=\'none\'" />';
+    } else {
+      el.textContent = (name || "U").slice(0, 1);
+    }
+  }
+
+  /** 绑定头像上传：点击头像选图 -> Cropper 裁剪 -> 上传 -> 更新资料 */
+  function bindAvatarUpload() {
+    const avatarEl = document.getElementById("avatar");
+    const avatarFile = document.getElementById("avatarFile");
+    if (!avatarEl || !avatarFile) return;
+    avatarEl.addEventListener("click", () => avatarFile.click());
+    avatarFile.addEventListener("change", () => {
+      if (!avatarFile.files.length) return;
+      openAvatarCrop(avatarFile.files[0]);
+      avatarFile.value = "";
+    });
+  }
+
+  /** 头像裁剪弹窗（Cropper.js 开源库，MIT） */
+  function openAvatarCrop(file) {
+    if (!window.Cropper) {
+      ensureLib(["cropper.min.js"], () => openAvatarCrop(file));
+      return;
+    }
+    const modal = document.createElement("div");
+    modal.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box;";
+    modal.innerHTML = `<div style="background:#fff;border-radius:12px;width:min(94vw,420px);padding:16px;box-sizing:border-box;position:relative">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <b style="font-size:15px;color:#222">裁剪头像</b>
+        <button id="crClose" style="border:none;background:#f1f2f4;border-radius:50%;width:34px;height:34px;font-size:18px;line-height:1;cursor:pointer;color:#555">×</button>
+      </div>
+      <div id="crStage" style="width:100%;height:260px;background:#f7f8fa;border-radius:8px;overflow:hidden"></div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button id="crCancel" style="flex:1;padding:10px;border:none;border-radius:8px;background:#f1f2f4;color:#555;cursor:pointer">取消</button>
+        <button id="crOk" style="flex:1;padding:10px;border:none;border-radius:8px;background:var(--brand,#5b7cfa);color:#fff;cursor:pointer">确定</button>
+      </div>
+    </div>`;
+    document.body.appendChild(modal);
+    const stage = modal.querySelector("#crStage");
+    const img = document.createElement("img");
+    img.style.maxWidth = "100%";
+    stage.appendChild(img);
+    img.src = URL.createObjectURL(file);
+    let cropper = null;
+    try {
+      cropper = new Cropper(img, { aspectRatio: 1, viewMode: 1, autoCropArea: 1, background: false, guides: true });
+    } catch (e) {
+      modal.remove();
+      toast("图片解析失败");
+      return;
+    }
+    const close = () => { try { cropper.destroy(); } catch (e) { /* ignore */ } URL.revokeObjectURL(img.src); modal.remove(); };
+    modal.querySelector("#crClose").onclick = close;
+    modal.querySelector("#crCancel").onclick = close;
+    modal.addEventListener("click", (ev) => { if (ev.target === modal) close(); });
+    modal.querySelector("#crOk").onclick = async () => {
+      const okBtn = modal.querySelector("#crOk");
+      okBtn.disabled = true;
+      okBtn.textContent = "上传中…";
+      try {
+        const blob = await new Promise((resolve) => cropper.getCroppedCanvas({ width: 300, height: 300 }).toBlob(resolve, "image/png"));
+        if (!blob) throw new Error("裁剪失败");
+        const fd = new FormData();
+        fd.append("file", blob, "avatar.png");
+        const data = await B.api.upload("/files?purpose=avatar", fd);
+        const me = await B.api.get("/auth/me");
+        await B.api.put("/auth/me", { nickname: me.nickname || "选手", phone: me.phone || "", avatar: data.url });
+        B.storage.user = Object.assign({}, B.storage.user || {}, { avatar: data.url });
+        renderAvatar(document.getElementById("avatar"), data.url, me.nickname);
+        toast("头像已更新");
+      } catch (err) {
+        toast(err.message || "头像上传失败");
+      } finally {
+        okBtn.disabled = false;
+        okBtn.textContent = "确定";
+        close();
+      }
+    };
+  }
+
   async function centerInit() {
     const user = B.storage.user;
     if (!user || !B.storage.token) {
@@ -702,7 +811,8 @@
       return;
     }
     document.getElementById("nickname").textContent = user.nickname || user.account || "选手";
-    document.getElementById("avatar").textContent = (user.nickname || user.account || "U").slice(0, 1);
+    renderAvatar(document.getElementById("avatar"), user.avatar, user.nickname || user.account);
+    bindAvatarUpload();
     document.getElementById("roleLabel").textContent = B.roleLabel(user.role);
     const accountEl = document.getElementById("accountLabel");
     if (accountEl) accountEl.textContent = user.account || "";
@@ -781,7 +891,10 @@
           .map(
             (x) => `<div class="li">
               <div class="main"><b>${esc(x.contestTitle || "赛事")} · ${esc(x.awardName || "获奖")}</b><span>${esc(x.rankNo ? "第 " + x.rankNo + " 名" : "")}${B.formatPrize(x) ? " · " + esc(B.formatPrize(x)) : ""}</span></div>
-              <button class="mini" data-cert="${x.contestId}">下载证书</button>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="mini" data-cert="${x.contestId}">下载证书</button>
+                <button class="mini" data-qr="${x.contestId}" data-qrname="${esc(x.contestTitle || "")}">证书二维码</button>
+              </div>
             </div>`
           )
           .join("");
@@ -802,9 +915,37 @@
           }
         });
       });
+      box.querySelectorAll("[data-qr]").forEach((btn) => {
+        btn.addEventListener("click", () => showCertQr(btn.dataset.qr, btn.dataset.qrname));
+      });
     } catch (e) {
       document.getElementById("myLists").innerHTML = empty("加载失败", e.message || "请稍后再试");
     }
+  }
+
+  /** 证书核验二维码：扫码可查看/下载本人证书 PDF */
+  function showCertQr(contestId, title) {
+    const url = location.origin + "/api/v1/awards/mine/pdf?contestId=" + contestId;
+    const modal = document.createElement("div");
+    modal.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:10px;box-sizing:border-box;";
+    modal.innerHTML = `<div style="background:#fff;border-radius:12px;width:min(90vw,360px);padding:20px;box-sizing:border-box;text-align:center;position:relative">
+      <b style="font-size:15px;color:#222">${esc(title || "")} · 证书二维码</b>
+      <p style="font-size:12px;color:#888;margin:8px 0 14px">扫码查看并下载您的获奖证书</p>
+      <div id="qrBox" style="display:flex;justify-content:center"></div>
+      <button id="qrClose" style="margin-top:16px;width:100%;padding:10px;border:none;border-radius:8px;background:#f1f2f4;color:#555;cursor:pointer">关闭</button>
+    </div>`;
+    document.body.appendChild(modal);
+    modal.querySelector("#qrClose").onclick = () => modal.remove();
+    modal.addEventListener("click", (ev) => { if (ev.target === modal) modal.remove(); });
+    const qrEl = modal.querySelector("#qrBox");
+    ensureLib(["qrcode.min.js"], () => {
+      if (!qrEl.isConnected) return;
+      if (window.QRCode) {
+        try { new QRCode(qrEl, { text: url, width: 180, height: 180 }); } catch (e) { qrEl.innerHTML = '<p style="color:#888;font-size:13px">二维码生成失败</p>'; }
+      } else {
+        qrEl.innerHTML = '<p style="color:#888;font-size:13px">二维码组件加载失败</p>';
+      }
+    });
   }
 
   async function logout() {
@@ -895,7 +1036,11 @@
         detailBox.innerHTML = `<div class="notice-item" style="box-shadow:var(--shadow)">
           <div class="head"><b style="font-size:17px">${esc(n.title)}</b>${n.pinned ? '<span class="badge badge-plain">置顶</span>' : ""}</div>
           <span class="date" style="font-size:12px;color:var(--muted);display:block;margin:6px 0 8px">${B.formatDate(n.publishedAt)}</span>
-          <div style="font-size:14px;line-height:1.9;white-space:pre-wrap;color:var(--ink-2)">${esc(n.content || "")}</div>
+          <div style="font-size:14px;line-height:1.9;color:var(--ink-2)">${
+            /<[a-z][\s\S]*>/i.test(n.content || "")
+              ? sanitizeHtml(n.content)
+              : '<div style="white-space:pre-wrap">' + esc(n.content) + "</div>"
+          }</div>
         </div>`;
       } catch (e) {
         detailBox.innerHTML = empty("公告不存在", "请返回公告列表");
@@ -910,7 +1055,7 @@
             .map(
               (n) => `<a class="notice-item" href="/m/notices.html?id=${n.id}">
                 <div class="head"><b>${esc(n.title)}</b>${n.pinned ? '<span class="badge badge-plain">置顶</span>' : ""}<span class="date">${B.formatDate(n.publishedAt)}</span></div>
-                <p class="content">${esc(n.content || "")}</p>
+                <p class="content">${stripHtml(n.content || "").slice(0, 80)}</p>
                 <span class="more-tip">查看全文</span>
               </a>`
             )

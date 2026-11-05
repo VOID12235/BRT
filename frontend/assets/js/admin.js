@@ -1461,6 +1461,7 @@
   function openNoticeModal(notice) {
     const isEdit = Boolean(notice);
     const n = notice || {};
+    let editor = null;
     openModal({
       title: isEdit ? "编辑公告" : "发布公告",
       size: "modal-lg",
@@ -1472,17 +1473,38 @@
         </div>
         <div class="field" style="margin-top:16px">
           <label>公告内容 *</label>
-          <textarea class="textarea" name="content" style="min-height:220px" required>${B.escapeHtml(
-            n.content || ""
-          )}</textarea>
+          <div id="noticeEditorEl" style="min-height:240px;border:1px solid #e4e3dd;border-radius:8px;background:#fff"></div>
+          <p class="tiny muted" style="margin-top:6px">支持加粗、标题、列表、链接等富文本格式</p>
         </div>
         <label class="check" style="margin-top:14px"><input type="checkbox" name="pinned" ${
           n.pinned ? "checked" : ""
         } /> 置顶显示</label>`,
+      onMount: (form) => {
+        const host = form.querySelector("#noticeEditorEl");
+        if (!host) return;
+        if (window.wangEditor) {
+          try {
+            const E = window.wangEditor;
+            editor = new E(host);
+            editor.config.placeholder = "请输入公告内容…";
+            editor.config.height = 240;
+            editor.config.zIndex = 10010;
+            editor.create();
+            if (n.content) editor.txt.html(n.content);
+          } catch (e) { /* 富文本初始化失败时回落 textarea */ }
+        }
+        if (!editor) {
+          host.innerHTML =
+            '<textarea class="textarea" name="content" style="min-height:240px;width:100%;border:none;padding:12px">' +
+            B.escapeHtml(n.content || "") +
+            "</textarea>";
+        }
+      },
       onSubmit: async (form) => {
+        const content = editor ? editor.txt.html() : formValue(form, "content").trim();
         const payload = {
           title: formValue(form, "title").trim(),
-          content: formValue(form, "content").trim(),
+          content: content,
           pinned: form.querySelector('[name="pinned"]').checked,
         };
         if (!payload.title) throw new Error("请输入公告标题");
